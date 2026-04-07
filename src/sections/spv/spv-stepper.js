@@ -8,7 +8,7 @@ import Logo from 'src/components/logo';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
 
 
-export default function Stepper() {
+export default function SpvStepper() {
   const router = useRouter();
   const steps = [
     { id: 'basic_info', number: 1, lines: ['Basic', 'Info'] },

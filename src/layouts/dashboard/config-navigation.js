@@ -95,6 +95,12 @@ export function useNavData() {
               { title: t('create'), path: paths.dashboard.signatories.new },
             ],
           },
+          {
+            title: t('spvkyc'),
+            path: paths.dashboard.spvkyc.root,
+            icon: ICONS.signatories,
+            
+          },
 
           //   // USER
           //   {
