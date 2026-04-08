@@ -4,7 +4,7 @@ import { alpha, Box } from "@mui/system";
 import Iconify from "src/components/iconify";
 import Label from "src/components/label";
 
-export default function DocumentCard({ docLink, icon, title, description, status }) {
+export default function DocumentCard({ docLink, icon, title, description, status,button }) {
     return (<>
         <Card
             sx={{
@@ -78,7 +78,7 @@ export default function DocumentCard({ docLink, icon, title, description, status
                         }
                     }}
                 >
-                    {docLink ? "VIEW" : <><Iconify icon="flat-color-icons:flash-on" width={18} /> GENERATE </>}
+                    {button ? button : docLink ? "VIEW" : "GENERATE" }
                 </Button>
             </Box>
         </Card>
