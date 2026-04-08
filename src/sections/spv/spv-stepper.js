@@ -6,6 +6,8 @@ import { useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
 import Logo from 'src/components/logo';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
+import BasicInfo from './basic-info/basic-info';
+import PoolFinancials from './pool-financials/pool-financials';
 
 
 export default function SpvStepper() {
@@ -14,12 +16,12 @@ export default function SpvStepper() {
     { id: 'basic_info', number: 1, lines: ['Basic', 'Info'] },
      { id: 'pool_financial', number: 2, lines: ['Pool', 'Financial'] },
     { id: 'ptc_parameters', number: 3, lines: ['PTC', 'Parameters'] },
-    { id: 'legal_structure', number: 4, lines: ['Legal', 'Structure'] },
-    { id: 'escrow_setup', number: 5, lines: ['Escrow', 'Setup'] },
-    { id: 'legal_documents', number: 6, lines: ['Legal', 'Documents'] },
-    { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
-    { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
-    { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
+    // { id: 'legal_structure', number: 4, lines: ['Legal', 'Structure'] },
+    // { id: 'escrow_setup', number: 5, lines: ['Escrow', 'Setup'] },
+    // { id: 'legal_documents', number: 6, lines: ['Legal', 'Documents'] },
+    // { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
+    // { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
+    // { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
   const [activeStepId, setActiveStepId] = useState('basic_info');
@@ -57,29 +59,29 @@ export default function SpvStepper() {
 
   const renderForm = () => {
     switch (activeStepId) {
-    //   case 'basic_info':
-    //     return (
-    //       <DocumentDetails
-    //         percent={(p) => updateStepPercent('basic_info', p)}
-    //         setActiveStepId={() => setActiveStepId('pool_financial')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'basic_info'])
-    //         }
-    //       />
-    //     );
+      case 'basic_info':
+        return (
+          <BasicInfo
+            percent={(p) => updateStepPercent('basic_info', p)}
+            setActiveStepId={() => setActiveStepId('pool_financial')}
+            dataInitializedSteps={dataInitializedSteps}
+            setDataInitializedSteps={() =>
+              setDataInitializedSteps((prev) => [...prev, 'basic_info'])
+            }
+          />
+        );
 
-    //    case 'pool_financial':
-    //     return (
-    //       <KYCAddressDetails
-    //         percent={(p) => updateStepPercent('pool_financial', p)}
-    //         setActiveStepId={() => setActiveStepId('ptc_parameters')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
-    //         }
-    //       />
-    //     );
+       case 'pool_financial':
+        return (
+          <PoolFinancials  
+            percent={(p) => updateStepPercent('pool_financial', p)}
+            setActiveStepId={() => setActiveStepId('ptc_parameters')}
+            dataInitializedSteps={dataInitializedSteps}
+            setDataInitializedSteps={() =>
+              setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
+            }
+          />
+        );
 
     //   case 'ptc_parameters':
     //     return (
@@ -172,17 +174,7 @@ export default function SpvStepper() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box
-        sx={{
-          position: 'fixed',
-          top: 16,
-          left: 16,
-          zIndex: 1300,
-        }}
-      >
-        <Logo />
-      </Box>
-
+      
       <ProgressStepper
         steps={steps}
         activeStepId={activeStepId} 
