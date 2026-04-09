@@ -57,7 +57,7 @@ function LegalDocument({ setActiveStepId, percent }) {
                 <Box display="flex" alignItems="center" gap={2}>
 
                     <Box>
-                        <Typography variant="h4" fontWeight={600}>
+                        <Typography variant="h4" color="primary" fontWeight={600}>
                             Legal Documents
                         </Typography>
                         <Typography variant="body2" color="text.secondary">

@@ -152,6 +152,7 @@ export default function SignatoriesListView() {
           ]}
           action={
             <Button
+            color='primary'
               component={RouterLink}
               href={paths.dashboard.signatories.new}
               variant="contained"

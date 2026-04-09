@@ -3,7 +3,6 @@ import { Box, Stack } from '@mui/material';
 
 import { AnimatePresence, m } from 'framer-motion';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
-import LegalDeed from './legal-trust-deed/legal-trust-deed';
 import CreditRating from './credit-rating/credit-rating';
 import LegalDocument from './legal-document/legal-document';
 
@@ -21,7 +20,7 @@ export default function SpvStepper() {
     { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('legal_documents');
+  const [activeStepId, setActiveStepId] = useState('basic_info');
 
   const [formData, setFormData] = useState({
     basic_info: {},

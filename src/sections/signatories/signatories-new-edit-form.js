@@ -523,6 +523,7 @@ export default function SignatoriesNewEditForm({
 
           {showActionButton && !isViewMode && (
             <Button
+            color='primary'
               type="submit"
               variant="contained"
               disabled={isSubmitting}
