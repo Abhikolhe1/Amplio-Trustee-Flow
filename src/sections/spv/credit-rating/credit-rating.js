@@ -3,15 +3,14 @@ import { yupResolver } from "@hookform/resolvers/yup";
 
 import { Button, Card, Grid, MenuItem, Typography } from "@mui/material";
 import { alpha, Box, Container, Stack } from "@mui/system";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import FormProvider, { RHFCustomFileUploadBox, RHFSelect, RHFTextField } from "src/components/hook-form";
 import Iconify from "src/components/iconify";
 import PropTypes from 'prop-types';
 
 import * as yup from 'yup';
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import RHFDatePicker from "src/components/hook-form/rhf-date-picker";
-import { update } from "lodash";
 
 const normalizeDate = (value) => {
     if (!value) {
@@ -21,6 +20,22 @@ const normalizeDate = (value) => {
     const parsedDate = value instanceof Date ? value : new Date(value);
 
     return Number.isNaN(parsedDate.getTime()) ? null : parsedDate;
+};
+
+const hasUploadedFile = (value) => {
+    if (!value) {
+        return false;
+    }
+
+    if (Array.isArray(value)) {
+        return value.length > 0;
+    }
+
+    if (typeof value === 'string') {
+        return Boolean(value.trim());
+    }
+
+    return true;
 };
 
 function CreditRating({ disabled, currData, percent, saveStepData, setActiveStepId }) {
@@ -33,7 +48,6 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
 
     ];
 
-    const [selectedId, setSelectedId] = useState();
     const category = ['pending- Awaiting CRISIL Review', 'AA+ (sf)- Excellent', 'AA (sf)-Very Strong', 'A+ (sf)-strong', 'A (sf)-Adequate'];
 
     const creditSchema = yup.object().shape({
@@ -41,6 +55,8 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
         applicationDate: yup.date().required('Application Date is Required').max(new Date(), 'Can Not be Select Future Date'),
         ratingObtained: yup.string().required('Settor Info is Required'),
         expectedRatingDate: yup.date().required('Expected Rating Date is Required').min(yup.ref('applicationDate'), 'Expected Rating Date is Must be After Than Application Date '),
+        ratingLetterDoc: yup.mixed().test('fileRequired', 'Rating Letter is required', (value) => hasUploadedFile(value)),
+        creditRatingAgancy: yup.string().required('Credit Rating Agancy is required')
     })
 
     const defaultValues = useMemo(() => ({
@@ -48,16 +64,19 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
         applicationDate: normalizeDate(currData?.applicationDate),
         ratingObtained: currData?.ratingObtained || '',
         expectedRatingDate: normalizeDate(currData?.expectedRatingDate),
-        ratingLetter: currData?.ratingLetter || '',
+        ratingLetterDoc: currData?.ratingLetterDoc || '',
+        creditRatingAgancy: currData?.creditRatingAgancy || '',
     }), [currData]);
     ;
 
+   
     const methods = useForm({
         resolver: yupResolver(creditSchema),
         defaultValues,
     })
 
-    const { handleSubmit, reset, formState: { isSubmitting }, watch } = methods;
+    const { handleSubmit, reset, formState: { isSubmitting }, watch , control,setValue} = methods;
+
 
     const values = watch();
 
@@ -96,8 +115,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
 
     const onSubmit = handleSubmit(async (data) => {
 
-        const updatedData= {...data,ratingAgancy:selectedId}
-        saveStepData(updatedData);
+        saveStepData(data);
         // setActiveStepId('isin_application');
     });
     useEffect(() => {
@@ -105,12 +123,6 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
             reset(defaultValues);
         }
     }, [defaultValues, currData, reset])
-
-
-    const handleCardClick = (id) => {
-        setSelectedId(id);
-
-    };
 
 
     return (
@@ -156,59 +168,77 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                         </Box>
 
                     </Box>
+                    <Controller
+                        name="creditRatingAgancy"
+                        control={control}
+                        render={({ field, fieldState: { error } }) => {
+                            const { value, onChange } = field;
 
-                    <Card>
-                        <Box display="flex" alignItems="center" sx={{ p: 3, pb: 0 }}>
-                            <Typography fontWeight={600}>
-                                Select Credit Rating Agency
-                            </Typography>
-                        </Box>
-                        <Grid container p={2}>
-                            {CardData.map((item, i) => (
-                                <Grid xs="12" md="3">
-                                    <Card
-                                        sx={(theme) => ({
-                                            m: 1,
-                                            borderRadius: 2,
-                                            boxShadow: theme.shadows[3],
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 2,
-                                            cursor: 'pointer',
-                                            transition: '0.1s',
-                                            border: selectedId === i ? (theme) => `solid 1px ${alpha(theme.palette.info.main, 0.9)}` : null,
-                                            backgroundColor: selectedId === i ? (theme) => alpha(theme.palette.info.main, 0.1) : null,
-                                            '&:hover': {
-                                                transform: 'scale(1.01)',
-                                                boxShadow: theme.shadows[8],
-                                            },
+                            return (
+                                <Card>
+                                    <Box display="flex" alignItems="center" sx={{ p: 3, pb: 0 }}>
+                                        <Typography fontWeight={600} color="primary">
+                                            Select Credit Rating Agency
+                                        </Typography>
+                                    </Box>
+
+                                    <Grid container p={2}>
+                                        {CardData.map((item, i) => {
+                                            const isSelected = value === item.heading;
+
+                                            return (
+                                                <Grid item xs={12} md={3} key={i}>
+                                                    <Card
+                                                        sx={(theme) => ({
+                                                            m: 1,
+                                                            borderRadius: 2,
+                                                            boxShadow: theme.shadows[3],
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: 2,
+                                                            cursor: 'pointer',
+                                                            transition: '0.1s',
+
+                                                            border: isSelected ? `1px solid ${alpha(theme.palette.info.main, 0.9)}` : '1px solid transparent',
+
+                                                            backgroundColor: isSelected ? alpha(theme.palette.info.main, 0.1) : 'transparent',
+
+                                                            '&:hover': {
+                                                                transform: 'scale(1.01)',
+                                                                boxShadow: theme.shadows[8],
+                                                            },
+                                                        })}
+                                                        onClick={() => onChange(item.heading)}
+                                                    >
+                                                        <Box textAlign="center" p={5}>
+                                                            <Typography fontWeight={600}>
+                                                                {item.heading}
+                                                            </Typography>
+                                                            <Typography variant="body2" color="text.secondary">
+                                                                {item.subHeading}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Card>
+                                                </Grid>
+                                            );
                                         })}
-
-                                        onClick={() => handleCardClick(i)}
-                                    >
-
-                                        <Box alignItems="center" textAlign="center" p={5}>
-                                            <Typography fontWeight={600}>
-                                                {item.heading}
-                                            </Typography>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {item.subHeading}
-                                            </Typography>
-                                        </Box>
-                                    </Card>
-                                </Grid>
-                            ))}
-                        </Grid>
-
-                    </Card>
-
+                                    </Grid>
+                                    {error && (
+                                        <Typography color="error" sx={{ px: 3, pb: 2 }}>
+                                            {error.message}
+                                        </Typography>
+                                    )}
+                                </Card>
+                            );
+                        }}
+                    />
                     <Card>
 
                         <Box display="flex" alignItems="center" sx={{ p: 3, pb: 0 }}>
                             <Box display="flex" alignItems="center" gap={2}>
 
                                 <Box>
-                                    <Typography fontWeight={600}>
+                                    <Typography fontWeight={600} color='primary'>
                                         Application Details
                                     </Typography>
                                     {/* <Typography variant="body2" color="text.secondary">
@@ -230,8 +260,8 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                     md: 'repeat(2, 1fr)',
                                 }}
                             >
-                                <RHFTextField name="applicationNumber" label="Application Reference No." type="text" disabled={disabled} />
-                                <RHFDatePicker name="applicationDate" label="Application Date" maxDate={new Date()} disabled={disabled} />
+                                <RHFTextField name="applicationNumber" label="Application Reference No." type="text" control={control} disabled={disabled} />
+                                <RHFDatePicker name="applicationDate" label="Application Date" maxDate={new Date()} control={control} disabled={disabled} />
                             </Box>
                             <Box
                                 columnGap={2}
@@ -243,7 +273,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                 }}
                             >
                                 <Box>
-                                    <RHFSelect  name="ratingObtained" label="Rating Obtained"  >
+                                    <RHFSelect name="ratingObtained" label="Rating Obtained" control={control} >
                                         {category.map((cat) => (
                                             <MenuItem key={cat} value={cat}>
                                                 {cat}
@@ -252,7 +282,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                     </RHFSelect>
                                     <Typography variant="body2" color="text.secondary" mt={1}>Expected rating: AA (sf) based on pool quality</Typography>
                                 </Box>
-                                <RHFDatePicker name="expectedRatingDate" label="Expected Rating Date" disabled={disabled} />
+                                <RHFDatePicker name="expectedRatingDate" label="Expected Rating Date" control={control} disabled={disabled} />
                             </Box>
                             <Box
                                 columnGap={2}
@@ -263,7 +293,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                     md: 'repeat(1, 1fr)',
                                 }}
                             >
-                                <RHFCustomFileUploadBox name="ratingLetter" label="Upload Rating Letter (PDF)" disabled={disabled} accept={{ 'application/pdf': ['.pdf']}}/>
+                                <RHFCustomFileUploadBox name="ratingLetterDoc" label="Upload Rating Letter (PDF)" disabled={disabled} control={control} accept={{ 'application/pdf': ['.pdf'] }} />
 
                             </Box>
                         </Stack>
