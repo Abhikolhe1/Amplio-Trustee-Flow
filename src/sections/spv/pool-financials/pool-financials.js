@@ -93,7 +93,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
 
     const percentValue = (completed / requiredFields.length) * 100;
     percent?.(percentValue);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     values.poolLimit,
     values.maturity,

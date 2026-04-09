@@ -5,7 +5,7 @@ import { useEffect, useMemo } from 'react';
 import Container from '@mui/material/Container';
 import { Box, Button, Card, Grid, MenuItem, Stack, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
-import FormProvider, { RHFSelect, RHFTextField, } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { useSettingsContext } from 'src/components/settings';
 import { yupResolver } from '@hookform/resolvers/yup';
 
@@ -38,14 +38,17 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
     windowDuration: Yup.string().required('Duration required'),
   });
 
-  const defaultValues = useMemo(() => ({
-    faceValue: currData?.faceValue || '',
-    // maxInvest: currData?.maxInvest || '',
-    maxPtc: currData?.maxPtc || '',
-    maxInvestPool: currData?.maxInvestPool || '',
-    windowFrequency: currData?.windowFrequency || '',
-    windowDuration: currData?.windowDuration || '',
-  }), [currData]);
+  const defaultValues = useMemo(
+    () => ({
+      faceValue: currData?.faceValue || '',
+      // maxInvest: currData?.maxInvest || '',
+      maxPtc: currData?.maxPtc || '',
+      maxInvestPool: currData?.maxInvestPool || '',
+      windowFrequency: currData?.windowFrequency || '',
+      windowDuration: currData?.windowDuration || '',
+    }),
+    [currData]
+  );
 
   const methods = useForm({
     resolver: yupResolver(FormSchema),
@@ -62,38 +65,38 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
 
   const values = watch();
 
- const requiredFields = [
-  'faceValue',
-  'maxPtc',
-  'maxInvestPool',
-  'windowFrequency',
-  'windowDuration',
-];
+  const requiredFields = [
+    'faceValue',
+    'maxPtc',
+    'maxInvestPool',
+    'windowFrequency',
+    'windowDuration',
+  ];
 
-useEffect(() => {
-  let completed = 0;
+  useEffect(() => {
+    let completed = 0;
 
-  requiredFields.forEach((field) => {
-    if (Array.isArray(values[field]) && values[field]?.length > 0) {
-      completed += 1;
-    }
+    requiredFields.forEach((field) => {
+      if (Array.isArray(values[field]) && values[field]?.length > 0) {
+        completed += 1;
+      }
 
-    if (values[field] && !Array.isArray(values[field])) {
-      completed += 1;
-    }
-  });
+      if (values[field] && !Array.isArray(values[field])) {
+        completed += 1;
+      }
+    });
 
-  const percentValue = (completed / requiredFields.length) * 100;
-  percent?.(percentValue);
+    const percentValue = (completed / requiredFields.length) * 100;
+    percent?.(percentValue);
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-  values.faceValue,
-  values.maxPtc,
-  values.maxInvestPool,
-  values.windowFrequency,
-  values.windowDuration,
-]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    values.faceValue,
+    values.maxPtc,
+    values.maxInvestPool,
+    values.windowFrequency,
+    values.windowDuration,
+  ]);
 
   const onSubmit = async (data) => {
     saveStepData(data);
@@ -102,10 +105,10 @@ useEffect(() => {
   };
 
   useEffect(() => {
-    if (currData){
+    if (currData) {
       reset(defaultValues);
     }
-  },[defaultValues, currData, reset]);
+  }, [defaultValues, currData, reset]);
 
   return (
     <Container>
@@ -118,7 +121,7 @@ useEffect(() => {
           }}
         >
           <Stack spacing={1} sx={{ mb: 3 }}>
-            <Typography variant="h5" color="primary" fontWeight={600}>
+            <Typography variant="h5" color="primary">
               PTC Parameters
             </Typography>
 
@@ -128,7 +131,7 @@ useEffect(() => {
             </Typography>
           </Stack>
 
-          <Typography variant="overline" color="text.primary" sx={{ mb: 2, display: 'block' }}>
+          <Typography variant="subtitle2" color="primary" sx={{ mb: 2, display: 'block' }}>
             PTC Unit Structure
           </Typography>
 
@@ -142,7 +145,11 @@ useEffect(() => {
                 fullWidth
                 sx={{ mt: 1 }}
               />
-              <Typography variant="caption" color="text.primary" sx={{ mt: 0.5, display: 'block' }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 0.5, display: 'block' }}
+              >
                 At ₹50L pool limit → max 5,00,000 units
               </Typography>
             </Grid>
@@ -157,7 +164,7 @@ useEffect(() => {
                   disabled
                 />
               </Stack>
-              <Typography variant="caption" color="text.primary">
+              <Typography variant="caption" color="text.secondary">
                 = 100 PTC units minimum
               </Typography>
             </Grid>
@@ -172,7 +179,7 @@ useEffect(() => {
                   fullWidth
                 />
               </Stack>
-              <Typography variant="caption" color="text.primary">
+              <Typography variant="caption" color="text.secondary">
                 Cap: ₹10,00,000 per investor
               </Typography>
             </Grid>
@@ -201,7 +208,7 @@ useEffect(() => {
             >
               <Typography variant="subtitle1" color="warning.main">
                 PTC Investment Rules
-                <span style={{ fontSize: '16px', marginLeft: '8px'}}> ✔</span>
+                <span style={{ fontSize: '16px', marginLeft: '8px' }}> ✔</span>
               </Typography>
 
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -211,7 +218,7 @@ useEffect(() => {
             </Box>
           </Box>
 
-          <Typography variant="overline" sx={{ mb: 2, display: 'block' }}>
+          <Typography variant="subtitle2" color="primary" sx={{ mb: 2, display: 'block' }}>
             Investor Liquidity Window
           </Typography>
 
@@ -225,7 +232,7 @@ useEffect(() => {
                 ))}
               </RHFSelect>
 
-              <Typography variant="caption">
+              <Typography variant="caption" color="text.secondary">
                 For 30-day maturity: windows at Day 7, 14, 21, 30
               </Typography>
             </Grid>
@@ -237,17 +244,17 @@ useEffect(() => {
                 label="Window Duration (hours)"
                 fullWidth
               />
-              <Typography variant="caption">
+              <Typography variant="caption" color="text.secondary">
                 Time window for investor exit/reinvest decision
               </Typography>
             </Grid>
           </Grid>
         </Card>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button type="submit" variant="contained" color="primary">
-              Next
-            </Button>
-          </Box>
+          <Button type="submit" variant="contained" color="primary">
+            Next
+          </Button>
+        </Box>
       </FormProvider>
     </Container>
   );

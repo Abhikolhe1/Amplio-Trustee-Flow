@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Container from '@mui/material/Container';
 import { Box, Button, Card, Grid, MenuItem, Stack, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
-import FormProvider, { RHFSelect, RHFTextField, } from 'src/components/hook-form';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 // ----------------------------------------------------------------------
@@ -54,52 +54,50 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     spvName: Yup.string().required('SPV Name is required'),
   });
 
-  const defaultValues = useMemo(() => ({
-    pspPartner: currData?.pspPartner || '',
-    spvStructure: currData?.spvStructure || '',
-    originator: currData?.originator || '',
-    spvName: currData?.spvName || '',
-  }), [currData]); 
+  const defaultValues = useMemo(
+    () => ({
+      pspPartner: currData?.pspPartner || '',
+      spvStructure: currData?.spvStructure || '',
+      originator: currData?.originator || '',
+      spvName: currData?.spvName || '',
+    }),
+    [currData]
+  );
 
   const methods = useForm({
     resolver: yupResolver(FormSchema),
     defaultValues,
   });
-const { handleSubmit, setValue, watch, reset, formState: { isSubmitting }, } = methods;
+  const {
+    handleSubmit,
+    setValue,
+    watch,
+    reset,
+    formState: { isSubmitting },
+  } = methods;
 
   const values = watch();
 
+  const requiredFields = ['pspPartner', 'spvStructure', 'originator', 'spvName'];
 
-  const requiredFields = [
-  'pspPartner',
-  'spvStructure',
-  'originator',
-  'spvName',
-];
+  useEffect(() => {
+    let completed = 0;
 
-useEffect(() => {
-  let completed = 0;
+    requiredFields.forEach((field) => {
+      if (Array.isArray(values[field]) && values[field]?.length > 0) {
+        completed += 1;
+      }
 
-  requiredFields.forEach((field) => {
-    if (Array.isArray(values[field]) && values[field]?.length > 0) {
-      completed += 1;
-    }
+      if (values[field] && !Array.isArray(values[field])) {
+        completed += 1;
+      }
+    });
 
-    if (values[field] && !Array.isArray(values[field])) {
-      completed += 1;
-    }
-  });
+    const percentValue = (completed / requiredFields.length) * 100;
+    percent?.(percentValue);
 
-  const percentValue = (completed / requiredFields.length) * 100;
-  percent?.(percentValue);
-
-// eslint-disable-next-line react-hooks/exhaustive-deps
-}, [
-  values.pspPartner,
-  values.spvStructure,
-  values.originator,
-  values.spvName,
-]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values.pspPartner, values.spvStructure, values.originator, values.spvName]);
 
   const generateSPVName = () => {
     const formattedId = `SPV-${String(spvCounter).padStart(3, '0')}`;
@@ -114,11 +112,11 @@ useEffect(() => {
     console.log(data);
     setActiveStepId('pool_financial');
   };
-   useEffect(() => {
-          if (currData) {
-              reset(defaultValues);
-          }
-      }, [defaultValues, currData, reset])
+  useEffect(() => {
+    if (currData) {
+      reset(defaultValues);
+    }
+  }, [defaultValues, currData, reset]);
 
   return (
     <Container>
@@ -131,7 +129,7 @@ useEffect(() => {
           }}
         >
           <Stack spacing={1} sx={{ mb: 3 }}>
-            <Typography variant="h5" color="primary" fontWeight={600}>
+            <Typography variant="h5" color="primary">
               Basic Info & PSP Linking
             </Typography>
 
@@ -187,15 +185,18 @@ useEffect(() => {
                   label="AUTO-GENERATED SPV NAME"
                   fullWidth
                 />
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  borderColor="primary"
-                  minWidth="90"
-                  onClick={generateSPVName}
-                >
-                  Regen
-                </Button>
+                <Box alignContent="center">
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    borderColor="primary"
+                    minWidth="95"
+                    size="medium"
+                    onClick={generateSPVName}
+                  >
+                    Regen
+                  </Button>
+                </Box>
               </Stack>
 
               <Typography variant="caption">
@@ -205,10 +206,10 @@ useEffect(() => {
           </Grid>
         </Card>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button type="submit" variant="contained" color="primary">
-              Next
-            </Button>
-          </Box>
+          <Button type="submit" variant="contained" color="primary">
+            Next
+          </Button>
+        </Box>
       </FormProvider>
     </Container>
   );
