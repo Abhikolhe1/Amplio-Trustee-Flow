@@ -24,6 +24,7 @@ export default function SpvStepper() {
   ];
 
   const [activeStepId, setActiveStepId] = useState('basic_info');
+  const [activeStepId, setActiveStepId] = useState('basic_info');
 
   const [formData, setFormData] = useState({
     basic_info: {},

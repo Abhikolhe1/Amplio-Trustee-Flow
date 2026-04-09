@@ -1,7 +1,7 @@
 
 import { yupResolver } from "@hookform/resolvers/yup";
 
-import { Button, Card, Grid, Typography } from "@mui/material";
+import { Button, Card, Grid, MenuItem, Typography } from "@mui/material";
 import { alpha, Box, Container, Stack } from "@mui/system";
 import { useForm } from "react-hook-form";
 import FormProvider, { RHFCustomFileUploadBox, RHFSelect, RHFTextField } from "src/components/hook-form";
@@ -115,6 +115,16 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
 
             <FormProvider methods={methods} onSubmit={onSubmit} >
                 <Stack spacing={3}>
+                    <Box display="flex" alignItems="center" gap={2}>
+
+                        <Box>
+                            <Typography variant="h4" color="primary" fontWeight={600}>
+                                Credit Rating
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                Obtain a SEBI-registered credit rating for PTCs. Mandatory before NSDL/CDSL will process the ISIN application. Expected turnaround: 7–10 business days.                                            </Typography>
+                        </Box>
+                    </Box>
                     <Box
                         sx={{
                             display: "flex",
@@ -123,9 +133,9 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                             gap: 2,
                             p: 1,
                             borderRadius: 1,
-                            border: (theme) => `solid 2px ${alpha(theme.palette.warning.main, 0.10)}`,
-                            backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.10),
-                            color: (theme) => alpha(theme.palette.warning.main, 0.10),
+                            border: (theme) => `solid 2px ${alpha(theme.palette.warning.main, 0.9)}`,
+                            backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
+                            color: (theme) => alpha(theme.palette.warning.main, 0.9),
 
                             mb: 1
                         }}
@@ -163,8 +173,8 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                             gap: 2,
                                             cursor: 'pointer',
                                             transition: '0.1s',
-                                            border: selectedId === i ? (theme) => `solid 1px ${alpha(theme.palette.info.main, 0.10)}` : null,
-                                            backgroundColor: selectedId === i ? (theme) => alpha(theme.palette.info.main, 0.10) : null,
+                                            border: selectedId === i ? (theme) => `solid 1px ${alpha(theme.palette.info.main, 0.9)}` : null,
+                                            backgroundColor: selectedId === i ? (theme) => alpha(theme.palette.info.main, 0.1) : null,
                                             '&:hover': {
                                                 transform: 'scale(1.01)',
                                                 boxShadow: theme.shadows[8],
@@ -230,11 +240,11 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                 }}
                             >
                                 <Box>
-                                    <RHFSelect native name="ratingObtained" label="Rating Obtained" InputLabelProps={{ shrink: true }} disabled={disabled}>
+                                    <RHFSelect  name="ratingObtained" label="Rating Obtained"  >
                                         {category.map((cat) => (
-                                            <option key={cat} value={cat}>
+                                            <MenuItem key={cat} value={cat}>
                                                 {cat}
-                                            </option>
+                                            </MenuItem>
                                         ))}
                                     </RHFSelect>
                                     <Typography variant="body2" color="text.secondary" mt={1}>Expected rating: AA (sf) based on pool quality</Typography>
