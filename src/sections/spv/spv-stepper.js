@@ -1,31 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Stack } from '@mui/material';
 
 import { AnimatePresence, m } from 'framer-motion';
-import { useRouter } from 'src/routes/hook';
-import { paths } from 'src/routes/paths';
-import Logo from 'src/components/logo';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
-import BasicInfo from './basic-info/basic-info';
-import PoolFinancials from './pool-financials/pool-financials';
+import LegalDeed from './legal-trust-deed/legal-trust-deed';
+import CreditRating from './credit-rating/credit-rating';
+import LegalDocument from './legal-document/legal-document';
 
 
 export default function SpvStepper() {
-  const router = useRouter();
   const steps = [
     { id: 'basic_info', number: 1, lines: ['Basic', 'Info'] },
-     { id: 'pool_financial', number: 2, lines: ['Pool', 'Financial'] },
+    { id: 'pool_financial', number: 2, lines: ['Pool', 'Financial'] },
     { id: 'ptc_parameters', number: 3, lines: ['PTC', 'Parameters'] },
-    // { id: 'legal_structure', number: 4, lines: ['Legal', 'Structure'] },
-    // { id: 'escrow_setup', number: 5, lines: ['Escrow', 'Setup'] },
-    // { id: 'legal_documents', number: 6, lines: ['Legal', 'Documents'] },
-    // { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
-    // { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
-    // { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
+    { id: 'legal_structure', number: 4, lines: ['Legal', 'Structure'] },
+    { id: 'escrow_setup', number: 5, lines: ['Escrow', 'Setup'] },
+    { id: 'legal_documents', number: 6, lines: ['Legal', 'Documents'] },
+    { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
+    { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
+    { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('basic_info');
-  const [dataInitializedSteps, setDataInitializedSteps] = useState([]);
+  const [activeStepId, setActiveStepId] = useState('legal_documents');
+
+  const [formData, setFormData] = useState({
+    basic_info: {},
+    pool_financial: {},
+    ptc_parameters: {},
+    legal_structure: {},
+    escrow_setup: {},
+    legal_documents: {},
+    credit_rating: {},
+    isin_application: {},
+    review_Activate: {},
+  });
+
+
   const [stepsProgress, setStepsProgress] = useState({
     basic_info: { percent: 0 },
     pool_financial: { percent: 0 },
@@ -39,6 +49,38 @@ export default function SpvStepper() {
 
   });
 
+  useEffect(() => {
+    const savedStep = localStorage.getItem('activeStepId');
+    const savedForm = localStorage.getItem('formData');
+    const savedProgress = localStorage.getItem('stepsProgress');
+
+    if (savedStep) setActiveStepId(savedStep);
+    if (savedForm) setFormData(JSON.parse(savedForm));
+    if (savedProgress) setStepsProgress(JSON.parse(savedProgress));
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('activeStepId', activeStepId);
+  }, [activeStepId]);
+
+  useEffect(() => {
+    localStorage.setItem('formData', JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    localStorage.setItem('stepsProgress', JSON.stringify(stepsProgress));
+  }, [stepsProgress]);
+
+
+  const saveStepData = (stepId, data) => {
+    setFormData((prev) => {
+      return {
+        ...prev,
+        [stepId]: { ...(prev[stepId] || {}), ...data },
+      };
+    });
+  };
+
   const updateStepPercent = (stepId, percent) => {
     setStepsProgress((prev) => ({
       ...prev,
@@ -47,11 +89,28 @@ export default function SpvStepper() {
   };
 
   const handleStepClick = (stepId) => {
-    const index = steps.findIndex((s) => s.id === stepId);
+    const currentIndex = steps.findIndex((s) => s.id === activeStepId);
+    const targetIndex = steps.findIndex((s) => s.id === stepId);
 
-    // Prevent skipping ahead
-    for (let i = 0; i < index; i += 1) {
-      if (stepsProgress[steps[i].id].percent < 100) return;
+    if (targetIndex === -1) return;
+
+    // Always allow going to the current or any previous step.
+    if (targetIndex <= currentIndex) {
+      setActiveStepId(stepId);
+      return;
+    }
+
+    // Allow moving forward one step at a time.
+    if (targetIndex === currentIndex + 1) {
+      setActiveStepId(stepId);
+      return;
+    }
+
+    // Prevent skipping multiple steps ahead unless all intermediate steps are complete.
+    for (let i = currentIndex + 1; i < targetIndex; i += 1) {
+      if ((stepsProgress[steps[i].id]?.percent ?? 0) < 100) {
+        return;
+      }
     }
 
     setActiveStepId(stepId);
@@ -59,113 +118,106 @@ export default function SpvStepper() {
 
   const renderForm = () => {
     switch (activeStepId) {
-      case 'basic_info':
+      // case 'basic_info':
+      //   return (
+      //     <BasicInfo
+      //       currData={formData.basic_info}
+      //       percent={(p) => updateStepPercent('basic_info', p)}
+      //       setActiveStepId={setActiveStepId}
+      //       saveStepData={(data) => saveStepData('basic_info', data)}
+      //     />
+      //   );
+
+      //  case 'pool_financial':
+      //   return (
+      //     <PoolFinancials  
+      //       percent={(p) => updateStepPercent('pool_financial', p)}
+      //       setActiveStepId={() => setActiveStepId('ptc_parameters')}
+      //       dataInitializedSteps={dataInitializedSteps}
+      //       setDataInitializedSteps={() =>
+      //         setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
+      //       }
+      //     />
+      //   );
+
+      //   case 'ptc_parameters':
+      //     return (
+      //       <UbosListView
+      //         percent={(p) => updateStepPercent('ptc_parameters', p)}
+      //         setActiveStepId={() => setActiveStepId('legal_structure')}
+      //         dataInitializedSteps={dataInitializedSteps}
+      //         setDataInitializedSteps={() =>
+      //           setDataInitializedSteps((prev) => [...prev, 'ptc_parameters'])
+      //         }
+      //       />
+      //     );
+
+      //   case 'legal_structure':
+      //     return (
+      //       <SignatoriesListView
+      //         percent={(p) => updateStepPercent('legal_structure', p)}
+      //         setActiveStepId={() => setActiveStepId('escrow_setup')}
+      //         dataInitializedSteps={dataInitializedSteps}
+      //         setDataInitializedSteps={() =>
+      //           setDataInitializedSteps((prev) => [...prev, 'legal_structure'])
+      //         }
+      //       />
+      //     );
+
+      //   case 'escrow_setup':
+      //     return (
+      //       <InvestorCompliance
+      //         percent={(p) => updateStepPercent('escrow_setup', p)}
+      //         setActiveStepId={() => setActiveStepId('legal_documents')}
+      //         dataInitializedSteps={dataInitializedSteps}
+      //         setDataInitializedSteps={() =>
+      //           setDataInitializedSteps((prev) => [...prev, 'escrow_setup'])
+      //         }
+      //       />
+      //     );
+
+      case 'legal_documents':
+        return <LegalDocument
+         // currData={formData.legal_documents}
+          percent={(p) => updateStepPercent('legal_documents', p)}
+          setActiveStepId={setActiveStepId}
+        
+        />;
+
+      case 'credit_rating':
         return (
-          <BasicInfo
-            percent={(p) => updateStepPercent('basic_info', p)}
-            setActiveStepId={() => setActiveStepId('pool_financial')}
-            dataInitializedSteps={dataInitializedSteps}
-            setDataInitializedSteps={() =>
-              setDataInitializedSteps((prev) => [...prev, 'basic_info'])
-            }
+          <CreditRating
+            currData={formData.credit_rating}
+            percent={(p) => updateStepPercent('credit_rating', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('credit_rating', data)}
+          
           />
         );
 
-       case 'pool_financial':
-        return (
-          <PoolFinancials  
-            percent={(p) => updateStepPercent('pool_financial', p)}
-            setActiveStepId={() => setActiveStepId('ptc_parameters')}
-            dataInitializedSteps={dataInitializedSteps}
-            setDataInitializedSteps={() =>
-              setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
-            }
-          />
-        );
+      //   case 'isin_application':
+      //     return (
+      //       <KYCAgreement
+      //         percent={(p) => updateStepPercent('isin_application', p)}
+      //         setActiveStepId={() => setActiveStepId('review_Activate')}
+      //         dataInitializedSteps={dataInitializedSteps}
+      //         setDataInitializedSteps={() =>
+      //           setDataInitializedSteps((prev) => [...prev, 'isin_application'])
+      //         } 
+      //       />
+      //     );
 
-    //   case 'ptc_parameters':
-    //     return (
-    //       <UbosListView
-    //         percent={(p) => updateStepPercent('ptc_parameters', p)}
-    //         setActiveStepId={() => setActiveStepId('legal_structure')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'ptc_parameters'])
-    //         }
-    //       />
-    //     );
-
-    //   case 'legal_structure':
-    //     return (
-    //       <SignatoriesListView
-    //         percent={(p) => updateStepPercent('legal_structure', p)}
-    //         setActiveStepId={() => setActiveStepId('escrow_setup')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'legal_structure'])
-    //         }
-    //       />
-    //     );
-
-    //   case 'escrow_setup':
-    //     return (
-    //       <InvestorCompliance
-    //         percent={(p) => updateStepPercent('escrow_setup', p)}
-    //         setActiveStepId={() => setActiveStepId('legal_documents')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'escrow_setup'])
-    //         }
-    //       />
-    //     );
-
-    //   case 'legal_documents':
-    //     return (
-    //       <KYCBankDetails
-    //         percent={(p) => updateStepPercent('legal_documents', p)}
-    //         setActiveStepId={() => setActiveStepId('credit_rating')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'legal_documents'])
-    //         }
-    //       />
-    //     );
-
-    //   case 'credit_rating':
-    //     return (
-    //       <OverviewMandateView
-    //         percent={(p) => updateStepPercent('credit_rating', p)}
-    //         setActiveStepId={() => setActiveStepId('isin_application')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'credit_rating'])
-    //         }
-    //       />
-    //     );
-
-    //   case 'isin_application':
-    //     return (
-    //       <KYCAgreement
-    //         percent={(p) => updateStepPercent('isin_application', p)}
-    //         setActiveStepId={() => setActiveStepId('review_Activate')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'isin_application'])
-    //         } 
-    //       />
-    //     );
-
-    //   case 'review_Activate':
-    //     return (
-    //       <KYCFinalReview
-    //         percent={(p) => updateStepPercent('review_Activate', p)}
-    //         setActiveStepId={() => setActiveStepId('')}
-    //         dataInitializedSteps={dataInitializedSteps}
-    //         setDataInitializedSteps={() =>
-    //           setDataInitializedSteps((prev) => [...prev, 'review_Activate'])
-    //         }
-    //       />
-    //     );
+      //   case 'review_Activate':
+      //     return (
+      //       <KYCFinalReview
+      //         percent={(p) => updateStepPercent('review_Activate', p)}
+      //         setActiveStepId={() => setActiveStepId('')}
+      //         dataInitializedSteps={dataInitializedSteps}
+      //         setDataInitializedSteps={() =>
+      //           setDataInitializedSteps((prev) => [...prev, 'review_Activate'])
+      //         }
+      //       />
+      //     );
 
       default:
         return null;
@@ -174,10 +226,20 @@ export default function SpvStepper() {
 
   return (
     <Box sx={{ p: 3 }}>
-      
+      {/* <Box
+        sx={{
+          position: 'fixed',
+          top: 16,
+          left: 16,
+          zIndex: 1300,
+        }}
+      >
+        <Logo />
+      </Box> */}
+
       <ProgressStepper
         steps={steps}
-        activeStepId={activeStepId} 
+        activeStepId={activeStepId}
         stepsProgress={stepsProgress}
         onStepClick={handleStepClick}
       />
