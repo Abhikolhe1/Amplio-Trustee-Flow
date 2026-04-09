@@ -53,7 +53,9 @@ function LegalDocument({ setActiveStepId, percent }) {
 
     return (
         <Container>
-            <Stack spacing={4}>
+            <Card>
+            <Stack spacing={4}p={3}>
+                
                 <Box display="flex" alignItems="center" gap={2}>
 
                     <Box>
@@ -71,10 +73,13 @@ function LegalDocument({ setActiveStepId, percent }) {
                         <DocumentCard button={doc.button} docLink={doc.docLink} icon={doc.icon} title={doc.title} status={doc.status} description={doc.description} />
                     ))}
                 </Stack>
-                <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", gap: 2 }}>
+                
+             
+            </Stack>
+               </Card>
+               <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", gap: 2, pt:3}}>
                     <Button  variant="contained" color="primary" onClick={ ()=>handelNext()}>Next</Button>
                 </Box>
-            </Stack>
         </Container>
     )
 

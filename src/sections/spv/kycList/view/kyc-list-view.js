@@ -354,13 +354,13 @@ function applyFilter({ inputData, comparator, filters }) {
         );
     }
 
-    if (stock.length) {
-        inputData = inputData.filter((product) => stock.includes(product.inventoryType));
-    }
+    // if (stock.length) {
+    //     inputData = inputData.filter((product) => stock.includes(product.inventoryType));
+    // }
 
-    if (publish.length) {
-        inputData = inputData.filter((product) => publish.includes(product.publish));
-    }
+    // if (publish.length) {
+    //     inputData = inputData.filter((product) => publish.includes(product.publish));
+    // }
 
     return inputData;
 }
