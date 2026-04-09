@@ -11,6 +11,7 @@ import PropTypes from 'prop-types';
 import * as yup from 'yup';
 import { useEffect, useMemo, useState } from "react";
 import RHFDatePicker from "src/components/hook-form/rhf-date-picker";
+import { update } from "lodash";
 
 const normalizeDate = (value) => {
     if (!value) {
@@ -94,7 +95,9 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
     // console.log(values);
 
     const onSubmit = handleSubmit(async (data) => {
-        saveStepData(data);
+
+        const updatedData= {...data,ratingAgancy:selectedId}
+        saveStepData(updatedData);
         // setActiveStepId('isin_application');
     });
     useEffect(() => {
@@ -260,7 +263,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                                     md: 'repeat(1, 1fr)',
                                 }}
                             >
-                                <RHFCustomFileUploadBox name="ratingLetter" label="Upload Rating Letter (PDF)" disabled={disabled} />
+                                <RHFCustomFileUploadBox name="ratingLetter" label="Upload Rating Letter (PDF)" disabled={disabled} accept={{ 'application/pdf': ['.pdf']}}/>
 
                             </Box>
                         </Stack>
