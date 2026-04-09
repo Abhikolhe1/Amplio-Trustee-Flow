@@ -5,11 +5,11 @@ import { useForm } from "react-hook-form";
 import FormProvider, { RHFSelect, RHFTextField } from "src/components/hook-form";
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 import DocumentCard from "src/components/card/documentCard";
 
-function LegelStructureView({ percent, setActiveStepId }) {
+function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }) {
 
     const Law = [
         { value: 'act', label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002' },
@@ -29,7 +29,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
             type: "primary",
             icon: "qlementine-icons:success-16",
             docLink: '/assets/spv-Document/trust_deed_realistic_demo.pdf',
-            button:"View Draft"
+            button: "View Draft"
         },
 
         {
@@ -39,7 +39,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
                 "Priya Mehta (Lead Trustee) · Sent via DigiLocker/eSign India",
             type: "warning",
             icon: "solar:arrow-right-outline",
-            button:"Sign Now →"
+            button: "Sign Now →"
         },
         {
             id: 6,
@@ -59,21 +59,21 @@ function LegelStructureView({ percent, setActiveStepId }) {
         },
 
     ];
- 
-    
-    const defaultValues = {
-        trustName: '',
-        trusteeEntity: '',
-        settlor: '',
-        governingLaw: '',
-        bankruptcy: '',
-        trustDuration: '',
-    };
+
+
+    const defaultValues = useMemo(() => ({
+        trustName: currData?.trustName || '',
+        trusteeEntity: currData?.trusteeEntity || '',
+        settlor: currData?.settlor || '',
+        governingLaw: currData?.governingLaw || '',
+        bankruptcy: currData?.bankruptcy || '',
+        trustDuration: currData?.trustDuration || '',
+    }), [currData]);
 
 
     const trustSchema = yup.object().shape({
         trustName: yup.string().required('Trust Name Is Required'),
-        trusteeEntity: yup.string().required(' is Required'),
+        trusteeEntity: yup.string().required('Trust Entity is Required'),
         settlor: yup.string().required('Settor Info is Required'),
         governingLaw: yup.string().required("Law is Required"),
         bankruptcy: yup.string().required("Bankruptcy Remoteness Clause is Required"),
@@ -94,9 +94,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
         'trustDuration',
     ];
     const values = watch();
-    // useEffect(() => {
-    //     percent(50);
-    // }, [percent]);
+
     useEffect(() => {
         let completed = 0;
 
@@ -126,6 +124,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
 
     const onSubmit = handleSubmit(async (data) => {
         console.log("Form Data", data);
+        saveStepData(data);
         setActiveStepId('escrow_setup')
     });
 
@@ -179,7 +178,6 @@ function LegelStructureView({ percent, setActiveStepId }) {
                             <RHFSelect
                                 name="governingLaw"
                                 label="Governing Law*"
-                                InputLabelProps={{ shrink: true }}
                             >
                                 {Law.map((role) => (
                                     <MenuItem key={role.value} value={role.value}>
@@ -202,7 +200,6 @@ function LegelStructureView({ percent, setActiveStepId }) {
                                 <RHFSelect
                                     name="bankruptcy"
                                     label="Bankruptcy Remoteness Clause*"
-                                    InputLabelProps={{ shrink: true }}
                                 >
                                     {Clause.map((role) => (
                                         <MenuItem key={role.value} value={role.value}>
@@ -216,25 +213,30 @@ function LegelStructureView({ percent, setActiveStepId }) {
 
                         </Box>
 
-                    
-                        <Stack spacing={2}>
-                            {documents.map((doc) => (
-                               <DocumentCard title={doc.title} description={doc.description} icon={doc.icon} docLink={doc.docLink} button={doc.button}/>
-                           
-                            ))}
-                        </Stack>
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", p: 3, gap: 2 }}>
-                            <Button
-                                type="submit"
-                                variant="contained"
-                                color="primary"
 
-                            >
-                                Next
-                            </Button>
-                        </Box>
+                      
+
                     </Stack>
                 </Card>
+                
+                <Card sx={{p:3, mt:3}}>
+                <Stack spacing={2}>
+                            {documents.map((doc) => (
+                                <DocumentCard title={doc.title} description={doc.description} icon={doc.icon} docLink={doc.docLink} button={doc.button} />
+
+                            ))}
+                        </Stack>
+                </Card>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", p: 3, gap: 2 }}>
+                    <Button
+                        type="submit"
+                        variant="contained"
+                        color="primary"
+
+                    >
+                        Next
+                    </Button>
+                </Box>
 
             </FormProvider >
         </Container >

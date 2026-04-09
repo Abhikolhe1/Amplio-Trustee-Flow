@@ -3,9 +3,10 @@ import { Box, Stack } from '@mui/material';
 
 import { AnimatePresence, m } from 'framer-motion';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
-import LegalDeed from './legal-trust-deed/legal-trust-deed';
 import CreditRating from './credit-rating/credit-rating';
 import LegalDocument from './legal-document/legal-document';
+import LegelStructureView from './legalStructure/legealStructureView';
+import EscrowSetupView from './escrow/escrowSetup';
 
 
 export default function SpvStepper() {
@@ -21,7 +22,7 @@ export default function SpvStepper() {
     { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('legal_documents');
+  const [activeStepId, setActiveStepId] = useState('legal_structure');
 
   const [formData, setFormData] = useState({
     basic_info: {},
@@ -37,15 +38,15 @@ export default function SpvStepper() {
 
 
   const [stepsProgress, setStepsProgress] = useState({
-    basic_info: { percent: 0 },
-    pool_financial: { percent: 0 },
-    ptc_parameters: { percent: 0 },
+    // basic_info: { percent: 0 },
+    // pool_financial: { percent: 0 },
+    // ptc_parameters: { percent: 0 },
     legal_structure: { percent: 0 },
     escrow_setup: { percent: 0 },
-    legal_documents: { percent: 0 },
-    credit_rating: { percent: 0 },
-    isin_application: { percent: 0 },
-    review_Activate: { percent: 0 }
+    // legal_documents: { percent: 0 },
+    // credit_rating: { percent: 0 },
+    // isin_application: { percent: 0 },
+    // review_Activate: { percent: 0 }
 
   });
 
@@ -152,29 +153,26 @@ export default function SpvStepper() {
       //       />
       //     );
 
-      //   case 'legal_structure':
-      //     return (
-      //       <SignatoriesListView
-      //         percent={(p) => updateStepPercent('legal_structure', p)}
-      //         setActiveStepId={() => setActiveStepId('escrow_setup')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'legal_structure'])
-      //         }
-      //       />
-      //     );
+      case 'legal_structure':
+        return (
+          <LegelStructureView
+          currData={formData.legal_structure}
+          percent={(p) => updateStepPercent('legal_structure', p)}
+          setActiveStepId={setActiveStepId}
+          saveStepData={(data) => saveStepData('legal_structure', data)}
+            
+          />
+        );
 
-      //   case 'escrow_setup':
-      //     return (
-      //       <InvestorCompliance
-      //         percent={(p) => updateStepPercent('escrow_setup', p)}
-      //         setActiveStepId={() => setActiveStepId('legal_documents')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'escrow_setup'])
-      //         }
-      //       />
-      //     );
+      case 'escrow_setup':
+        return (
+          <EscrowSetupView
+          currData={formData.escrow_setup}
+          percent={(p) => updateStepPercent('escrow_setup', p)}
+          setActiveStepId={setActiveStepId}
+          saveStepData={(data) => saveStepData('escrow_setup', data)}
+          />
+        );
 
       case 'legal_documents':
         return <LegalDocument

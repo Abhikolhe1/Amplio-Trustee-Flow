@@ -5,9 +5,9 @@ import { useForm } from "react-hook-form";
 import FormProvider, { RHFSelect, RHFTextField } from "src/components/hook-form";
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
-function EscrowSetupView({ percent, setActiveStepId }) {
+function EscrowSetupView({ percent, setActiveStepId,currData,saveStepData }) {
 
 
     const bank = [
@@ -16,20 +16,21 @@ function EscrowSetupView({ percent, setActiveStepId }) {
         { value: 'icici', label: 'ICICI Bank' },
         { value: 'kotak', label: 'Kotak Mahindra Bank' },
     ];
+    
 
-    const defaultValues = {
-        verification: '',
-        expected: '',
-        bank: '',
-        location: '',
-    };
+    const defaultValues = useMemo(() =>({
+        verification: currData?.verification ||'',
+        expected: currData?.expected || '',
+        bank: currData?.bank || '',
+        location: currData?.location || '',
+    }),[currData]);
 
 
     const trustSchema = yup.object().shape({
         verification: yup.string().required('Trust Name Is Required'),
-        expected: yup.string().required(' is Required'),
+        expected: yup.string().required('Expected Setup Time is Required'),
         bank: yup.string().required("bank Remoteness bank is Required"),
-        location: yup.string().required('Duration Is Required'),
+        location: yup.string().required('Branch/City Is Required'),
     })
     const methods = useForm({
         resolver: yupResolver(trustSchema),
@@ -44,9 +45,7 @@ function EscrowSetupView({ percent, setActiveStepId }) {
         'location',
     ];
     const values = watch();
-    // useEffect(() => {
-    //     percent(50);
-    // }, [percent]);
+ 
     useEffect(() => {
         let completed = 0;
 
@@ -80,6 +79,7 @@ function EscrowSetupView({ percent, setActiveStepId }) {
     };
     const onSubmit = handleSubmit(async (data) => {
         console.log("Form Data", data);
+        saveStepData(data)
         setActiveStepId('legal_documents')
     });
 
@@ -131,7 +131,6 @@ function EscrowSetupView({ percent, setActiveStepId }) {
                             <RHFSelect
                                 name="bank"
                                 label="Bank*"
-                                InputLabelProps={{ shrink: true }}
                             >
                                 {bank.map((role) => (
                                     <MenuItem key={role.value} value={role.value}>
@@ -157,7 +156,9 @@ function EscrowSetupView({ percent, setActiveStepId }) {
                             </Stack>
                             <RHFTextField name="expected" label="Expected Setup Time" type="text" />
                         </Box>
-                        <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", p: 3, gap: 2 }}>
+                    </Stack>
+                </Card>
+                <Box sx={{ display: "flex", justifyContent: "flex-end", alignContent: "center", p: 3, gap: 2 }}>
                             <Button
                                 type="submit"
                                 variant="contained"
@@ -166,8 +167,6 @@ function EscrowSetupView({ percent, setActiveStepId }) {
                                 Next
                             </Button>
                         </Box>
-                    </Stack>
-                </Card>
             </FormProvider >
         </Container >
     )
