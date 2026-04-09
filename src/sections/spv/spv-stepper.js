@@ -3,7 +3,9 @@ import { Box, Stack } from '@mui/material';
 
 import { AnimatePresence, m } from 'framer-motion';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
-import LegalDeed from './legal-trust-deed/legal-trust-deed';
+import BasicInfo from './basic-info/basic-info';
+import PoolFinancials from './pool-financials/pool-financials';
+import PtcParameters from './ptc-parameters/ptc-parameters';
 import CreditRating from './credit-rating/credit-rating';
 import LegalDocument from './legal-document/legal-document';
 
@@ -21,7 +23,7 @@ export default function SpvStepper() {
     { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('legal_documents');
+  const [activeStepId, setActiveStepId] = useState('basic_info');
 
   const [formData, setFormData] = useState({
     basic_info: {},
@@ -118,39 +120,37 @@ export default function SpvStepper() {
 
   const renderForm = () => {
     switch (activeStepId) {
-      // case 'basic_info':
-      //   return (
-      //     <BasicInfo
-      //       currData={formData.basic_info}
-      //       percent={(p) => updateStepPercent('basic_info', p)}
-      //       setActiveStepId={setActiveStepId}
-      //       saveStepData={(data) => saveStepData('basic_info', data)}
-      //     />
-      //   );
+      case 'basic_info':
+        return (
+          <BasicInfo
+            currData={formData.basic_info}
+            percent={(p) => updateStepPercent('basic_info', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('basic_info', data)}
+          />
+        );
 
-      //  case 'pool_financial':
-      //   return (
-      //     <PoolFinancials  
-      //       percent={(p) => updateStepPercent('pool_financial', p)}
-      //       setActiveStepId={() => setActiveStepId('ptc_parameters')}
-      //       dataInitializedSteps={dataInitializedSteps}
-      //       setDataInitializedSteps={() =>
-      //         setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
-      //       }
-      //     />
-      //   );
+       case 'pool_financial':
+        return (
+          <PoolFinancials  
+            currData={formData.pool_financial}
+            percent={(p) => updateStepPercent('pool_financial', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('pool_financial', data)}
+            
+          />
+        );
 
-      //   case 'ptc_parameters':
-      //     return (
-      //       <UbosListView
-      //         percent={(p) => updateStepPercent('ptc_parameters', p)}
-      //         setActiveStepId={() => setActiveStepId('legal_structure')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'ptc_parameters'])
-      //         }
-      //       />
-      //     );
+      case 'ptc_parameters':
+        return (
+          <PtcParameters
+            currData={formData.ptc_parameters}
+            percent={(p) => updateStepPercent('ptc_parameters', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('ptc_parameters', data)}
+          />
+        );
+    
 
       //   case 'legal_structure':
       //     return (
@@ -176,24 +176,24 @@ export default function SpvStepper() {
       //       />
       //     );
 
-      case 'legal_documents':
-        return <LegalDocument
-         // currData={formData.legal_documents}
-          percent={(p) => updateStepPercent('legal_documents', p)}
-          setActiveStepId={setActiveStepId}
+      // case 'legal_documents':
+      //   return <LegalDocument
+      //    // currData={formData.legal_documents}
+      //     percent={(p) => updateStepPercent('legal_documents', p)}
+      //     setActiveStepId={setActiveStepId}
         
-        />;
+      //   />;
 
-      case 'credit_rating':
-        return (
-          <CreditRating
-            currData={formData.credit_rating}
-            percent={(p) => updateStepPercent('credit_rating', p)}
-            setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('credit_rating', data)}
+      // case 'credit_rating':
+      //   return (
+      //     <CreditRating
+      //       currData={formData.credit_rating}
+      //       percent={(p) => updateStepPercent('credit_rating', p)}
+      //       setActiveStepId={setActiveStepId}
+      //       saveStepData={(data) => saveStepData('credit_rating', data)}
           
-          />
-        );
+      //     />
+      //   );
 
       //   case 'isin_application':
       //     return (
