@@ -62,20 +62,38 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
 
   const values = watch();
 
-  useEffect(() => {
-    const totalFields = 5;
-    let filledFields = 0;
+ const requiredFields = [
+  'faceValue',
+  'maxPtc',
+  'maxInvestPool',
+  'windowFrequency',
+  'windowDuration',
+];
 
-    if(values.faceValue !== '') filledFields +=1;
-    // if(values.maxInvest) filledFields +=1;
-    if(values.maxPtc !== '') filledFields +=1;
-    if(values.maxInvestPool !== '') filledFields +=1;
-    if(values.windowFrequency !== '') filledFields +=1;
-    if(values.windowDuration !== '') filledFields +=1;
+useEffect(() => {
+  let completed = 0;
 
-    const progressPercent = Math.round((filledFields / totalFields) * 100);
-    percent(progressPercent);
-  },[values, percent]);
+  requiredFields.forEach((field) => {
+    if (Array.isArray(values[field]) && values[field]?.length > 0) {
+      completed += 1;
+    }
+
+    if (values[field] && !Array.isArray(values[field])) {
+      completed += 1;
+    }
+  });
+
+  const percentValue = (completed / requiredFields.length) * 100;
+  percent?.(percentValue);
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  values.faceValue,
+  values.maxPtc,
+  values.maxInvestPool,
+  values.windowFrequency,
+  values.windowDuration,
+]);
 
   const onSubmit = async (data) => {
     saveStepData(data);

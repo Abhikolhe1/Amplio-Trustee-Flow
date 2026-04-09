@@ -50,13 +50,16 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
     reserveBuffer: Yup.string().required('Reserve Buffer is required'),
     cutoffTime: Yup.string().required('Cutoff time required'),
   });
-  const defaultValues = useMemo(() => ({
-    poolLimit: currData?.poolLimit || '',
-    maturity: currData?.maturity || '',
-    targetYield: currData?.targetYield || '',
-    reserveBuffer: currData?.reserveBuffer || '',
-    cutoffTime: currData?.cutoffTime || '',
-  }), [currData]);
+  const defaultValues = useMemo(
+    () => ({
+      poolLimit: currData?.poolLimit || '',
+      maturity: currData?.maturity || '',
+      targetYield: currData?.targetYield || '',
+      reserveBuffer: currData?.reserveBuffer || '',
+      cutoffTime: currData?.cutoffTime || '',
+    }),
+    [currData]
+  );
 
   const methods = useForm({
     resolver: yupResolver(PoolSchema),
@@ -73,19 +76,31 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
 
   const values = watch();
 
+  const requiredFields = ['poolLimit', 'maturity', 'targetYield', 'reserveBuffer', 'cutoffTime'];
+
   useEffect(() => {
-    const totalFields = 5;
-    let filledFields = 0;
+    let completed = 0;
 
-    if(values.poolLimit !== '') filledFields +=1;
-    if(values.maturity !== '') filledFields +=1;
-    if(values.targetYield !== '') filledFields +=1;
-    if(values.reserveBuffer !== '') filledFields +=1;
-    if(values.cutoffTime !== '') filledFields +=1;
+    requiredFields.forEach((field) => {
+      if (Array.isArray(values[field]) && values[field]?.length > 0) {
+        completed += 1;
+      }
 
-    const progressPercent = Math.round((filledFields / totalFields) * 100);
-    percent(progressPercent);
-  },[values, percent])
+      if (values[field] && !Array.isArray(values[field])) {
+        completed += 1;
+      }
+    });
+
+    const percentValue = (completed / requiredFields.length) * 100;
+    percent?.(percentValue);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    values.poolLimit,
+    values.maturity,
+    values.targetYield,
+    values.reserveBuffer,
+    values.cutoffTime,
+  ]);
 
   const onSubmit = async (data) => {
     saveStepData(data);
@@ -94,10 +109,10 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
   };
 
   useEffect(() => {
-    if (currData){
+    if (currData) {
       reset(defaultValues);
     }
-  }, [defaultValues, currData, reset])
+  }, [defaultValues, currData, reset]);
 
   return (
     <Container>
@@ -106,8 +121,10 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Stack spacing={1}>
-                <Typography variant="h5" color="primary" >Pool Financial Configuration</Typography>
-                <Typography variant="body2" >
+                <Typography variant="h5" color="primary">
+                  Pool Financial Configuration
+                </Typography>
+                <Typography variant="body2">
                   Set the pool limit, maturity, yield, discount range, reserve buffer, and daily
                   cutoff time for the T1 SPV.
                 </Typography>
@@ -145,7 +162,9 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
               />
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="h6" color="primary">Pool Parameters</Typography>
+              <Typography variant="h6" color="primary">
+                Pool Parameters
+              </Typography>
             </Grid>
             <Grid item xs={12}>
               <Stack spacing={0.5}>
@@ -230,18 +249,13 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
                 Transactions post-cutoff go to next-day batch
               </Typography>
             </Grid>
-            
           </Grid>
         </Card>
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                <Button
-                  type="submit"
-                  variant="contained"
-                    color='primary'
-                >
-                  Next
-                </Button>
-              </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button type="submit" variant="contained" color="primary">
+            Next
+          </Button>
+        </Box>
       </FormProvider>
     </Container>
   );

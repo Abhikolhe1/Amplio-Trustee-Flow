@@ -68,6 +68,39 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
 const { handleSubmit, setValue, watch, reset, formState: { isSubmitting }, } = methods;
 
   const values = watch();
+
+
+  const requiredFields = [
+  'pspPartner',
+  'spvStructure',
+  'originator',
+  'spvName',
+];
+
+useEffect(() => {
+  let completed = 0;
+
+  requiredFields.forEach((field) => {
+    if (Array.isArray(values[field]) && values[field]?.length > 0) {
+      completed += 1;
+    }
+
+    if (values[field] && !Array.isArray(values[field])) {
+      completed += 1;
+    }
+  });
+
+  const percentValue = (completed / requiredFields.length) * 100;
+  percent?.(percentValue);
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [
+  values.pspPartner,
+  values.spvStructure,
+  values.originator,
+  values.spvName,
+]);
+
   const generateSPVName = () => {
     const formattedId = `SPV-${String(spvCounter).padStart(3, '0')}`;
 
@@ -75,18 +108,6 @@ const { handleSubmit, setValue, watch, reset, formState: { isSubmitting }, } = m
 
     setSpvCounter((prev) => prev + 1);
   };
-  useEffect(() => {
-    const totalFields = 4;
-    let filledFields = 0;
-
-    if (values.pspPartner !== '') filledFields += 1;
-    if (values.spvStructure !== '') filledFields += 1;
-    if (values.originator !== '') filledFields += 1;
-    if (values.spvName !== '') filledFields += 1;
-
-    const progressPercent = Math.round((filledFields / totalFields) * 100);
-    percent(progressPercent);
-  }, [values, percent]);
 
   const onSubmit = async (data) => {
     saveStepData(data);
