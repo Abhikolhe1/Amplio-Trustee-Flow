@@ -11,8 +11,8 @@ import DocumentCard from 'src/components/card/documentCard';
 
 function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }) {
   const Law = [
-    { value: 'act', label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002' },
-    { value: 'only', label: 'Indian Trusts Act, 1882 only' },
+    { value: 'ITA-1882+SARFAESI-2002', label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002' },
+    { value: 'ITA-1882', label: 'Indian Trusts Act, 1882 only' },
   ];
   const Clause = [
     { value: 'full', label: 'Full Isolation (Recommended)' },
