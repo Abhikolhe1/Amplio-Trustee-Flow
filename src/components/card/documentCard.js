@@ -65,7 +65,7 @@ export default function DocumentCard({ docLink, icon, title, description, status
                     >
                         {status}
                     </Label>}
-                
+                {button &&
                 <Button
                     variant="outlined"
                     size="medium"
@@ -80,6 +80,7 @@ export default function DocumentCard({ docLink, icon, title, description, status
                 >
                     {button ? button : docLink ? "VIEW" : "GENERATE" }
                 </Button>
+                }
             </Box>
         </Card>
     </>)
