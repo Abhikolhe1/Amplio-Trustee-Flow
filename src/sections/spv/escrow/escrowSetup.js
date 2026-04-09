@@ -99,7 +99,7 @@ function EscrowSetupView({ percent, setActiveStepId }) {
                         sx={{ px: 3, py: 2 }}
                     >
                         <Box>
-                            <Typography fontWeight={600}>
+                            <Typography color="primary" fontWeight={600}>
                                 Escrow Setup
                             </Typography>
                             <Box mt={1}>

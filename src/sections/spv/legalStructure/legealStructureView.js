@@ -6,8 +6,7 @@ import FormProvider, { RHFSelect, RHFTextField } from "src/components/hook-form"
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
 import { useEffect } from "react";
-import Iconify from "src/components/iconify";
-import Label from 'src/components/label';
+
 import DocumentCard from "src/components/card/documentCard";
 
 function LegelStructureView({ percent, setActiveStepId }) {
@@ -29,7 +28,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
                 "PDF auto-generated with all SPV parameters · 14 pages",
             type: "primary",
             icon: "qlementine-icons:success-16",
-            docLink: '/assets/spv-Document/trust_deed.pdf',
+            docLink: '/assets/spv-Document/trust_deed_realistic_demo.pdf',
             button:"View Draft"
         },
 
@@ -49,7 +48,6 @@ function LegelStructureView({ percent, setActiveStepId }) {
                 "FinFlow Capital authorized signatory · Unlocks after Trustee signs",
             type: "error",
             icon: "mynaui:three-solid",
-            button:"Generate"
         },
         {
             id: 7,
@@ -58,7 +56,6 @@ function LegelStructureView({ percent, setActiveStepId }) {
                 "Maharashtra Stamp Act applicable · ₹500 stamp duty",
             type: "error",
             icon: "mynaui:four-solid",
-            button:"Generate"
         },
 
     ];
@@ -147,7 +144,7 @@ function LegelStructureView({ percent, setActiveStepId }) {
                         <Box display="flex" alignItems="center" gap={2}>
 
                             <Box>
-                                <Typography py={1} fontWeight={600}>
+                                <Typography color="primary" py={1} fontWeight={600}>
                                     Legal Structure & Trust Deed
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary">
