@@ -77,11 +77,11 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
     const totalFields = 5;
     let filledFields = 0;
 
-    if(values.poolLimit) filledFields +=1;
-    if(values.maturity) filledFields +=1;
-    if(values.targetYield) filledFields +=1;
-    if(values.reserveBuffer) filledFields +=1;
-    if(values.cutoffTime) filledFields +=1;
+    if(values.poolLimit !== '') filledFields +=1;
+    if(values.maturity !== '') filledFields +=1;
+    if(values.targetYield !== '') filledFields +=1;
+    if(values.reserveBuffer !== '') filledFields +=1;
+    if(values.cutoffTime !== '') filledFields +=1;
 
     const progressPercent = Math.round((filledFields / totalFields) * 100);
     percent(progressPercent);

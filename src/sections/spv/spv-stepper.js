@@ -24,7 +24,6 @@ export default function SpvStepper() {
   ];
 
   const [activeStepId, setActiveStepId] = useState('basic_info');
-  const [activeStepId, setActiveStepId] = useState('basic_info');
 
   const [formData, setFormData] = useState({
     basic_info: {},
@@ -177,24 +176,24 @@ export default function SpvStepper() {
       //       />
       //     );
 
-      // case 'legal_documents':
-      //   return <LegalDocument
-      //    // currData={formData.legal_documents}
-      //     percent={(p) => updateStepPercent('legal_documents', p)}
-      //     setActiveStepId={setActiveStepId}
+      case 'legal_documents':
+        return <LegalDocument
+         // currData={formData.legal_documents}
+          percent={(p) => updateStepPercent('legal_documents', p)}
+          setActiveStepId={setActiveStepId}
         
-      //   />;
+        />;
 
-      // case 'credit_rating':
-      //   return (
-      //     <CreditRating
-      //       currData={formData.credit_rating}
-      //       percent={(p) => updateStepPercent('credit_rating', p)}
-      //       setActiveStepId={setActiveStepId}
-      //       saveStepData={(data) => saveStepData('credit_rating', data)}
+      case 'credit_rating':
+        return (
+          <CreditRating
+            currData={formData.credit_rating}
+            percent={(p) => updateStepPercent('credit_rating', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('credit_rating', data)}
           
-      //     />
-      //   );
+          />
+        );
 
       //   case 'isin_application':
       //     return (

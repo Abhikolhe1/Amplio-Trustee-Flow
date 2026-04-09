@@ -79,10 +79,10 @@ const { handleSubmit, setValue, watch, reset, formState: { isSubmitting }, } = m
     const totalFields = 4;
     let filledFields = 0;
 
-    if (values.pspPartner) filledFields += 1;
-    if (values.spvStructure) filledFields += 1;
-    if (values.originator) filledFields += 1;
-    if (values.spvName) filledFields += 1;
+    if (values.pspPartner !== '') filledFields += 1;
+    if (values.spvStructure !== '') filledFields += 1;
+    if (values.originator !== '') filledFields += 1;
+    if (values.spvName !== '') filledFields += 1;
 
     const progressPercent = Math.round((filledFields / totalFields) * 100);
     percent(progressPercent);
@@ -91,7 +91,6 @@ const { handleSubmit, setValue, watch, reset, formState: { isSubmitting }, } = m
   const onSubmit = async (data) => {
     saveStepData(data);
     console.log(data);
-    
     setActiveStepId('pool_financial');
   };
    useEffect(() => {

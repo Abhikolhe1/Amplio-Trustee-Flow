@@ -66,12 +66,12 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
     const totalFields = 5;
     let filledFields = 0;
 
-    if(values.faceValue) filledFields +=1;
+    if(values.faceValue !== '') filledFields +=1;
     // if(values.maxInvest) filledFields +=1;
-    if(values.maxPtc) filledFields +=1;
-    if(values.maxInvestPool) filledFields +=1;
-    if(values.windowFrequency) filledFields +=1;
-    if(values.windowDuration) filledFields +=1;
+    if(values.maxPtc !== '') filledFields +=1;
+    if(values.maxInvestPool !== '') filledFields +=1;
+    if(values.windowFrequency !== '') filledFields +=1;
+    if(values.windowDuration !== '') filledFields +=1;
 
     const progressPercent = Math.round((filledFields / totalFields) * 100);
     percent(progressPercent);
