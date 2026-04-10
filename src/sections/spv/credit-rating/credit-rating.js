@@ -1,6 +1,6 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 
-import { Button, Card, Grid, MenuItem, Typography } from '@mui/material';
+import { Alert, Button, Card, Grid, MenuItem, Tooltip, Typography } from '@mui/material';
 import { alpha, Box, Container, Stack } from '@mui/system';
 import { Controller, useForm } from 'react-hook-form';
 import FormProvider, {
@@ -14,6 +14,7 @@ import PropTypes from 'prop-types';
 import * as yup from 'yup';
 import { useEffect, useMemo } from 'react';
 import RHFDatePicker from 'src/components/hook-form/rhf-date-picker';
+
 
 const normalizeDate = (value) => {
   if (!value) {
@@ -47,6 +48,9 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
     { heading: 'ICRA', subHeading: "ICRA Ltd. (Moody's)" },
     { heading: 'CARE', subHeading: 'CARE Ratings Ltd.' },
     { heading: 'Brickwork', subHeading: 'Brickwork Ratings India' },
+    { heading: 'India Ratings', subHeading: 'India Ratings and Research' },
+    { heading: 'Acuité', subHeading: 'Acuité Ratings & Research' },
+    { heading: 'Infomerics', subHeading: 'Infomerics Valuation and Rating Pvt Ltd.' }
   ];
 
   const category = [
@@ -58,19 +62,19 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
   ];
 
   const creditSchema = yup.object().shape({
-    applicationNumber: yup.string().required('Application Reference No. Is Required'),
-    applicationDate: yup
+    // applicationNumber: yup.string().required('Application Reference No. Is Required'),
+    ratingDate: yup
       .date()
       .required('Application Date is Required')
       .max(new Date(), 'Can Not be Select Future Date'),
     ratingObtained: yup.string().required('Settor Info is Required'),
-    expectedRatingDate: yup
-      .date()
-      .required('Expected Rating Date is Required')
-      .min(
-        yup.ref('applicationDate'),
-        'Expected Rating Date is Must be After Than Application Date '
-      ),
+    // applicationDate: yup
+    //   .date()
+    //   .required('Expected Rating Date is Required')
+    //   .min(
+    //     yup.ref('applicationDate'),
+    //     'Expected Rating Date is Must be After Than Application Date '
+    //   ),
     ratingLetterDoc: yup
       .mixed()
       .test('fileRequired', 'Rating Letter is required', (value) => hasUploadedFile(value)),
@@ -79,10 +83,10 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
 
   const defaultValues = useMemo(
     () => ({
-      applicationNumber: currData?.applicationNumber || '',
-      applicationDate: normalizeDate(currData?.applicationDate),
+      // applicationNumber: currData?.applicationNumber || '',
+      // applicationDate: normalizeDate(currData?.applicationDate),
       ratingObtained: currData?.ratingObtained || '',
-      expectedRatingDate: normalizeDate(currData?.expectedRatingDate),
+      ratingDate: normalizeDate(currData?.ratingDate),
       ratingLetterDoc: currData?.ratingLetterDoc || '',
       creditRatingAgency: currData?.creditRatingAgency || '',
     }),
@@ -105,10 +109,10 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
   const values = watch();
 
   const requiredFields = [
-    'applicationNumber',
-    'applicationDate',
+    'creditRatingAgency',
     'ratingObtained',
-    'expectedRatingDate',
+    'ratingDate',
+    'ratingLetterDoc',
   ];
 
   useEffect(() => {
@@ -128,10 +132,11 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
     percent?.(percentValue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    values.applicationNumber,
-    values.applicationDate,
+
+    values.creditRatingAgency,
     values.ratingObtained,
-    values.expectedRatingDate,
+    values.ratingDate,
+    values.ratingLetterDoc,
   ]);
 
   // console.log(values);
@@ -161,37 +166,12 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
               </Typography>
             </Box>
           </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'flex-start',
-              alignContent: 'center',
-              gap: 2,
-              p: 1,
-              borderRadius: 1,
-              border: (theme) => `solid 2px ${alpha(theme.palette.warning.main, 0.9)}`,
-              backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
-              color: (theme) => alpha(theme.palette.warning.main, 0.9),
-
-              mb: 1,
-            }}
-          >
-            <Box sx={{ p: 1, pr: 0 }}>
-              <Iconify icon="flat-color-icons:flash-on" width={20} height={20} />
-            </Box>
-            <Box>
-              <Typography variant="body2" sx={{}}>
-                SEBI Requirement:
-              </Typography>
-              <Typography variant="subtitle2" sx={{ color: 'gray' }} fontWeight={400}>
-                {' '}
-                Per SEBI (Public Offer and Listing of Securitised Debt Instruments) Regulations
+          <Alert severity="warning" sx={{ mb: 2 }}>
+                <b>SEBI Requirement:</b> Per SEBI  Regulations
                 2008, all securitised instruments offered to more than 49 investors must carry a
                 valid credit rating from a SEBI-registered CRA. ISIN application will be rejected
                 without this.
-              </Typography>
-            </Box>
-          </Box>
+          </Alert>
           <Controller
             name="creditRatingAgency"
             control={control}
@@ -219,30 +199,55 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                               boxShadow: theme.shadows[3],
                               display: 'flex',
                               flexDirection: 'column',
-                              gap: 2,
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              textAlign: 'center',
+
+                              width: '90%',
+                              height: 90,
+                        
+
                               cursor: 'pointer',
-                              transition: '0.1s',
+                              transition: '0.2s',
 
                               border: isSelected
-                                ? `1px solid ${alpha(theme.palette.info.main, 0.9)}`
+                                ? `1px solid ${alpha(theme.palette.primary.light, 0.9)}`
                                 : '1px solid transparent',
 
                               backgroundColor: isSelected
-                                ? alpha(theme.palette.info.main, 0.1)
+                                ? alpha(theme.palette.primary.lighter,0.9)
                                 : 'transparent',
 
                               '&:hover': {
-                                transform: 'scale(1.01)',
+                                transform: 'scale(1.03)',
                                 boxShadow: theme.shadows[8],
                               },
                             })}
                             onClick={() => onChange(item.heading)}
                           >
-                            <Box textAlign="center" p={5}>
-                              <Typography fontWeight={600}>{item.heading}</Typography>
-                              <Typography variant="body2" color="text.secondary">
+                            <Box textAlign="center" p={3}>
+                              <Typography
+                                fontWeight={600}
+                                noWrap
+                                sx={{ maxWidth: '100%' }}
+                              >
+                                {item.heading}
+                              </Typography>
+                              <Tooltip title={item.subHeading || ''} arrow>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                }}
+                              >
                                 {item.subHeading}
                               </Typography>
+                              </Tooltip>
                             </Box>
                           </Card>
                         </Grid>
@@ -277,7 +282,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
 
             <Stack spacing={3} p={{ xs: 3 }}>
               {/* <Typography variant="subtitle2">Invoice Metadata</Typography> */}
-              <Box
+              {/* <Box
                 columnGap={2}
                 rowGap={3}
                 display="grid"
@@ -300,7 +305,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                   control={control}
                   disabled={disabled}
                 />
-              </Box>
+              </Box> */}
               <Box
                 columnGap={2}
                 rowGap={3}
@@ -323,8 +328,9 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                   </Typography>
                 </Box>
                 <RHFDatePicker
-                  name="expectedRatingDate"
-                  label="Expected Rating Date"
+                  name="ratingDate"
+                  label="Rating Date"
+                  maxDate={new Date()}
                   control={control}
                   disabled={disabled}
                 />
@@ -346,13 +352,14 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
                   accept={{ 'application/pdf': ['.pdf'] }}
                 />
               </Box>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignContent: 'center', gap: 2 }}>
+                <Button type="submit" variant="contained" color="primary" loading={isSubmitting}>
+                  Next
+                </Button>
+              </Box>
             </Stack>
           </Card>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignContent: 'center', gap: 2 }}>
-            <Button type="submit" variant="contained" color="primary" loading={isSubmitting}>
-              Next
-            </Button>
-          </Box>
+
         </Stack>
       </FormProvider>
     </Container>

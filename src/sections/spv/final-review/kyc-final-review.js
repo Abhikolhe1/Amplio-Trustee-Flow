@@ -141,6 +141,10 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Credit Rating', value: isin?.creditRating },
   ];
 
+  const handelSubmit=()=>{
+    percent(100);
+     router.push(paths.dashboard.spvkyc.new);
+  }
   return (
     <Container>
       <Box
@@ -226,7 +230,7 @@ export default function KYCFinalReview({ currData }) {
               },
             })}
 
-            // onClick={}
+            onClick={()=>handelSubmit()}
           >
             Review & Activate
           </Button>
@@ -238,6 +242,6 @@ export default function KYCFinalReview({ currData }) {
 
 KYCFinalReview.propTypes = {
   currData: PropTypes.any,
-  // percent: PropTypes.func,
+  percent: PropTypes.func,
   // setActiveStepId: PropTypes.func.isRequired,
 };

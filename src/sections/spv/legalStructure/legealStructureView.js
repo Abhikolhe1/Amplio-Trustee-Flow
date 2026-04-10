@@ -1,19 +1,24 @@
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Alert, Button, Card, Chip, MenuItem, Typography } from '@mui/material';
 import { alpha, Box, Container, Stack } from '@mui/system';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
-import { useEffect, useMemo } from 'react';
+import { useContext, useEffect, useMemo } from 'react';
 
 import DocumentCard from 'src/components/card/documentCard';
+import { AuthContext } from 'src/auth/context/jwt';
 
 function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }) {
+
+  const { user } = useContext(AuthContext);
+
   const Law = [
-    { value: 'ITA-1882+SARFAESI-2002', label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002' },
-    { value: 'ITA-1882', label: 'Indian Trusts Act, 1882 only' },
+    { value: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002', label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002' },
+    { value: 'Indian Trusts Act, 1882 only', label: 'Indian Trusts Act, 1882 only' },
   ];
+
   const Clause = [
     { value: 'full', label: 'Full Isolation (Recommended)' },
     { value: 'partial', label: 'Partial Isolation' },
@@ -29,7 +34,6 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
       docLink: '/assets/spv-Document/trust_deed_realistic_demo.pdf',
       button: 'View Draft',
     },
-
     {
       id: 5,
       title: 'Trustee E-Sign — Pending',
@@ -54,14 +58,25 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     },
   ];
 
+  const mergeDocuments = (baseDocs) => {
+    return baseDocs.map((doc) => {
+      const found = currData?.documents?.find((d) => d.id === doc.id);
+      return {
+        ...doc,
+        status: found?.status || 'PENDING',
+      };
+    });
+  };
+
   const defaultValues = useMemo(
     () => ({
-      trustName: currData?.trustName || '',
-      trusteeEntity: currData?.trusteeEntity || '',
-      settlor: currData?.settlor || '',
+      trustName: currData?.trustName || 'Axis Trustee Services Ltd',
+      trusteeEntity: currData?.trusteeEntity || 'Axis Trustee Services Ltd',
+      settlor: currData?.settlor || 'BirbalPlus',
       governingLaw: currData?.governingLaw || '',
       bankruptcy: currData?.bankruptcy || '',
       trustDuration: currData?.trustDuration || '',
+      documents: mergeDocuments(documents),
     }),
     [currData]
   );
@@ -73,19 +88,46 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     governingLaw: yup.string().required('Law is Required'),
     bankruptcy: yup.string().required('Bankruptcy Remoteness Clause is Required'),
     trustDuration: yup.string().required('Duration Is Required'),
+
+    documents: yup.array().of(
+      yup.object().shape({
+        status: yup.string().test(
+          'doc-validation',
+          'Complete all required documents',
+          function (value) {
+            return value === 'COMPLETED';
+          }
+        ),
+      })
+    ),
   });
+
   const methods = useForm({
     resolver: yupResolver(trustSchema),
     defaultValues,
   });
+
   const {
     handleSubmit,
     control,
     reset,
     setValue,
     formState: { isSubmitting, errors },
-    watch,
   } = methods;
+
+  useEffect(() => {
+    if (currData) {
+      reset({
+        trustName: currData?.trustName,
+        trusteeEntity: currData?.trusteeEntity,
+        settlor: currData?.settlor,
+        governingLaw: currData?.governingLaw,
+        bankruptcy: currData?.bankruptcy,
+        trustDuration: currData?.trustDuration,
+        documents: mergeDocuments(documents),
+      });
+    }
+  }, [currData, reset]);
 
   const requiredFields = [
     'trustName',
@@ -95,32 +137,33 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     'bankruptcy',
     'trustDuration',
   ];
-  const values = watch();
+
+  const watchedFields = useWatch({
+    control,
+    name: requiredFields,
+  });
+
+  const formDocuments = useWatch({
+    control,
+    name: 'documents',
+  }) || [];
 
   useEffect(() => {
-    let completed = 0;
+    const completedFields = watchedFields.filter(Boolean).length;
 
-    requiredFields.forEach((field) => {
-      if (Array.isArray(values[field]) && values[field]?.length > 0) {
-        completed += 1;
-      }
+    const requiredDocuments = formDocuments;
 
-      if (values[field] && !Array.isArray(values[field])) {
-        completed += 1;
-      }
-    });
+    const completedDocuments = requiredDocuments.filter(
+      (doc) => doc.status === 'COMPLETED' || doc.status === 'SIGNED'
+    ).length;
 
-    const percentValue = (completed / requiredFields.length) * 100;
+    const completed = completedFields + completedDocuments;
+    const totalRequiredItems = requiredFields.length + requiredDocuments.length;
+    const percentValue =
+      totalRequiredItems > 0 ? Math.round((completed / totalRequiredItems) * 100) : 0;
+
     percent?.(percentValue);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    values.trustName,
-    values.trusteeEntity,
-    values.settlor,
-    values.governingLaw,
-    values.bankruptcy,
-    values.trustDuration,
-  ]);
+  }, [watchedFields, formDocuments]);
 
   const onSubmit = handleSubmit(async (data) => {
     console.log('Form Data', data);
@@ -131,7 +174,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
   return (
     <Container>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Alert severity="info" sx={{ mb: 2 }}>
+           <Alert severity="info" sx={{ mb: 2 }}>
           Why Legal first? The Trust Deed establishes the legal SPV entity under the Trustee's
           fiduciary control. Axis Bank will only open the escrow account after receiving a signed
           copy of the Trust Deed. This step must be completed before Step 5.
@@ -160,8 +203,8 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                 md: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="trustName" label="Trust Name (Legal)" type="text" />
-              <RHFTextField name="trusteeEntity" label="Trustee Entity" type="text" />
+              <RHFTextField name="trustName" label="Trust Name (Legal)" type="text" disabled/>
+              <RHFTextField name="trusteeEntity" label="Trustee Entity" type="text" disabled />
             </Box>
             <Box
               columnGap={2}
@@ -172,7 +215,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                 md: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" type="text" />
+              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" type="text" disabled/>
               <RHFSelect name="governingLaw" label="Governing Law*">
                 {Law.map((role) => (
                   <MenuItem key={role.value} value={role.value}>
@@ -208,24 +251,39 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
         </Card>
 
         <Card sx={{ p: 3, mt: 3 }}>
-          <Typography variant="subtitle1" color="primary" py={1} mb={2}>
+          <Typography variant="subtitle1" color="primary" mb={2}>
             Execution Status
           </Typography>
+
           <Stack spacing={2}>
-            {documents.map((doc) => (
+            {formDocuments.map((doc, index) => (
               <DocumentCard
+                key={doc.id}
                 title={doc.title}
                 description={doc.description}
                 icon={doc.icon}
+                status={doc.status}
                 docLink={doc.docLink}
                 button={doc.button}
+                onSign={() => {
+                  setValue(`documents.${index}.status`, 'COMPLETED', {
+                    shouldValidate: true,
+                    shouldDirty: true,
+                    shouldTouch: true,
+                  });
+                }}
               />
             ))}
           </Stack>
+
+          {errors.documents && (
+            <Typography color="error">
+              Please complete all required documents
+            </Typography>
+          )}
         </Card>
-        <Box
-          sx={{ display: 'flex', justifyContent: 'flex-end', alignContent: 'center', p: 3, gap: 2 }}
-        >
+
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 3 }}>
           <Button type="submit" variant="contained" color="primary">
             Next
           </Button>

@@ -26,15 +26,15 @@ export default function SpvStepper() {
     { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('basic_info');
+  const [activeStepId, setActiveStepId] = useState('legal_structure');
 
   const [formData, setFormData] = useState({
     basic_info: {},
     pool_financial: {},
     ptc_parameters: {},
-    legal_structure: {},
+    legal_structure: {documents: []},
     escrow_setup: {},
-    legal_documents: {},
+    legal_documents: { documents: [] },
     credit_rating: {},
     isin_application: {},
     review_Activate: {},
@@ -173,9 +173,10 @@ export default function SpvStepper() {
       case 'legal_documents':
         return (
           <LegalDocument
-            // currData={formData.legal_documents}
+            currData={formData.legal_documents}
             percent={(p) => updateStepPercent('legal_documents', p)}
             setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('legal_documents', data)}
           />
         );
 
