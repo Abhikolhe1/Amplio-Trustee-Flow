@@ -17,8 +17,6 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 // _mock
 import { PRODUCT_STOCK_OPTIONS } from 'src/_mock';
-// api
-import { useGetProducts } from 'src/api/product';
 // components
 import { useSettingsContext } from 'src/components/settings';
 import {
@@ -26,7 +24,6 @@ import {
     getComparator,
     emptyRows,
     TableNoData,
-    TableSkeleton,
     TableEmptyRows,
     TableHeadCustom,
     TableSelectedAction,
@@ -49,16 +46,6 @@ const TABLE_HEAD = [
     { id: 'status', label: 'Status', width: 160 },
     { id: 'createdAt', label: 'Create at', width: 160 },
     { id: 'action', label: 'Action', width: 50 },
-];
-
-const products = [
-    {
-        applicationId: 'SPV-01',
-        status: 'Pending',
-        createdAt: '2026-04-01',
-        action: 'View',
-    },
-    
 ];
 
 const PUBLISH_OPTIONS = [
@@ -91,10 +78,10 @@ export default function KycListView() {
     const confirm = useBoolean();
 
     useEffect(() => {
-        //const products = JSON.parse(localStorage.getItem('formData'));
-        // console.log(products.credit_rating);
-        if (products.length) {
-            setTableData(products);
+        const spvRows = getSpvRowsFromStorage();
+
+        if (spvRows.length) {
+            setTableData(spvRows);
         }
     }, []);
 
@@ -336,7 +323,7 @@ export default function KycListView() {
 // ----------------------------------------------------------------------
 
 function applyFilter({ inputData, comparator, filters }) {
-    const { name, stock, publish } = filters;
+    const { name } = filters;
 
     const stabilizedThis = inputData.map((el, index) => [el, index]);
   
@@ -363,4 +350,62 @@ function applyFilter({ inputData, comparator, filters }) {
     // }
 
     return inputData;
+}
+
+function getSpvRowsFromStorage() {
+    try {
+        const savedForm = localStorage.getItem('formData');
+        const savedStep = localStorage.getItem('activeStepId');
+        const savedProgress = localStorage.getItem('stepsProgress');
+
+        if (!savedForm) {
+            return [];
+        }
+
+        const formData = JSON.parse(savedForm);
+        const stepsProgress = savedProgress ? JSON.parse(savedProgress) : {};
+
+        if (!formData || typeof formData !== 'object') {
+            return [];
+        }
+
+        const applicationId = formData?.basic_info?.spvName || 'SPV Application';
+
+        return [
+            {
+                id: applicationId,
+                applicationId,
+                status: getSpvStatus(savedStep, stepsProgress),
+                createdAt: getSpvCreatedAt(formData),
+                action: 'View',
+            },
+        ];
+    } catch (error) {
+        console.error('Unable to read SPV KYC data from localStorage', error);
+        return [];
+    }
+}
+
+function getSpvStatus(activeStepId, stepsProgress = {}) {
+    if (activeStepId === 'review_Activate' && stepsProgress?.review_Activate?.percent === 100) {
+        return 'Completed';
+    }
+
+    const hasStarted = Object.values(stepsProgress).some((step) => Number(step?.percent) > 0);
+
+    return hasStarted ? 'In Progress' : 'Pending';
+}
+
+function getSpvCreatedAt(formData) {
+    const possibleDates = [
+        formData?.basic_info?.createdAt,
+        formData?.pool_financial?.createdAt,
+        formData?.ptc_parameters?.createdAt,
+        formData?.legal_structure?.createdAt,
+        formData?.escrow_setup?.createdAt,
+        formData?.credit_rating?.applicationDate,
+        formData?.isin_application?.issueDate,
+    ].filter(Boolean);
+
+    return possibleDates[0] || new Date().toISOString();
 }

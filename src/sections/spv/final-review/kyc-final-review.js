@@ -1,46 +1,8 @@
 import { Box, Button, Container, Grid, Stack, Typography } from '@mui/material';
-import Iconify from 'src/components/iconify';
-import KycReviewCard from './kyc-review-card';
 import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
-import { label } from 'yet-another-react-lightbox';
-const basicIdentityData = [
-  { label: 'SPV Name', value: 'RZP-T1-2026-V1-928' },
-  { label: 'SPV Legal Structure', value: 'Standalone Passive Vehicle' },
-  { label: 'PSP Partner', value: 'Razorpay' },
-  { label: 'Originator (NBFC)', value: 'FinFlow Capital Pvt. Ltd.' },
-];
-
-const poolFinancialsData = [
-  { label: 'Pool Limit', value: '₹50,00,000' },
-  { label: 'Maturity', value: '30 days' },
-  { label: 'Target Investor Yield', value: '10% p.a.' },
-  { label: 'Reserve Buffer', value: '2% (₹1,00,000 required)' },
-  { label: 'Daily Cutoff', value: '18:00 IST' },
-];
-
-const ptcParametersgData = [
-  { label: 'Face Value per Unit', value: '₹100' },
-  { label: 'Min Investment', value: '₹10,000 (100 units)' },
-  { label: 'Max Investors per Pool', value: '200' },
-  { label: 'Window Frequency', value: 'Every 7 days' },
-  { label: 'Window Duration', value: '24 hours' },
-];
-
-const legalTrustDeedData = [
-  { label: 'Trust Name', value: 'RZP T1 Receivables Trust 2026' },
-  { label: 'Trustee Entity', value: 'FinSecure Trustee Services Ltd.' },
-  { label: 'Settlor', value: 'FinFlow Capital Pvt. Ltd.' },
-  { label: 'Trust Duration', value: '5 years (extendable)' },
-  { label: 'Execution Status', value: 'Pending' },
-];
-
-const escrowAccountsData = [
-  { label: 'Bank', value: 'Axis Bank' },
-  { label: 'Branch / City', value: 'Mumbai' },
-  { label: 'Verification Method', value: 'Penny Drop + Trustee' },
-  { label: 'Expected Setup Time', value: '24-48 hours' },
-];
+import Iconify from 'src/components/iconify';
+import KycReviewCard from './kyc-review-card';
 
 const documentsUploadData = [
   { label: 'Trust Deed', value: 'Signed' },
@@ -48,29 +10,10 @@ const documentsUploadData = [
   { label: 'Information Memorandum', value: 'Required' },
 ];
 
-// const creditRatingData = [
-//   { label: 'Credit Rating Agency', value: 'CRISIL' },
-//   { label: 'Application No', value: 'CRISIL-APP-2026-0412-T1' },
-//   { label: 'Rating Obtained', value: 'pending' },
-//   { label: 'Application Date', value: '04-04-2026' },
-// ];
-
 export default function KYCFinalReview({ currData }) {
-  // const basicIdentityData = currData?.basic_info;
-  // const poolFinancialsData = currData?.pool_financial;
-  // const ptcParametersgData = currData?.ptc_parameters;
-  // const legalTrustDeedData = currData?.legal_structure;
-  // const escrowAccountsData = currData?.escrow_setup;
-  // const documentsUploadData = currData?.legal_documents;
-
-  // const isinApplicationData = convertToCardData(currData?.isin_application);
-
   const basic = currData?.basic_info;
   const basicIdentityData = [
-    {
-      label: 'SPV Name',
-      value: basic?.spvName || '--',
-    },
+    { label: 'SPV Name', value: basic?.spvName || '--' },
     {
       label: 'SPV Legal Structure',
       value:
@@ -84,50 +27,39 @@ export default function KYCFinalReview({ currData }) {
         ? basic.pspPartner.charAt(0).toUpperCase() + basic.pspPartner.slice(1)
         : '--',
     },
-    {
-      label: 'Originator (NBFC)',
-      value: basic?.originator || '--',
-    },
+    { label: 'Originator (NBFC)', value: basic?.originator || '--' },
   ];
 
   const pool = currData?.pool_financial;
   const poolFinancialsData = [
     {
       label: 'Pool Limit',
-      value: pool?.poolLimit ? `₹${Number(pool.poolLimit).toLocaleString('en-IN')}` : '--',
+      value: pool?.poolLimit ? `Rs. ${Number(pool.poolLimit).toLocaleString('en-IN')}` : '--',
     },
-    {
-      label: 'Maturity',
-      value: pool?.maturity ? `${pool.maturity} days` : '--',
-    },
+    { label: 'Maturity', value: pool?.maturity ? `${pool.maturity} days` : '--' },
     {
       label: 'Target Investor Yield',
       value: pool?.targetYield ? `${pool.targetYield}% p.a.` : '--',
     },
-    {
-      label: 'Reserve Buffer',
-      value: pool?.reserveBuffer ? `${pool.reserveBuffer}%` : '--',
-    },
-    {
-      label: 'Daily Cutoff',
-      value: pool?.cutoffTime ? `${pool.cutoffTime} IST` : '--',
-    },
+    { label: 'Reserve Buffer', value: pool?.reserveBuffer ? `${pool.reserveBuffer}%` : '--' },
+    { label: 'Daily Cutoff', value: pool?.cutoffTime ? `${pool.cutoffTime} IST` : '--' },
   ];
 
   const ptc = currData?.ptc_parameters;
   const ptcParametersData = [
-    {
-      label: 'Face Value per Unit',
-      value: ptc?.faceValue ? `₹${ptc.faceValue}` : '--',
-    },
+    { label: 'Face Value per Unit', value: ptc?.faceValue ? `Rs. ${ptc.faceValue}` : '--' },
     {
       label: 'Min Investment',
-      value: ptc?.faceValue ? `₹${ptc.faceValue * 100} (100 units)` : '--', // example logic
+      value:
+        ptc?.minInvestment && ptc?.minUnits
+          ? `Rs. ${Number(ptc.minInvestment).toLocaleString('en-IN')} (${Number(ptc.minUnits).toLocaleString('en-IN')} units)`
+          : '--',
     },
     {
-      label: 'Max Investors per Pool',
-      value: ptc?.maxInvestPool || '--',
+      label: 'Max Units per Investor',
+      value: ptc?.maxPtc ? Number(ptc.maxPtc).toLocaleString('en-IN') : '--',
     },
+    { label: 'Max Investors per Pool', value: ptc?.maxInvestPool || '--' },
     {
       label: 'Window Frequency',
       value: ptc?.windowFrequency ? `Every ${ptc.windowFrequency} days` : '--',
@@ -145,24 +77,38 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Settlor', value: legal?.settlor || '--' },
     { label: 'Trust Duration', value: legal?.trustDuration || '--' },
     { label: 'Governing Law', value: legal?.governingLaw || '--' },
-
-    // extra fields
-    // { label: 'Bankruptcy Status', value: legal?.bankruptcy || '--' },
-
-    // // static (not in localStorage)
-    // { label: 'Execution Status', value: 'Pending' },
   ];
 
   const escrow = currData?.escrow_setup;
-  const escrowAccountsData = [
-    {
-      label: 'Bank',
-      value: escrow?.bank === 'axis' ? 'Axis Bank' : escrow?.bank ? escrow.bank : '--',
-    },
-    { label: 'Branch / City', value: escrow?.location || '--' },
-    { label: 'Verification Method', value: escrow?.verification || '--' },
-    { label: 'Expected Setup Time', value: escrow?.expected || '--' },
-  ];
+  const bankLabelMap = {
+    axis: 'Axis Bank',
+    hdfc: 'HDFC Bank',
+    icici: 'ICICI Bank',
+    kotak: 'Kotak Mahindra Bank',
+  };
+  const generatedEscrowAccounts = escrow?.generatedAccounts || [];
+  const escrowAccountsData =
+    generatedEscrowAccounts.length > 0
+      ? generatedEscrowAccounts.flatMap((account, index) => [
+          {
+            label: `Account ${index + 1}`,
+            value: account?.accountType || account?.accountLabel || '--',
+          },
+          {
+            label: `Account ${index + 1} Bank`,
+            value: bankLabelMap[account?.bank] || account?.bank || '--',
+          },
+          { label: `Account ${index + 1} Branch`, value: account?.location || '--' },
+        ])
+      : [
+          {
+            label: 'Bank',
+            value: bankLabelMap[escrow?.bank] || escrow?.bank || '--',
+          },
+          { label: 'Branch / City', value: escrow?.location || '--' },
+          { label: 'Verification Method', value: escrow?.verification || '--' },
+          { label: 'Expected Setup Time', value: escrow?.expected || '--' },
+        ];
 
   const creditRating = currData?.credit_rating;
   const creditRatingData = [
@@ -215,62 +161,48 @@ export default function KYCFinalReview({ currData }) {
         </Stack>
 
         <Grid container spacing={2}>
-          {/* Basic */}
           <KycReviewCard
             title="Basic Identity"
             status="completed"
             icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
             data={basicIdentityData}
           />
-
-          {/* Pool */}
           <KycReviewCard
             title="Pool Financials"
             status="pending"
             icon={<Iconify icon="mdi:finance" width={24} />}
             data={poolFinancialsData}
           />
-
-          {/* PTC */}
           <KycReviewCard
             title="PTC Parameters"
             status="pending"
             icon={<Iconify icon="mdi:tune-variant" width={24} />}
             data={ptcParametersData}
           />
-
-          {/* Legal & Trust Deed */}
           <KycReviewCard
             title="Legal & Trust Deed"
             status="pending"
             icon={<Iconify icon="mdi:scale-balance" width={24} />}
             data={legalTrustDeedData}
           />
-          {/* Escrow */}
           <KycReviewCard
             title="Escrow & Accounts"
             status="pending"
             icon={<Iconify icon="mdi:bank-outline" width={24} />}
             data={escrowAccountsData}
           />
-
-          {/* Documents  */}
           <KycReviewCard
             title="Documents"
             status="pending"
             icon={<Iconify icon="mdi:file-document-outline" width={24} />}
             data={documentsUploadData}
           />
-
-          {/* Credit Rating  */}
           <KycReviewCard
             title="Credit Rating"
             status="pending"
             icon={<Iconify icon="mdi:star-check-outline" width={24} />}
             data={creditRatingData}
           />
-
-          {/* ISIN  */}
           <KycReviewCard
             title="ISIN Application"
             status="pending"
@@ -287,8 +219,6 @@ export default function KYCFinalReview({ currData }) {
                 backgroundColor: theme.palette.primary.main,
               },
             })}
-
-            // onClick={}
           >
             Review & Activate
           </Button>
@@ -300,6 +230,4 @@ export default function KYCFinalReview({ currData }) {
 
 KYCFinalReview.propTypes = {
   currData: PropTypes.any,
-  // percent: PropTypes.func,
-  // setActiveStepId: PropTypes.func.isRequired,
 };

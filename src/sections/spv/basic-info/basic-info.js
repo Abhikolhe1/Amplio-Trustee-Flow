@@ -108,13 +108,28 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values.pspPartner, values.spvStructure, values.originator, values.spvName]);
 
-  const generateSPVName = () => {
-    const formattedId = `SPV-${String(spvCounter).padStart(3, '0')}`;
+const generateSPVName = () => {
+  const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
 
-    setValue('spvName', formattedId);
-
-    setSpvCounter((prev) => prev + 1);
+  // Convert PSP value to readable code
+  const pspCodeMap = {
+    razorpay: 'RZP',
+    paytm: 'PAYTM',
+    phonepe: 'PHNP',
+    cashfree: 'CSF',
   };
+  const pspCode = pspCodeMap[watch('pspPartner')] || 'GEN';
+  // Year
+  const year = new Date().getFullYear();
+  // Version (incremental)
+  const version = `V${spvCounter}`;
+  // Random Hash (6 chars)
+  const hash = Math.random().toString(36).substring(2, 8).toUpperCase();
+  // Final ID
+  const formattedId = `${pspCode}-${year}-${version}-${hash}`;
+  setValue('spvName', formattedId);
+  setSpvCounter((prev) => prev + 1);
+};
 
   const onSubmit = async (data) => {
     saveStepData(data);
