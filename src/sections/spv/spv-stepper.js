@@ -133,7 +133,7 @@ export default function SpvStepper() {
       case 'pool_financial':
         return (
           <PoolFinancials
-            currData={formData.pool_financial}
+            currData={formData}
             percent={(p) => updateStepPercent('pool_financial', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('pool_financial', data)}
@@ -144,6 +144,7 @@ export default function SpvStepper() {
         return (
           <PtcParameters
             currData={formData.ptc_parameters}
+            poolData={formData.pool_financial}
             percent={(p) => updateStepPercent('ptc_parameters', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('ptc_parameters', data)}
