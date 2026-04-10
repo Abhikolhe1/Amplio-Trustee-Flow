@@ -2,7 +2,16 @@ import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import Container from '@mui/material/Container';
-import { Box, Button, Card, Grid, MenuItem, Stack, Typography } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  Grid,
+  MenuItem,
+  Stack,
+  Typography,
+  InputAdornment,
+} from '@mui/material';
 import { useForm } from 'react-hook-form';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -148,9 +157,6 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
                   </MenuItem>
                 ))}
               </RHFSelect>
-              <Typography variant="caption" color="success.main" sx={{ mt: 0.5, display: 'block' }}>
-                ✓ Razorpay API verified and active
-              </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
               <RHFSelect name="spvStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
@@ -160,10 +166,6 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
                   </MenuItem>
                 ))}
               </RHFSelect>
-
-              <Typography variant="caption">
-                T1 pools — Standalone Passive Vehicle recommended
-              </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
               <RHFTextField
@@ -173,43 +175,44 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
                 fullWidth
                 sx={{ mt: 1 }}
               />
-              <Typography variant="caption" color="success.main" sx={{ mt: 0.5, display: 'block' }}>
-                ✓ RBI NBFC-ICC Reg. No. N-14.03292
-              </Typography>
             </Grid>
             <Grid item xs={12} md={6}>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <RHFTextField
-                  name="spvName"
-                  placeholder="SPV-001"
-                  label="AUTO-GENERATED SPV NAME"
-                  fullWidth
-                />
-                <Box alignContent="center">
-                  <Button
-                    variant="outlined"
-                    color="primary"
-                    borderColor="primary"
-                    minWidth="95"
-                    size="medium"
-                    onClick={generateSPVName}
-                  >
-                    Regen
-                  </Button>
-                </Box>
-              </Stack>
-
-              <Typography variant="caption">
-                Format: [PSP]-[Bucket]-[Year]-[Version]-[Hash]
-              </Typography>
+              <RHFTextField
+                name="spvName"
+                placeholder="SPV-001"
+                label="AUTO-GENERATED SPV NAME"
+                fullWidth
+                sx={{ mt: 1 }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <Button
+                        variant="text"
+                        color="primary"
+                        onClick={generateSPVName}
+                        sx={{
+                          minWidth: 'auto',
+                          px: 1,
+                          fontWeight: 600,
+                          bgcolor: (theme) => theme.palette.primary.lighter,
+                          border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                          borderRadius: 1,
+                        }}
+                      >
+                        Regen
+                      </Button>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                <Button type="submit" variant="contained" color="primary">
+                  Next
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </Card>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button type="submit" variant="contained" color="primary">
-            Next
-          </Button>
-        </Box>
       </FormProvider>
     </Container>
   );

@@ -31,7 +31,7 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
 
   const FormSchema = Yup.object().shape({
     faceValue: Yup.string().required('Face value is required'),
-    // maxInvest: Yup.string().required('Min investment is required'),
+    maxInvest: Yup.string().required('Min investment is required'),
     maxPtc: Yup.string().required('Max PTC is required'),
     maxInvestPool: Yup.string().required('Max investors required'),
     windowFrequency: Yup.string().required('Select frequency'),
@@ -41,7 +41,7 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
   const defaultValues = useMemo(
     () => ({
       faceValue: currData?.faceValue || '',
-      // maxInvest: currData?.maxInvest || '',
+      maxInvest: currData?.maxInvest || '',
       maxPtc: currData?.maxPtc || '',
       maxInvestPool: currData?.maxInvestPool || '',
       windowFrequency: currData?.windowFrequency || '',
@@ -67,6 +67,7 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
 
   const requiredFields = [
     'faceValue',
+    'maxInvest',
     'maxPtc',
     'maxInvestPool',
     'windowFrequency',
@@ -92,6 +93,7 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     values.faceValue,
+    values.maxInvest,
     values.maxPtc,
     values.maxInvestPool,
     values.windowFrequency,
@@ -131,7 +133,7 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
             </Typography>
           </Stack>
 
-          <Typography variant="subtitle2" color="primary" sx={{ mb: 2, display: 'block' }}>
+          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, display: 'block' }}>
             PTC Unit Structure
           </Typography>
 
@@ -143,7 +145,6 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
                 label="Face Value per PTC Unit (₹)"
                 placeholder="82"
                 fullWidth
-                sx={{ mt: 1 }}
               />
               <Typography
                 variant="caption"
@@ -155,70 +156,42 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <RHFTextField
-                  type="number"
-                  name="maxInvest"
-                  label="Min Investment per Investor (₹)"
-                  fullWidth
-                  disabled
-                />
-              </Stack>
+              <RHFTextField
+                type="number"
+                name="maxInvest"
+                label="Min Investment per Investor (₹)"
+                fullWidth
+              />
               <Typography variant="caption" color="text.secondary">
                 = 100 PTC units minimum
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <RHFTextField
-                  type="number"
-                  placeholder="10000"
-                  name="maxPtc"
-                  label="Max PTCs per Investor (units)"
-                  fullWidth
-                />
-              </Stack>
+              <RHFTextField
+                type="number"
+                placeholder="10000"
+                name="maxPtc"
+                label="Max PTCs per Investor (units)"
+                fullWidth
+              />
               <Typography variant="caption" color="text.secondary">
                 Cap: ₹10,00,000 per investor
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                <RHFTextField
-                  type="number"
-                  placeholder="200"
-                  name="maxInvestPool"
-                  label="Max Investors per Pool"
-                  fullWidth
-                />
-              </Stack>
+              <RHFTextField
+                type="number"
+                placeholder="200"
+                name="maxInvestPool"
+                label="Max Investors per Pool"
+                fullWidth
+              />
             </Grid>
           </Grid>
 
-          <Box padding={3}>
-            <Box
-              padding={2}
-              sx={{
-                borderRadius: 2,
-                bgcolor: (theme) => theme.palette.warning.lighter,
-                border: (theme) => `1px solid ${theme.palette.warning.main}`,
-              }}
-            >
-              <Typography variant="subtitle1" color="warning.main">
-                PTC Investment Rules
-                <span style={{ fontSize: '16px', marginLeft: '8px' }}> ✔</span>
-              </Typography>
-
-              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                Configure investment unit pricing, investor participation limits, reinvestment
-                preferences, and liquidity access for the Pass Through Certificate pool.
-              </Typography>
-            </Box>
-          </Box>
-
-          <Typography variant="subtitle2" color="primary" sx={{ mb: 2, display: 'block' }}>
+          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, mt: 2, display: 'block' }}>
             Investor Liquidity Window
           </Typography>
 
@@ -249,12 +222,12 @@ export default function PtcParameters({ percent, setActiveStepId, currData, save
               </Typography>
             </Grid>
           </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button type="submit" variant="contained" color="primary">
+              Next
+            </Button>
+          </Box>
         </Card>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button type="submit" variant="contained" color="primary">
-            Next
-          </Button>
-        </Box>
       </FormProvider>
     </Container>
   );

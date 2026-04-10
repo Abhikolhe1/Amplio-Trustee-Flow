@@ -1,10 +1,13 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo } from 'react';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
+import { Controller } from 'react-hook-form';
 import Container from '@mui/material/Container';
 import { Box, Button, Card, Grid, Stack, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import FormProvider, { RHFSlider, RHFSwitch, RHFTextField } from 'src/components/hook-form';
+
 // components
 import { yupResolver } from '@hookform/resolvers/yup';
 import WidgetSummaryCard from 'src/components/card/widget-summary-card';
@@ -162,7 +165,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
               />
             </Grid>
             <Grid item xs={12}>
-              <Typography variant="h6" color="primary">
+              <Typography variant="subtitle1" color="primary">
                 Pool Parameters
               </Typography>
             </Grid>
@@ -188,14 +191,14 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
               <Stack spacing={0.5}>
                 <Typography variant="body2">Maturity (Days)</Typography>
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="caption">7d</Typography>
-                  <Typography variant="caption">90d</Typography>
+                  <Typography variant="caption">30d</Typography>
+                  <Typography variant="caption">120d</Typography>
                 </Stack>
 
                 <RHFSlider
                   name="maturity"
-                  min={7}
-                  max={90}
+                  min={30}
+                  max={120}
                   step={1}
                   sx={sliderStyle}
                   valueLabelFormat={(value) => `${formatNumber(value)} days`}
@@ -239,23 +242,38 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
               </Stack>
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFTextField
+              <Controller
                 name="cutoffTime"
-                label="Daily Cutoff Time (IST)"
-                type="time"
-                InputLabelProps={{ shrink: true }}
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <TimePicker
+                    label="Window Duration"
+                    value={field.value || null}
+                    onChange={field.onChange}
+                    views={['hours', 'minutes']}
+                    format="HH:mm"
+                    ampm={false}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
               />
               <Typography variant="caption" color="text.secondary">
-                Transactions post-cutoff go to next-day batch
+                Time window for investor exit/reinvest decision
               </Typography>
             </Grid>
           </Grid>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button type="submit" variant="contained" color="primary">
+              Next
+            </Button>
+          </Box>
         </Card>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button type="submit" variant="contained" color="primary">
-            Next
-          </Button>
-        </Box>
       </FormProvider>
     </Container>
   );
