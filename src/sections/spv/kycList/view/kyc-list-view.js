@@ -153,6 +153,11 @@ export default function KycListView() {
         setFilters(defaultFilters);
     }, []);
 
+   const removeItems = () => {
+    localStorage.clear();
+};
+    
+
 
 
     return (
@@ -176,9 +181,11 @@ export default function KycListView() {
                         <Button
                             component={RouterLink}
                             color='primary'
+                            onClick={removeItems}
                             href={paths.dashboard.spvkyc.new}
                             variant="contained"
                             startIcon={<Iconify icon="mingcute:add-line" />}
+                            
                         >
                             New Kyc
                         </Button>
