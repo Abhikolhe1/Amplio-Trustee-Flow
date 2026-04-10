@@ -3,6 +3,8 @@ import Iconify from 'src/components/iconify';
 import KycReviewCard from './kyc-review-card';
 import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hook';
 
 const documentsUploadData = [
   { label: 'Trust Deed', value: 'Signed' },
@@ -10,7 +12,9 @@ const documentsUploadData = [
   { label: 'Information Memorandum', value: 'Required' },
 ];
 
-export default function KYCFinalReview({ currData }) {
+export default function KYCFinalReview({ currData, percent }) {
+
+  const router = useRouter();
   const basic = currData?.basic_info;
   const basicIdentityData = [
     {
@@ -113,16 +117,16 @@ export default function KYCFinalReview({ currData }) {
   const creditRating = currData?.credit_rating;
   const creditRatingData = [
     { label: 'Credit Rating Agency', value: creditRating?.creditRatingAgency },
-    { label: 'Application Number', value: creditRating?.applicationNumber },
+    // { label: 'Application Number', value: creditRating?.applicationNumber },
+    // {
+    //   label: 'Application Date',
+    //   value: creditRating?.applicationDate
+    //     ? dayjs(creditRating.applicationDate).format('DD MMM YYYY')
+    //     : '--',
+    // },
     {
-      label: 'Application Date',
-      value: creditRating?.applicationDate
-        ? dayjs(creditRating.applicationDate).format('DD MMM YYYY')
-        : '--',
-    },
-    {
-      label: 'Expected  Rating Date',
-      value: creditRating?.expectedRatingDate
+      label: 'Rating Date',
+      value: creditRating?.ratingDate
         ? dayjs(creditRating.expectedRatingDate).format('DD MMM YYYY')
         : '--',
     },
@@ -141,10 +145,9 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Credit Rating', value: isin?.creditRating },
   ];
 
-  const handelSubmit=()=>{
-    percent(100);
-     router.push(paths.dashboard.spvkyc.new);
-  }
+  const handleSubmit = () => {
+    // router.push(paths.dashboard.spvkyc.success);
+  };
   return (
     <Container>
       <Box
@@ -230,9 +233,9 @@ export default function KYCFinalReview({ currData }) {
               },
             })}
 
-            onClick={()=>handelSubmit()}
+            onClick={handleSubmit}
           >
-            Review & Activate
+            Activate
           </Button>
         </Stack>
       </Box>

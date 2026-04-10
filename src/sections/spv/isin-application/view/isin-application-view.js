@@ -19,7 +19,7 @@ export default function ISINApplicationView({ currData, percent, setActiveStepId
     setFormData(formData);
   }, []);
   const creditRatingData = formData?.credit_rating;
-  const applicationDate = dayjs(creditRatingData?.applicationDate).format('DD MMM YYYY');
+  const applicationDate = dayjs(creditRatingData?.ratingDate).format('DD MMM YYYY');
 
   const ratingObtained = creditRatingData?.ratingObtained;
   const creditRatingAgency = creditRatingData?.creditRatingAgency;

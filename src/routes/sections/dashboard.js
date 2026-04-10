@@ -17,6 +17,7 @@ const IndexPage = lazy(() => import('src/pages/dashboard/analytics'));
 // kyc
 const SpvCreatePage = lazy(() => import('src/pages/dashboard/spv/new'));
 const SpvListPage = lazy(() => import('src/pages/dashboard/spv/list'));
+const SpvSuccess = lazy(() => import('src/pages/dashboard/spv/success-screen'));
 
 // const IndexPage = lazy(() => import('src/pages/dashboard/app'));
 const OverviewEcommercePage = lazy(() => import('src/pages/dashboard/ecommerce'));
@@ -135,6 +136,7 @@ export const dashboardRoutes = [
           { element: <SpvListPage />, index: true },
           { path: 'list', element: <SpvListPage /> },
           { path: 'new', element: <SpvCreatePage/> },
+          { path: 'success', element: <SpvSuccess/> },
         ],
       },
       {

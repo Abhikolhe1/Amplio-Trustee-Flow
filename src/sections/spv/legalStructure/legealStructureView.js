@@ -73,8 +73,8 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
       trustName: currData?.trustName || 'Axis Trustee Services Ltd',
       trusteeEntity: currData?.trusteeEntity || 'Axis Trustee Services Ltd',
       settlor: currData?.settlor || 'BirbalPlus',
-      governingLaw: currData?.governingLaw || '',
-      bankruptcy: currData?.bankruptcy || '',
+      governingLaw: currData?.governingLaw || "Indian Trusts Act, 1882 + SARFAESI Act, 2002",
+      bankruptcy: currData?.bankruptcy || "full",
       trustDuration: currData?.trustDuration || '',
       documents: mergeDocuments(documents),
     }),
@@ -174,11 +174,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
   return (
     <Container>
       <FormProvider methods={methods} onSubmit={onSubmit}>
-           <Alert severity="info" sx={{ mb: 2 }}>
-          Why Legal first? The Trust Deed establishes the legal SPV entity under the Trustee's
-          fiduciary control. Axis Bank will only open the escrow account after receiving a signed
-          copy of the Trust Deed. This step must be completed before Step 5.
-        </Alert>
+
         <Card>
           <Box display="flex" alignItems="center" sx={{ px: 3, py: 1 }}>
             <Box display="flex" alignItems="center" gap={2}>
@@ -191,8 +187,14 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                   be opened after this is signed.
                 </Typography>
               </Box>
+
             </Box>
           </Box>
+          <Alert severity="info" sx={{ m: 3 }}>
+            Why Legal first? The Trust Deed establishes the legal SPV entity under the Trustee's
+            fiduciary control. Axis Bank will only open the escrow account after receiving a signed
+            copy of the Trust Deed. This step must be completed before Step 5.
+          </Alert>
           <Stack spacing={3} p={{ xs: 3 }}>
             <Box
               columnGap={2}
@@ -203,7 +205,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                 md: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="trustName" label="Trust Name (Legal)" type="text" disabled/>
+              <RHFTextField name="trustName" label="Trust Name (Legal)" type="text" disabled />
               <RHFTextField name="trusteeEntity" label="Trustee Entity" type="text" disabled />
             </Box>
             <Box
@@ -215,7 +217,8 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                 md: 'repeat(2, 1fr)',
               }}
             >
-              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" type="text" disabled/>
+              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" type="text" disabled />
+
               <RHFSelect name="governingLaw" label="Governing Law*">
                 {Law.map((role) => (
                   <MenuItem key={role.value} value={role.value}>
@@ -245,7 +248,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
                   Full isolation protects investors if platform defaults
                 </Typography>
               </Box>
-              <RHFTextField name="trustDuration" label="Trust Duration" type="text" />
+              <RHFTextField name="trustDuration" label="Trust Duration" type="text" placeholder="5 Years (extendable)" />
             </Box>
           </Stack>
         </Card>
@@ -281,13 +284,14 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
               Please complete all required documents
             </Typography>
           )}
-        </Card>
-
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 3 }}>
+           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt:2 }}>
           <Button type="submit" variant="contained" color="primary">
             Next
           </Button>
         </Box>
+        </Card>
+
+       
       </FormProvider>
     </Container>
   );

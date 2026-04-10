@@ -85,7 +85,7 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
     () => ({
       // applicationNumber: currData?.applicationNumber || '',
       // applicationDate: normalizeDate(currData?.applicationDate),
-      ratingObtained: currData?.ratingObtained || '',
+      ratingObtained: currData?.ratingObtained || 'pending- Awaiting CRISIL Review',
       ratingDate: normalizeDate(currData?.ratingDate),
       ratingLetterDoc: currData?.ratingLetterDoc || '',
       creditRatingAgency: currData?.creditRatingAgency || '',
