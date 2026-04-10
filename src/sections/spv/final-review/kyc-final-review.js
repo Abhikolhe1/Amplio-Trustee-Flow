@@ -3,44 +3,6 @@ import Iconify from 'src/components/iconify';
 import KycReviewCard from './kyc-review-card';
 import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
-import { label } from 'yet-another-react-lightbox';
-const basicIdentityData = [
-  { label: 'SPV Name', value: 'RZP-T1-2026-V1-928' },
-  { label: 'SPV Legal Structure', value: 'Standalone Passive Vehicle' },
-  { label: 'PSP Partner', value: 'Razorpay' },
-  { label: 'Originator (NBFC)', value: 'FinFlow Capital Pvt. Ltd.' },
-];
-
-const poolFinancialsData = [
-  { label: 'Pool Limit', value: '₹50,00,000' },
-  { label: 'Maturity', value: '30 days' },
-  { label: 'Target Investor Yield', value: '10% p.a.' },
-  { label: 'Reserve Buffer', value: '2% (₹1,00,000 required)' },
-  { label: 'Daily Cutoff', value: '18:00 IST' },
-];
-
-const ptcParametersgData = [
-  { label: 'Face Value per Unit', value: '₹100' },
-  { label: 'Min Investment', value: '₹10,000 (100 units)' },
-  { label: 'Max Investors per Pool', value: '200' },
-  { label: 'Window Frequency', value: 'Every 7 days' },
-  { label: 'Window Duration', value: '24 hours' },
-];
-
-const legalTrustDeedData = [
-  { label: 'Trust Name', value: 'RZP T1 Receivables Trust 2026' },
-  { label: 'Trustee Entity', value: 'FinSecure Trustee Services Ltd.' },
-  { label: 'Settlor', value: 'FinFlow Capital Pvt. Ltd.' },
-  { label: 'Trust Duration', value: '5 years (extendable)' },
-  { label: 'Execution Status', value: 'Pending' },
-];
-
-const escrowAccountsData = [
-  { label: 'Bank', value: 'Axis Bank' },
-  { label: 'Branch / City', value: 'Mumbai' },
-  { label: 'Verification Method', value: 'Penny Drop + Trustee' },
-  { label: 'Expected Setup Time', value: '24-48 hours' },
-];
 
 const documentsUploadData = [
   { label: 'Trust Deed', value: 'Signed' },
@@ -48,23 +10,7 @@ const documentsUploadData = [
   { label: 'Information Memorandum', value: 'Required' },
 ];
 
-// const creditRatingData = [
-//   { label: 'Credit Rating Agency', value: 'CRISIL' },
-//   { label: 'Application No', value: 'CRISIL-APP-2026-0412-T1' },
-//   { label: 'Rating Obtained', value: 'pending' },
-//   { label: 'Application Date', value: '04-04-2026' },
-// ];
-
 export default function KYCFinalReview({ currData }) {
-  // const basicIdentityData = currData?.basic_info;
-  // const poolFinancialsData = currData?.pool_financial;
-  // const ptcParametersgData = currData?.ptc_parameters;
-  // const legalTrustDeedData = currData?.legal_structure;
-  // const escrowAccountsData = currData?.escrow_setup;
-  // const documentsUploadData = currData?.legal_documents;
-
-  // const isinApplicationData = convertToCardData(currData?.isin_application);
-
   const basic = currData?.basic_info;
   const basicIdentityData = [
     {
@@ -187,7 +133,6 @@ export default function KYCFinalReview({ currData }) {
   const isinApplicationData = [
     { label: 'Depository', value: isin?.depositoryId?.toUpperCase() },
     { label: 'Security Type', value: isin?.securityType },
-    { label: 'ISIN Prefix', value: isin?.isinPrefix },
     { label: 'Issue Size', value: isin?.issueSize },
     {
       label: 'Issue Date',
@@ -200,7 +145,7 @@ export default function KYCFinalReview({ currData }) {
     <Container>
       <Box
         sx={{
-          maxWidth: 900,
+          maxWidth: 1200,
           mx: 'auto',
         }}
       >
@@ -218,7 +163,6 @@ export default function KYCFinalReview({ currData }) {
           {/* Basic */}
           <KycReviewCard
             title="Basic Identity"
-            status="completed"
             icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
             data={basicIdentityData}
           />
@@ -226,7 +170,6 @@ export default function KYCFinalReview({ currData }) {
           {/* Pool */}
           <KycReviewCard
             title="Pool Financials"
-            status="pending"
             icon={<Iconify icon="mdi:finance" width={24} />}
             data={poolFinancialsData}
           />
@@ -234,7 +177,6 @@ export default function KYCFinalReview({ currData }) {
           {/* PTC */}
           <KycReviewCard
             title="PTC Parameters"
-            status="pending"
             icon={<Iconify icon="mdi:tune-variant" width={24} />}
             data={ptcParametersData}
           />
@@ -242,14 +184,12 @@ export default function KYCFinalReview({ currData }) {
           {/* Legal & Trust Deed */}
           <KycReviewCard
             title="Legal & Trust Deed"
-            status="pending"
             icon={<Iconify icon="mdi:scale-balance" width={24} />}
             data={legalTrustDeedData}
           />
           {/* Escrow */}
           <KycReviewCard
             title="Escrow & Accounts"
-            status="pending"
             icon={<Iconify icon="mdi:bank-outline" width={24} />}
             data={escrowAccountsData}
           />
@@ -265,7 +205,6 @@ export default function KYCFinalReview({ currData }) {
           {/* Credit Rating  */}
           <KycReviewCard
             title="Credit Rating"
-            status="pending"
             icon={<Iconify icon="mdi:star-check-outline" width={24} />}
             data={creditRatingData}
           />
@@ -273,7 +212,6 @@ export default function KYCFinalReview({ currData }) {
           {/* ISIN  */}
           <KycReviewCard
             title="ISIN Application"
-            status="pending"
             icon={<Iconify icon="mdi:file-certificate-outline" width={24} />}
             data={isinApplicationData}
           />

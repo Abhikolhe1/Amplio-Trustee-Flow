@@ -8,25 +8,14 @@ function DepositoryCard({ selectedDepository, onSelect }) {
       title: 'NSDL',
       subtitle: 'National Securities Depository Limited',
       tag: 'Preferred for institutional PTCs  & T-bills',
-      participant: ' Axis Bank DP / HDFC Securities',
     },
     {
       id: 'cdsl',
       title: 'CDSL',
       subtitle: 'Central Depository Services Limited',
       tag: 'Preferred for retail investor PTCs',
-      participant: 'Zerodha / Groww / Angel',
     },
   ];
-
-  // const [selected, setSelected] = useState('nsdl');
-
-  // useEffect(() => {
-  //   if (currData?.depositoryId) {
-  //     setSelected(currData.depositoryId);
-  //   }
-  //   selectedDepository = selected;
-  // }, [selected]);
 
   return (
     <Card
@@ -50,11 +39,11 @@ function DepositoryCard({ selectedDepository, onSelect }) {
                 border: '1px solid',
                 borderColor:
                   selectedDepository === option.id
-                    ? theme.palette.primary.main
+                    ? theme.palette.primary.light
                     : theme.palette.divider,
                 backgroundColor:
                   selectedDepository === option.id
-                    ? theme.palette.primary.main + '09'
+                    ? theme.palette.primary.lighter
                     : theme.palette.background.paper,
                 transition: 'all 0.2s',
                 '&:hover': {
@@ -73,14 +62,12 @@ function DepositoryCard({ selectedDepository, onSelect }) {
                   size="small"
                   sx={(theme) => ({
                     mt: 1,
-                    backgroundColor: theme.palette.success.light + '05',
+                    backgroundColor: theme.palette.primary.main + '05',
+                    // color: theme.palette.primary.main,
                   })}
-                  color="primary"
+                  // color="primary"
                   variant="outlined"
                 />
-                <Typography mt={1} variant="body2" color="text.secondary">
-                  Depository Participant : {option.participant}
-                </Typography>
               </CardContent>
             </Card>
           </Grid>

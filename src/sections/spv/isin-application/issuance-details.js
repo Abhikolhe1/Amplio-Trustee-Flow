@@ -8,13 +8,16 @@ import {
   CardContent,
   CircularProgress,
   Grid,
+  MenuItem,
   Stack,
   Typography,
 } from '@mui/material';
-import React, { useEffect, useMemo } from 'react';
-import FormProvider, { RHFTextField } from 'src/components/hook-form';
-import { DatePicker } from '@mui/x-date-pickers';
+import React, { useEffect, useMemo, useState } from 'react';
+import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+// import { DatePicker } from '@mui/x-date-pickers';
 import PropTypes from 'prop-types';
+import { useSnackbar } from 'src/components/snackbar';
+import RHFDatePicker from 'src/components/hook-form/rhf-date-picker';
 
 // a reusable function to calculate form progress
 export const calculateFormProgress = (values) => {
@@ -23,38 +26,44 @@ export const calculateFormProgress = (values) => {
 
   for (let key in values) {
     total++;
-
     if (values[key] !== '' && values[key] !== null) {
       filled++;
     }
   }
-
   return Math.round((filled / total) * 100);
 };
 
-// Issuance Details function
-export default function IssuanceDetails({ currData, percent, saveStepData }) {
+export default function IssuanceDetails({
+  selectedDepository,
+  creditAgecyWithRating,
+  issueSize,
+  currData,
+  percent,
+  saveStepData,
+  setActiveStepId,
+}) {
+  const { enqueueSnackbar } = useSnackbar();
+
+  const securityType = [
+    { value: 'secure', label: 'Secure' },
+    { value: 'unsecure', label: 'Unsecure' },
+  ];
+
   const issuanceSchema = Yup.object({
     securityType: Yup.string().required('Security Type is required'),
-    isinPrefix: Yup.string().required('ISIN Prefix is required'),
+    // isinPrefix: Yup.string().required('ISIN Prefix is required'),
     issueSize: Yup.string().required(' Issue size is required'),
+    // issueSize: Yup.number().typeError('Must be a number').required('Issue Size is required'),
     issueDate: Yup.date().nullable().required('Issue Date is required'),
     creditRating: Yup.string().required('Credit Rating is required'),
   });
 
-  const defaultValues = useMemo(() => {
-    // const stored = localStorage.getItem('issuanceDetails');
-
-    const currIssuanceDetails = currData ? currData : null;
-
-    return {
-      securityType: currIssuanceDetails?.securityType || '',
-      isinPrefix: currIssuanceDetails?.isinPrefix || '',
-      issueSize: currIssuanceDetails?.issueSize || '',
-      issueDate: currIssuanceDetails?.issueDate ? new Date(currIssuanceDetails.issueDate) : null,
-      creditRating: currIssuanceDetails?.creditRating || '',
-    };
-  }, []);
+  const defaultValues = {
+    securityType: currData?.securityType || 'secure',
+    issueSize: '',
+    issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+    creditRating: '',
+  };
 
   const methods = useForm({
     resolver: yupResolver(issuanceSchema),
@@ -63,24 +72,40 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
   });
 
   const {
+    reset,
     control,
     handleSubmit,
-    formState: { isSubmitting, isValid },
+    formState: { isSubmitting },
   } = methods;
 
   const values = useWatch({ control });
 
   const onSubmit = handleSubmit((data) => {
-    // console.log('clicked', data);
-    // localStorage.setItem('issuanceDetails', JSON.stringify(data));
-    saveStepData(data);
+    try {
+      saveStepData({
+        ...data,
+        depositoryId: selectedDepository,
+      });
+      enqueueSnackbar('Data Saved Successfully', { variant: 'success' });
+      setActiveStepId('review_Activate');
+    } catch (error) {
+      enqueueSnackbar('Failed to save data', { variant: 'error' });
+      throw error;
+    }
   });
 
   useEffect(() => {
+    reset({
+      // securityType: currData?.securityType || 'secure',
+      issueSize: issueSize || '',
+      creditRating: creditAgecyWithRating || '',
+      // issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+    });
+  }, [issueSize, creditAgecyWithRating]);
+
+  useEffect(() => {
     // sessionStorage.setItem('issuanceDetails', JSON.stringify(values));
-
     const progress = calculateFormProgress(values);
-
     percent(progress);
   }, [values]);
 
@@ -96,21 +121,35 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
         <FormProvider methods={methods} onSubmit={onSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
-              <RHFTextField name="securityType" label="Security Type" />
-              <Typography variant="caption" color="text.secondary">
+              {/* <RHFTextField name="securityType" label="Security Type" /> */}
+              <RHFSelect name="securityType" label="Security Type">
+                {securityType.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>
+                    {type.label}
+                  </MenuItem>
+                ))}
+              </RHFSelect>
+              {/* <Typography variant="caption" color="text.secondary">
                 Auto-determined by SPV structure · Cannot be changed
-              </Typography>
+              </Typography> */}
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            {/* <Grid item xs={12} md={6}>
               <RHFTextField name="isinPrefix" label="ISIN Prefix" />
               <Typography variant="caption" color="text.secondary">
                 All Indian securities start with INE
               </Typography>
+            </Grid> */}
+            <Grid item xs={12} md={6}>
+              <RHFTextField
+                name="creditRating"
+                label="Credit Rating"
+                InputProps={{ readOnly: true }}
+              />
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <RHFTextField name="issueSize" label="Issue Size" />
+              <RHFTextField name="issueSize" label="Issue Size" InputProps={{ readOnly: true }} />
               <Typography variant="caption" color="text.secondary">
                 Pulled from Step 2 · Pool Limit = max issuance size
               </Typography>
@@ -119,7 +158,14 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
             <Grid item xs={12} md={6}>
               {/* <RHFTextField name="issueDate" label="Issue Date" /> */}
 
-              <Controller
+              <RHFDatePicker
+                name="issueDate"
+                label="Issue Date"
+                maxDate={new Date()}
+                control={control}
+              />
+
+              {/* <Controller
                 name="issueDate"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
@@ -137,11 +183,7 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
                     }}
                   />
                 )}
-              />
-            </Grid>
-
-            <Grid item xs={12}>
-              <RHFTextField name="creditRating" label="Credit Rating" />
+              /> */}
             </Grid>
           </Grid>
 
@@ -150,7 +192,7 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
             <Button
               type="submit"
               variant="contained"
-              disabled={!isValid || isSubmitting}
+              disabled={isSubmitting}
               color="primary"
               startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
             >
@@ -164,6 +206,8 @@ export default function IssuanceDetails({ currData, percent, saveStepData }) {
 }
 
 IssuanceDetails.propTypes = {
+  issueSize: PropTypes.string,
+  creditAgecyWithRating: PropTypes.string,
   percent: PropTypes.func.isRequired,
   setActiveStepId: PropTypes.func.isRequired,
   saveStepData: PropTypes.func.isRequired,

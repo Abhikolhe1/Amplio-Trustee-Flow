@@ -1,23 +1,39 @@
 import { Box, Button, Card, Container, Stack, Typography } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import DepositoryCard from '../depository-card';
 import IssuanceDetails from '../issuance-details';
 import ApplicationTracker from '../application-tracker';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
+import dayjs from 'dayjs';
 
 export default function ISINApplicationView({ currData, percent, setActiveStepId, saveStepData }) {
-  const [isFormComplete, setIsFormComplete] = useState(false);
+  // const [isFormComplete, setIsFormComplete] = useState(false);
   const [selectedDepository, setSelectedDepository] = useState(currData?.depositoryId || 'nsdl');
+  const [formData, setFormData] = useState({});
 
-  const handleNextStep = () => {
-    saveStepData({
-      ...currData,
-      depositoryId: selectedDepository,
-    });
-    setActiveStepId('review_Activate');
-  };
+  useEffect(() => {
+    const data = localStorage.getItem('formData');
+    const formData = JSON.parse(data);
+    setFormData(formData);
+  }, []);
+  const creditRatingData = formData?.credit_rating;
+  const applicationDate = dayjs(creditRatingData?.applicationDate).format('DD MMM YYYY');
+
+  const ratingObtained = creditRatingData?.ratingObtained;
+  const creditRatingAgency = creditRatingData?.creditRatingAgency;
+
+  const creditAgecyWithRating =
+    creditRatingAgency && ratingObtained
+      ? `${creditRatingAgency}  -  ${ratingObtained}`
+      : creditRatingAgency || ratingObtained || '';
+
+  // console.log('rating obtained', ratingObtained);
+  const poolData = formData?.pool_financial;
+  const issueSize = poolData?.poolLimit;
+
+  // const handleNextStep = () => {};
 
   return (
     <Container>
@@ -30,8 +46,8 @@ export default function ISINApplicationView({ currData, percent, setActiveStepId
           the unique identifier for PTC trading and Demat crediting.
         </Typography>
       </Stack>
-      {/* Confirmation note below title */}
 
+      {/* Confirmation note below title */}
       <Box m={1}>
         <Label
           variant="soft"
@@ -45,33 +61,37 @@ export default function ISINApplicationView({ currData, percent, setActiveStepId
           }}
         >
           <Iconify icon="mdi:check-circle" width={18} />
-          Credit Rating Confirmed — CRISIL AA (sf). Rated on 11 Apr 2026. ISIN application is now
-          unlocked.
+          Credit Rating Confirmed — {ratingObtained}. Rated on {applicationDate}. ISIN application
+          is now unlocked.
         </Label>
       </Box>
       {/* Depository Card */}
       <DepositoryCard selectedDepository={selectedDepository} onSelect={setSelectedDepository} />
+
       {/* Issuance Details */}
       <IssuanceDetails
+        selectedDepository={selectedDepository}
+        creditAgecyWithRating={creditAgecyWithRating}
+        issueSize={issueSize}
         currData={currData}
+        setActiveStepId={setActiveStepId}
         saveStepData={saveStepData}
-        percent={(p) => {
-          percent(p);
-          setIsFormComplete(p === 100);
-        }}
+        percent={percent}
       />
+
       {/* Application Tracker */}
-      <ApplicationTracker />
-      <Stack mt={2} alignItems="flex-end">
+      {/* <ApplicationTracker /> */}
+
+      {/* <Stack mt={2} alignItems="flex-end">
         <Button
           variant="contained"
           color="primary"
           onClick={handleNextStep}
-          disabled={!isFormComplete}
+          // disabled={!isFormComplete}
         >
           Next
         </Button>
-      </Stack>
+      </Stack> */}
     </Container>
   );
 }
