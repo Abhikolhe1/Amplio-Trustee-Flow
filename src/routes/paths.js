@@ -79,7 +79,7 @@ export const paths = {
       trusteeKyc: `${ROOTS.AUTH}/kyc/trustee-kyc`,
       kycBasicInfo: `${ROOTS.AUTH}/kyc/basic-info`,
       kycSuccessful: `${ROOTS.AUTH}/kyc/kyc-successful`,
-      kycPending: `${ROOTS.AUTH}/kyc/kyc-pending`
+      kycPending: `${ROOTS.AUTH}/kyc/kyc-pending`,
     },
   },
   authDemo: {
@@ -125,11 +125,18 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/signatories/${id}/edit`,
       details: (id) => `${ROOTS.DASHBOARD}/signatories/${id}`,
     },
-    pendingAppointments:{
+    spvkyc: {
+      root: `${ROOTS.DASHBOARD}/spvkyc`,
+      list: `${ROOTS.DASHBOARD}/spvkyc/list`,
+      new: `${ROOTS.DASHBOARD}/spvkyc/new`,
+      success: `${ROOTS.DASHBOARD}/spvkyc/success`,
+    },
+
+    pendingAppointments: {
       root: `${ROOTS.DASHBOARD}/pendingAppointments`,
       list: `${ROOTS.DASHBOARD}/pendingAppointments/list`,
     },
-    assignedIssues:{
+    assignedIssues: {
       root: `${ROOTS.DASHBOARD}/assignedIssues`,
       list: `${ROOTS.DASHBOARD}/assignedIssues/list`,
     },
