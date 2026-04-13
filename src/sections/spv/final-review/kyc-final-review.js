@@ -4,8 +4,12 @@ import dayjs from 'dayjs';
 import Iconify from 'src/components/iconify';
 import KycReviewCard from './kyc-review-card';
 import { format } from 'date-fns';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hook';
 
 export default function KYCFinalReview({ currData }) {
+
+  const router=useRouter();
   //  Basic Info
   const basic = currData?.basic_info;
   const basicIdentityData = [
@@ -162,7 +166,7 @@ export default function KYCFinalReview({ currData }) {
   ];
 
   const handleSubmit = () => {
-    // router.push(paths.dashboard.spvkyc.success);
+    router.push(paths.dashboard.spvkyc.success);
   };
   return (
     <Container>
@@ -238,6 +242,7 @@ export default function KYCFinalReview({ currData }) {
                 backgroundColor: theme.palette.primary.main,
               },
             })}
+            onClick={handleSubmit}
           >
             Activate
           </Button>
