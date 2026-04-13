@@ -41,9 +41,9 @@ export default function SpvStepper() {
   });
 
   const [stepsProgress, setStepsProgress] = useState({
-    basic_info: { percent: 0 },
-    pool_financial: { percent: 0 },
-    ptc_parameters: { percent: 0 },
+    // basic_info: { percent: 0 },
+    // pool_financial: { percent: 0 },
+    // ptc_parameters: { percent: 0 },
     legal_structure: { percent: 0 },
     escrow_setup: { percent: 0 },
     legal_documents: { percent: 0 },

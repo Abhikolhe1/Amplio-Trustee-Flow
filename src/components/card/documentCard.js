@@ -104,7 +104,7 @@ export default function DocumentCard({
                         color="warning"
                         onClick={onSign}
                     >
-                        SIGN
+                        E-Sign
                     </Button>
                 )}
             </Box>
