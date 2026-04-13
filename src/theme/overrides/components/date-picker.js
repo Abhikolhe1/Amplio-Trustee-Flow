@@ -63,11 +63,11 @@ export default function DatePicker(theme) {
         root: {
           '& .MuiPickersLayout-actionBar': {
             [`& .${buttonClasses.root}:last-of-type`]: {
-              backgroundColor: theme.palette.text.primary,
-              color:
-                theme.palette.mode === 'light'
-                  ? theme.palette.common.white
-                  : theme.palette.grey[800],
+              backgroundColor: theme.palette.primary.main,
+              color: theme.palette.primary.contrastText,
+              '&:hover': {
+                backgroundColor: theme.palette.primary.dark,
+              },
             },
           },
         },

@@ -251,10 +251,14 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
                 render={({ field, fieldState: { error } }) => (
                   <TimePicker
                     label="Cutoff Time"
+                    color="primary"
                     value={field.value || null}
                     onChange={(newValue) => field.onChange(newValue)}
                     ampm={false}
                     slotProps={{
+                      actionBar: {
+                        actions: ['accept'],
+                      },
                       textField: {
                         fullWidth: true,
                         margin: 'normal',
