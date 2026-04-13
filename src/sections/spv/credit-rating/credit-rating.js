@@ -54,7 +54,6 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
   ];
 
   const category = [
-    'pending- Awaiting CRISIL Review',
     'AA+ (sf)- Excellent',
     'AA (sf)-Very Strong',
     'A+ (sf)-strong',
@@ -85,10 +84,10 @@ function CreditRating({ disabled, currData, percent, saveStepData, setActiveStep
     () => ({
       // applicationNumber: currData?.applicationNumber || '',
       // applicationDate: normalizeDate(currData?.applicationDate),
-      ratingObtained: currData?.ratingObtained || 'pending- Awaiting CRISIL Review',
+      ratingObtained: currData?.ratingObtained || 'AA+ (sf)- Excellent',
       ratingDate: normalizeDate(currData?.ratingDate),
       ratingLetterDoc: currData?.ratingLetterDoc || '',
-      creditRatingAgency: currData?.creditRatingAgency || '',
+      creditRatingAgency: currData?.creditRatingAgency || 'CRISIL',
     }),
     [currData]
   );

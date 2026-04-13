@@ -67,7 +67,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     () => ({
       pspPartner: currData?.pspPartner || '',
       spvStructure: currData?.spvStructure || '',
-      originator: currData?.originator || '',
+      originator: currData?.originator || 'Birbal Plus',
       spvName: currData?.spvName || '',
     }),
     [currData]
@@ -185,10 +185,10 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
             <Grid item xs={12} md={6}>
               <RHFTextField
                 name="originator"
-                placeholder="FinFlow Capital Pvt. Ltd. (NBFC)"
                 label="ORIGINATOR (PLATFORM NBFC)"
                 fullWidth
                 sx={{ mt: 1 }}
+                disabled
               />
             </Grid>
             <Grid item xs={12} md={6}>

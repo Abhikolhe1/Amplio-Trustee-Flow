@@ -226,7 +226,7 @@ export default function IssuanceDetails({
           >
             <RHFCustomFileUploadBox
               name="isisnLetterDoc"
-              label="upload ISIN Application Leter (PDF)"
+              label="Upload ISIN Application Leter (PDF)"
               // disabled={disabled}
               control={control}
               accept={{

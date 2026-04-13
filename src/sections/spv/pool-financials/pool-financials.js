@@ -61,7 +61,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
   const defaultValues = useMemo(
     () => ({
       poolLimit: pool?.poolLimit ?? 1000000,
-      maturity: pool?.maturity ?? 30,
+      maturity: pool?.maturity ?? 12,
       targetYield: pool?.targetYield ?? 6,
       reserveBuffer: pool?.reserveBuffer ?? 0.5,
       cutoffTime: pool?.cutoffTime ? new Date(pool.cutoffTime) : null,
@@ -147,7 +147,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
             <Grid item xs={12} sm={6} lg={3}>
               <WidgetSummaryCard
                 title="Maturity"
-                total={`${values.maturity || 0} days`}
+                total={`${values.maturity || 0} Months`}
                 timing="Per PTC cycle"
               />
             </Grid>
@@ -192,19 +192,19 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack spacing={0.5}>
-                <Typography variant="body2">Maturity (Days)</Typography>
+                <Typography variant="body2">Maturity (Months)</Typography>
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="caption">30d</Typography>
-                  <Typography variant="caption">120d</Typography>
+                  <Typography variant="caption">12M</Typography>
+                  <Typography variant="caption">36M</Typography>
                 </Stack>
 
                 <RHFSlider
                   name="maturity"
-                  min={30}
-                  max={120}
+                  min={12}
+                  max={36}
                   step={1}
                   sx={sliderStyle}
-                  valueLabelFormat={(value) => `${formatNumber(value)} days`}
+                  valueLabelFormat={(value) => `${formatNumber(value)} Months`}
                 />
               </Stack>
             </Grid>

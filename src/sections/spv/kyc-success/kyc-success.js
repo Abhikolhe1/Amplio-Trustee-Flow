@@ -48,49 +48,58 @@ export default function SpvLiveSuccess() {
   };
 
   return (
-    <Container maxWidth="md">
-      <Card
-        sx={{
-          p: 4,
-          borderRadius: 3,
-          backgroundColor: theme.palette.background.paper,
-        }}
-      >
-        {/* Icon */}
-        <Box display="flex" justifyContent="center" mb={2}>
-          <Iconify
-            icon="mdi:check-circle-outline"
-            width={70}
-            height={70}
-            color={theme.palette.success.main}
-          />
-        </Box>
-
-        {/* Title */}
-        <Typography
-          variant="h4"
-          // fontWeight={700}
-          color="primary"
-          align="center"
-          gutterBottom
+    <Box
+      sx={{
+        minHeight: '70vh',
+        display: 'flex',
+        justifyContent: 'center', // horizontal center
+        alignItems: 'center',     // vertical center (optional)
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <Container maxWidth="md" >
+        <Card
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            backgroundColor: theme.palette.background.paper,
+          }}
         >
-          {data.title}
-        </Typography>
+          {/* Icon */}
+          <Box display="flex" justifyContent="center" mb={2}>
+            <Iconify
+              icon="mdi:check-circle-outline"
+              width={70}
+              height={70}
+              color={theme.palette.success.main}
+            />
+          </Box>
 
-        {/* Description */}
-        <Typography
-          variant="subtitle2"
-          color={theme.palette.text.secondary}
-          align="center"
-          maxWidth="600px"
-          mx="auto"
-          mb={4}
-        >
-          {data.description}
-        </Typography>
+          {/* Title */}
+          <Typography
+            variant="h4"
+            // fontWeight={700}
+            color="primary"
+            align="center"
+            gutterBottom
+          >
+            {data.title}
+          </Typography>
 
-        {/* Chips */}
-        {/* <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={1.5} mb={4}>
+          {/* Description */}
+          <Typography
+            variant="subtitle2"
+            color={theme.palette.text.secondary}
+            align="center"
+            maxWidth="600px"
+            mx="auto"
+            mb={4}
+          >
+            {data.description}
+          </Typography>
+
+          {/* Chips */}
+          {/* <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={1.5} mb={4}>
           {data.chips.map((chip, index) => (
             <Chip
               key={index}
@@ -105,47 +114,48 @@ export default function SpvLiveSuccess() {
           ))}
         </Stack> */}
 
-        {/* Actions */}
-        <Stack direction="row" spacing={2} justifyContent="center" mb={3}>
-          {data.actions.map((action, index) => (
-            <Button
-              key={index}
-              variant={action.variant}
-              sx={{
-                px: 3,
-                py: 1.2,
-                ...(action.color === 'success' && {
-                  backgroundColor: theme.palette.success.main,
-                  '&:hover': {
-                    backgroundColor: theme.palette.success.dark,
-                  },
-                }),
-                ...(action.color === 'primary' && {
-                  borderColor: theme.palette.primary.main,
-                  color: theme.palette.primary.main,
-                  '&:hover': {
-                    borderColor: theme.palette.primary.dark,
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }),
-              }}
-              onClick={handleDashboard}
-            >
-              {action.label}
-            </Button>
-          ))}
-        </Stack>
+          {/* Actions */}
+          <Stack direction="row" spacing={2} justifyContent="center" mb={3}>
+            {data.actions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant}
+                sx={{
+                  px: 3,
+                  py: 1.2,
+                  ...(action.color === 'success' && {
+                    backgroundColor: theme.palette.success.main,
+                    '&:hover': {
+                      backgroundColor: theme.palette.success.dark,
+                    },
+                  }),
+                  ...(action.color === 'primary' && {
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      borderColor: theme.palette.primary.dark,
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }),
+                }}
+                onClick={handleDashboard}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </Stack>
 
-        {/* Footer */}
-        <Typography
-          variant="caption"
-          color={theme.palette.text.disabled}
-          align="center"
-          display="block"
-        >
-          {data.timestamp}
-        </Typography>
-      </Card>
-    </Container>
+          {/* Footer */}
+          <Typography
+            variant="caption"
+            color={theme.palette.text.disabled}
+            align="center"
+            display="block"
+          >
+            {data.timestamp}
+          </Typography>
+        </Card>
+      </Container>
+    </Box>
   );
 }

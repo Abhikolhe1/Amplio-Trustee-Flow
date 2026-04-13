@@ -16,24 +16,24 @@ const DEFAULT_DOCUMENTS = [
             "Master fiduciary framework between Settlor, Trustee, and Beneficiaries",
         icon: "mdi:file-document-outline",
         docLink: "/assets/spv-Document/trust_deed.pdf",
-        status: "PENDING",
+        status: "sign",
     },
     {
-        id: 5,
+        id: 2,
         title: "Escrow Agreement",
         description:
             "Account control terms, debit freeze conditions, and release triggers",
         icon: "mdi:file-document-outline",
-        docLink: "/assets/spv-Document/escrow.pdf",
+        docLink: "/assets/spv-Document/escrow_agreement.pdf",
         status: "PENDING",
     },
     {
-        id: 6,
+        id: 3,
         title: "Information Memorandum (IM)",
         description:
             "SEBI-mandated investor disclosure document with risk factors",
         icon: "mdi:file-document-outline",
-        docLink: "/assets/spv-Document/im.pdf",
+        docLink: "/assets/spv-Document/information_memorandum.pdf",
         status: "PENDING",
     },
 ];
@@ -62,10 +62,16 @@ function LegalDocument({ setActiveStepId, percent, currData, saveStepData }) {
     });
 
     const formDocs = watch("documents");
-     const formDocuments = useWatch({
+    const formDocuments = useWatch({
         control,
         name: 'documents',
-      }) || [];
+    }) || [];
+
+    const normalizeStatus = (status) => {
+        if (status === "COMPLETED") return "SIGNED";
+        if (status === "sign") return "SIGNED";
+        return status;
+    };
 
     useEffect(() => {
         const currentDocuments = Array.isArray(currData)
@@ -73,13 +79,19 @@ function LegalDocument({ setActiveStepId, percent, currData, saveStepData }) {
             : Array.isArray(currData?.documents)
                 ? currData.documents
                 : [];
+        const storedData = JSON.parse(localStorage.getItem("formData")) || {};
+        const prevDoc = storedData.legal_structure.documents
 
         const updatedDocs = DEFAULT_DOCUMENTS.map((doc) => {
             const existing = currentDocuments.find((d) => d.id === doc.id);
+            const previous = prevDoc.find((d) => d.title === doc.title);
+
 
             return {
                 ...doc,
-                status: existing?.status || "PENDING",
+                status: normalizeStatus(
+                    existing?.status || previous?.status || "PENDING"
+                ),
             };
         });
 
@@ -90,21 +102,21 @@ function LegalDocument({ setActiveStepId, percent, currData, saveStepData }) {
         console.log("All signed:", data);
         saveStepData(data);
         setActiveStepId("credit_rating");
-        
+
     };
 
-     useEffect(() => {
-       
+    useEffect(() => {
+
         const requiredDocuments = formDocuments;
-    
+
         const completedDocuments = requiredDocuments.filter(
-          (doc) => doc.status === 'COMPLETED' || doc.status === 'SIGNED'
+            (doc) => doc.status === 'COMPLETED' || doc.status === 'SIGNED'
         ).length;
         const percentValue =
-          requiredDocuments.length > 0 && Math.round((completedDocuments / requiredDocuments.length) * 100);
-    
+            requiredDocuments.length > 0 && Math.round((completedDocuments / requiredDocuments.length) * 100);
+
         percent?.(percentValue);
-      }, [formDocuments, percent]);
+    }, [formDocuments]);
 
     return (
         <Container>

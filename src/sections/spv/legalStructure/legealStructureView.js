@@ -87,7 +87,7 @@ const mergeDocuments = (baseDocs, currentDocuments = []) =>
 function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }) {
   const previousDocumentsKeyRef = useRef('');
 
-  const [open,setOpen]=useState(false);
+
   const previousStampFileKeyRef = useRef('');
 
   const [isFirstCardSaved, setIsFirstCardSaved] = useState(
@@ -162,6 +162,8 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     getValues,
     formState: { errors },
   } = methods;
+
+
 
   useEffect(() => {
     if (currData) {
@@ -253,7 +255,6 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
 
   const handleFirstCardSave = async () => {
 
-    setOpen(true);
     const isValid = await trigger([
       'trustName',
       'trusteeEntity',
@@ -424,7 +425,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
             </Button>
           </Box>
         </Card>
- {open && 
+ {isFirstCardSaved && 
         <Card sx={{ p: 3, mt: 3 }}>
           <Typography variant="subtitle1" color="primary" mb={2}>
             Execution Status
@@ -456,11 +457,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
               name="stampFile"
               label="Document Upload*"
               icon="mdi:file-document-outline"
-              accept={{
-                'image/png': ['.png'],
-                'image/jpeg': ['.jpg', '.jpeg'],
-                'application/pdf': ['.pdf'],
-              }}
+             accept={{ 'application/pdf': ['.pdf'] }}
             />
             {errors.stampFile && (
               <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>

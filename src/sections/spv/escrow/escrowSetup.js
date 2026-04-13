@@ -1,10 +1,10 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Alert, Button, Card, MenuItem, Typography } from '@mui/material';
+import { Alert, Button, Card, Typography } from '@mui/material';
 import { Box, Container, Stack } from '@mui/system';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import * as yup from 'yup';
 
 const ESCROW_ACCOUNT_DEFAULTS = [
@@ -13,37 +13,49 @@ const ESCROW_ACCOUNT_DEFAULTS = [
     title: 'Primary Escrow Account',
     subtitle: 'This account stores transactions that were settled successfully.',
     accountType: 'Collection Escrow',
-    bank: 'axis',
+    bank: 'Axis Bank',
     location: 'Pune Main Branch',
-    verification: 'Trustee + Platform Dual Authorization',
-    expected: '2-3 Business Days',
+    accountNumber: '123456789012',
+    ifscCode: 'UTIB0000123',
+    // verification: 'Trustee + Platform Dual Authorization',
+    // expected: '2-3 Business Days',
   },
   {
     accountLabel: 'Escrow Account 2',
     title: 'Buffer Escrow Account',
     subtitle: 'This account stores buffer transactions and reserve funds for protection.',
     accountType: 'Reserve Escrow',
-    bank: 'hdfc',
+    bank: 'Axis Bank',
     location: 'Mumbai Fort Branch',
-    verification: 'Trustee + Platform Dual Authorization',
-    expected: '2-3 Business Days',
+    accountNumber: '987654321098',
+    ifscCode: 'UTIB0000456',
+    // verification: 'Trustee + Platform Dual Authorization',
+    // expected: '2-3 Business Days',
   },
 ];
 
-const bankOptions = [
-  { value: 'axis', label: 'Axis Bank (Preferred - Active Relationship)' },
-  { value: 'hdfc', label: 'HDFC Bank' },
-  { value: 'icici', label: 'ICICI Bank' },
-  { value: 'kotak', label: 'Kotak Mahindra Bank' },
-];
+
 
 const accountSchema = yup.object().shape({
   accountType: yup.string().required('Account type is required'),
   bank: yup.string().required('Bank is required'),
   location: yup.string().required('Branch / City is required'),
-  verification: yup.string().required('Verification method is required'),
-  expected: yup.string().required('Expected setup time is required'),
+  // verification: yup.string().required('Verification method is required'),
+  // expected: yup.string().required('Expected setup time is required'),
+  accountNo: yup.number().required('Account Number is required'),
+  ifscCode: yup.string().required('IFSC Code is required').trim().transform((value) => value?.toUpperCase()).matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Enter valid IFSC (e.g., SBIN0001234)')
 });
+
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+function resolveAccountNumber(...values) {
+  return values.find((value) => value !== undefined && value !== null && `${value}`.trim() !== '');
+}
+
+function resolveIfscCode(...values) {
+  const validValue = values.find((value) => IFSC_REGEX.test(`${value || ''}`.trim().toUpperCase()));
+  return validValue || '';
+}
 
 function getInitialAccount(currData, index) {
   const savedAccount = currData?.accounts?.[index];
@@ -55,9 +67,11 @@ function getInitialAccount(currData, index) {
     accountType: savedAccount?.accountType || generatedAccount?.accountType || fallback.accountType,
     bank: savedAccount?.bank || generatedAccount?.bank || fallback.bank,
     location: savedAccount?.location || generatedAccount?.location || fallback.location,
-    verification:
-      savedAccount?.verification || generatedAccount?.verification || fallback.verification,
-    expected: savedAccount?.expected || generatedAccount?.expected || fallback.expected,
+    // verification:savedAccount?.verification || generatedAccount?.verification || fallback.verification,
+    // expected: savedAccount?.expected || generatedAccount?.expected || fallback.expected,
+    accountNo: resolveAccountNumber( savedAccount?.accountNo, savedAccount?.accountNumber,generatedAccount?.accountNo,generatedAccount?.accountNumber,fallback.accountNumber
+    ),
+    ifscCode: resolveIfscCode(savedAccount?.ifscCode, generatedAccount?.ifscCode, fallback.ifscCode),
   };
 }
 
@@ -65,7 +79,7 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
   const isGenerated = !disabled;
 
   return (
-    <FormProvider methods={methods} onSubmit={() => {}}>
+    <FormProvider methods={methods} onSubmit={() => { }}>
       <Card sx={{ p: 3 }}>
         <Stack spacing={1} sx={{ mb: 3 }}>
           <Typography color="primary" variant="h5">
@@ -92,26 +106,28 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
               md: 'repeat(2, 1fr)',
             }}
           >
-            <RHFTextField name="accountType" label="Account Type" disabled={disabled} />
-
-            <RHFSelect name="bank" label="Bank" disabled={disabled}>
+            <RHFTextField name="accountType" label="Account Type" disabled />
+            <RHFTextField name="bank" label="Bank" disabled />
+            {/* <RHFSelect name="bank" label="Bank" disabled={disabled}>
               {bankOptions.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
                 </MenuItem>
               ))}
-            </RHFSelect>
+            </RHFSelect> */}
+            <RHFTextField name="accountNo" label="Account No." disabled />
+            <RHFTextField name="ifscCode" label="IFSC Code" disabled/>
 
-            <RHFTextField name="location" label="Branch / City" disabled={disabled} />
-            <RHFTextField name="expected" label="Expected Setup Time" disabled={disabled} />
+            <RHFTextField name="location" label="Branch / City" disabled/>
+            {/* <RHFTextField name="expected" label="Expected Setup Time" disabled={disabled} /> */}
 
-            <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+            {/* <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
               <RHFTextField name="verification" label="Verification Method" disabled={disabled} />
               <Typography variant="caption" mt={1} color="text.secondary">
                 Bank freezes debit rights. All outflows require Trustee + Platform dual digital
                 signature.
               </Typography>
-            </Box>
+            </Box> */}
           </Box>
         ) : null}
       </Card>
@@ -162,7 +178,7 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
 
   useEffect(() => {
     percent?.((generatedCount / 2) * 100);
-  }, [generatedCount, percent]);
+  }, [generatedCount]);
 
   const persistAccounts = (accounts) => {
     saveStepData({
@@ -228,7 +244,13 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
           subtitle={ESCROW_ACCOUNT_DEFAULTS[0].subtitle}
           methods={accountOneMethods}
           disabled={generatedCount < 1}
-        />
+        /> 
+        {generatedCount<1 &&
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <Button variant="contained" color="primary" onClick={handleAction}>
+            {actionLabel}
+          </Button>
+        </Box>}
 
         <EscrowCard
           title={ESCROW_ACCOUNT_DEFAULTS[1].title}
