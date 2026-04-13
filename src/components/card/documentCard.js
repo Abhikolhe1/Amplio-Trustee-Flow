@@ -1,51 +1,74 @@
 
-import { Button, Card, Link, Typography } from "@mui/material";
+import { Button, Card, Typography } from "@mui/material";
 import { alpha, Box } from "@mui/system";
 import Iconify from "src/components/iconify";
 import Label from "src/components/label";
 
-export default function DocumentCard({ docLink, icon, title, description, status,button }) {
-    return (<>
+export default function DocumentCard({
+    docLink,
+    icon,
+    title,
+    description,
+    status,
+    onSign,
+}) {
+    const isSigned = status === "SIGNED" || status === "COMPLETED";
+
+    return (
         <Card
-            sx={{
+            sx={(theme) => ({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 p: 2,
                 borderRadius: 1,
-                border: docLink ? (theme) => `solid 2px ${alpha(theme.palette.success.light, 0.5)}` : (theme) => `solid 2px ${alpha(theme.palette.error.light, 0.5)}`,
-                backgroundColor: docLink ? (theme) => alpha(theme.palette.success.light, 0.2) : (theme) => alpha(theme.palette.error.light, 0.2),
 
-            }}
+                border: `2px solid ${isSigned
+                        ? alpha(theme.palette.success.light, 0.5)
+                        : alpha(theme.palette.warning.light, 0.5)
+                    }`,
+
+                backgroundColor: `${isSigned
+                        ? alpha(theme.palette.success.light, 0.2)
+                        : alpha(theme.palette.warning.light, 0.2)
+                    }`,
+            })}
         >
+        
             <Box display="flex" alignItems="center" gap={2}>
-                {icon &&
+                {icon && (
                     <Box
-                        sx={{
+                        sx={(theme) => ({
                             width: 44,
                             height: 44,
                             borderRadius: 1,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            border: docLink ? (theme) => `solid 2px ${alpha(theme.palette.success.light, 0.5)}` : (theme) => `solid 2px ${alpha(theme.palette.error.light, 0.5)}`,
-                            backgroundColor: docLink ? (theme) => alpha(theme.palette.success.light, 0.2) : (theme) => alpha(theme.palette.error.light, 0.2),
-                        }}
+
+                            border: `2px solid ${isSigned
+                                    ? alpha(theme.palette.success.light, 0.5)
+                                    : alpha(theme.palette.warning.light, 0.5)
+                                }`,
+
+                            backgroundColor: `${isSigned
+                                    ? alpha(theme.palette.success.light, 0.2)
+                                    : alpha(theme.palette.warning.light, 0.2)
+                                }`,
+                        })}
                     >
                         <Iconify icon={icon} width={22} color="info" />
                     </Box>
-                }
+                )}
 
                 <Box>
-                    {title &&
-                        <Typography variant="subtitle1" fontWeight={600}>
-                            {title}
-                        </Typography>}
-                    {description &&
-                        <Typography variant="body2" sx={{ mt: 0.3 }}
-                        >
-                            {description}
-                        </Typography>}
+                    <Typography variant="subtitle1" fontWeight={600}>
+                        {title}
+                    </Typography>
+
+                    <Typography variant="body2" sx={{ mt: 0.3 }}>
+                        {description}
+                    </Typography>
                 </Box>
             </Box>
 
@@ -59,29 +82,32 @@ export default function DocumentCard({ docLink, icon, title, description, status
                             borderRadius: 1,
                             fontSize: 12,
                             fontWeight: 600,
-
                         }}
-                        color={docLink ? "success" : "error"}
+                        color={isSigned ? "success" : "warning"}
                     >
                         {status}
-                    </Label>}
-                {button &&
+                    </Label>
+                }
+
                 <Button
                     variant="outlined"
                     size="medium"
-                    color={docLink ? "success" : "primary"}
-                    onClick={() => {
-                        if (docLink) {
-                            window.open(docLink, "_blank");
-                        } else {
-
-                        }
-                    }}
+                    onClick={() => window.open(docLink, "_blank")}
                 >
-                    {button ? button : docLink ? "VIEW" : "GENERATE" }
+                    VIEW
                 </Button>
-                }
+
+                {!isSigned && (
+                    <Button
+                        variant="contained"
+                        size="medium"
+                        color="warning"
+                        onClick={onSign}
+                    >
+                        SIGN
+                    </Button>
+                )}
             </Box>
         </Card>
-    </>)
+    );
 }

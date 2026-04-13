@@ -8,17 +8,24 @@ import DashboardLayout from 'src/layouts/dashboard';
 import { LoadingScreen } from 'src/components/loading-screen';
 import { element } from 'prop-types';
 
+
+
 // ----------------------------------------------------------------------
 
 // OVERVIEW
 const IndexPage = lazy(() => import('src/pages/dashboard/analytics'));
+// kyc
+const SpvCreatePage = lazy(() => import('src/pages/dashboard/spv/new'));
+const SpvListPage = lazy(() => import('src/pages/dashboard/spv/list'));
+const SpvSuccess = lazy(() => import('src/pages/dashboard/spv/success-screen'));
+
 // const IndexPage = lazy(() => import('src/pages/dashboard/app'));
 const OverviewEcommercePage = lazy(() => import('src/pages/dashboard/ecommerce'));
 const OverviewAnalyticsPage = lazy(() => import('src/pages/dashboard/analytics'));
 const OverviewBankingPage = lazy(() => import('src/pages/dashboard/banking'));
 const OverviewBookingPage = lazy(() => import('src/pages/dashboard/booking'));
 const OverviewFilePage = lazy(() => import('src/pages/dashboard/file'));
-const SpvNewPage = lazy(() => import('src/pages/dashboard/spv/spv-kyc'));
+const SpvNewPage = lazy(() => import('src/pages/dashboard/spv/list'));
 // PRODUCT
 const ProductDetailsPage = lazy(() => import('src/pages/dashboard/product/details'));
 const ProductListPage = lazy(() => import('src/pages/dashboard/product/list'));
@@ -119,10 +126,19 @@ export const dashboardRoutes = [
       { element: <IndexPage />, index: true },
       // { path: 'ecommerce', element: <OverviewEcommercePage /> },
       { path: 'analytics', element: <OverviewAnalyticsPage /> },
-      { path: 'spvkyc', element: <SpvNewPage /> },
+      // { path: 'spvkyc', element: <SpvNewPage /> },
       // { path: 'banking', element: <OverviewBankingPage /> },
       // { path: 'booking', element: <OverviewBookingPage /> },
       // { path: 'file', element: <OverviewFilePage /> },
+      {
+        path: 'spvkyc',
+        children: [
+          { element: <SpvListPage />, index: true },
+          { path: 'list', element: <SpvListPage /> },
+          { path: 'new', element: <SpvCreatePage/> },
+          { path: 'success', element: <SpvSuccess/> },
+        ],
+      },
       {
         path: 'user',
         children: [

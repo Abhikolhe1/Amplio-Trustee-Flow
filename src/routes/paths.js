@@ -127,6 +127,9 @@ export const paths = {
     },
     spvkyc: {
       root: `${ROOTS.DASHBOARD}/spvkyc`,
+      list: `${ROOTS.DASHBOARD}/spvkyc/list`,
+      new: `${ROOTS.DASHBOARD}/spvkyc/new`,
+      success: `${ROOTS.DASHBOARD}/spvkyc/success`,
     },
 
     pendingAppointments: {

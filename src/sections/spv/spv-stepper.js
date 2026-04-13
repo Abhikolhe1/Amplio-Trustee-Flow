@@ -3,11 +3,15 @@ import { Box, Stack } from '@mui/material';
 
 import { AnimatePresence, m } from 'framer-motion';
 import ProgressStepper from 'src/components/progress-stepper/ProgressStepper';
+import BasicInfo from './basic-info/basic-info';
+import PoolFinancials from './pool-financials/pool-financials';
+import PtcParameters from './ptc-parameters/ptc-parameters';
 import CreditRating from './credit-rating/credit-rating';
 import LegalDocument from './legal-document/legal-document';
 import LegelStructureView from './legalStructure/legealStructureView';
 import EscrowSetupView from './escrow/escrowSetup';
-
+import ISINApplicationView from './isin-application/view/isin-application-view';
+import KYCFinalReview from './final-review/kyc-final-review';
 
 export default function SpvStepper() {
   const steps = [
@@ -22,20 +26,19 @@ export default function SpvStepper() {
     { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('legal_structure');
+  const [activeStepId, setActiveStepId] = useState('basic_info');
 
   const [formData, setFormData] = useState({
     basic_info: {},
     pool_financial: {},
     ptc_parameters: {},
-    legal_structure: {},
+    legal_structure: {documents: []},
     escrow_setup: {},
-    legal_documents: {},
+    legal_documents: { documents: [] },
     credit_rating: {},
     isin_application: {},
     review_Activate: {},
   });
-
 
   const [stepsProgress, setStepsProgress] = useState({
     // basic_info: { percent: 0 },
@@ -43,11 +46,10 @@ export default function SpvStepper() {
     // ptc_parameters: { percent: 0 },
     legal_structure: { percent: 0 },
     escrow_setup: { percent: 0 },
-    // legal_documents: { percent: 0 },
-    // credit_rating: { percent: 0 },
-    // isin_application: { percent: 0 },
-    // review_Activate: { percent: 0 }
-
+    legal_documents: { percent: 0 },
+    credit_rating: { percent: 0 },
+    isin_application: { percent: 0 },
+    review_Activate: { percent: 0 },
   });
 
   useEffect(() => {
@@ -71,7 +73,6 @@ export default function SpvStepper() {
   useEffect(() => {
     localStorage.setItem('stepsProgress', JSON.stringify(stepsProgress));
   }, [stepsProgress]);
-
 
   const saveStepData = (stepId, data) => {
     setFormData((prev) => {
@@ -119,68 +120,66 @@ export default function SpvStepper() {
 
   const renderForm = () => {
     switch (activeStepId) {
-      // case 'basic_info':
-      //   return (
-      //     <BasicInfo
-      //       currData={formData.basic_info}
-      //       percent={(p) => updateStepPercent('basic_info', p)}
-      //       setActiveStepId={setActiveStepId}
-      //       saveStepData={(data) => saveStepData('basic_info', data)}
-      //     />
-      //   );
+      case 'basic_info':
+        return (
+          <BasicInfo
+            currData={formData.basic_info}
+            percent={(p) => updateStepPercent('basic_info', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('basic_info', data)}
+          />
+        );
 
-      //  case 'pool_financial':
-      //   return (
-      //     <PoolFinancials  
-      //       percent={(p) => updateStepPercent('pool_financial', p)}
-      //       setActiveStepId={() => setActiveStepId('ptc_parameters')}
-      //       dataInitializedSteps={dataInitializedSteps}
-      //       setDataInitializedSteps={() =>
-      //         setDataInitializedSteps((prev) => [...prev, 'pool_financial'])
-      //       }
-      //     />
-      //   );
+      case 'pool_financial':
+        return (
+          <PoolFinancials
+            currData={formData}
+            percent={(p) => updateStepPercent('pool_financial', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('pool_financial', data)}
+          />
+        );
 
-      //   case 'ptc_parameters':
-      //     return (
-      //       <UbosListView
-      //         percent={(p) => updateStepPercent('ptc_parameters', p)}
-      //         setActiveStepId={() => setActiveStepId('legal_structure')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'ptc_parameters'])
-      //         }
-      //       />
-      //     );
+      case 'ptc_parameters':
+        return (
+          <PtcParameters
+            currData={formData.ptc_parameters}
+            poolData={formData.pool_financial}
+            percent={(p) => updateStepPercent('ptc_parameters', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('ptc_parameters', data)}
+          />
+        );
 
       case 'legal_structure':
         return (
           <LegelStructureView
-          currData={formData.legal_structure}
-          percent={(p) => updateStepPercent('legal_structure', p)}
-          setActiveStepId={setActiveStepId}
-          saveStepData={(data) => saveStepData('legal_structure', data)}
-            
+            currData={formData.legal_structure}
+            percent={(p) => updateStepPercent('legal_structure', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('legal_structure', data)}
           />
         );
 
       case 'escrow_setup':
         return (
           <EscrowSetupView
-          currData={formData.escrow_setup}
-          percent={(p) => updateStepPercent('escrow_setup', p)}
-          setActiveStepId={setActiveStepId}
-          saveStepData={(data) => saveStepData('escrow_setup', data)}
+            currData={formData.escrow_setup}
+            percent={(p) => updateStepPercent('escrow_setup', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('escrow_setup', data)}
           />
         );
 
       case 'legal_documents':
-        return <LegalDocument
-         // currData={formData.legal_documents}
-          percent={(p) => updateStepPercent('legal_documents', p)}
-          setActiveStepId={setActiveStepId}
-        
-        />;
+        return (
+          <LegalDocument
+            currData={formData.legal_documents}
+            percent={(p) => updateStepPercent('legal_documents', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('legal_documents', data)}
+          />
+        );
 
       case 'credit_rating':
         return (
@@ -189,33 +188,27 @@ export default function SpvStepper() {
             percent={(p) => updateStepPercent('credit_rating', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('credit_rating', data)}
-          
           />
         );
 
-      //   case 'isin_application':
-      //     return (
-      //       <KYCAgreement
-      //         percent={(p) => updateStepPercent('isin_application', p)}
-      //         setActiveStepId={() => setActiveStepId('review_Activate')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'isin_application'])
-      //         } 
-      //       />
-      //     );
+      case 'isin_application':
+        return (
+          <ISINApplicationView
+            currData={formData.isin_application}
+            percent={(p) => updateStepPercent('isin_application', p)}
+            setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('isin_application', data)}
+          />
+        );
 
-      //   case 'review_Activate':
-      //     return (
-      //       <KYCFinalReview
-      //         percent={(p) => updateStepPercent('review_Activate', p)}
-      //         setActiveStepId={() => setActiveStepId('')}
-      //         dataInitializedSteps={dataInitializedSteps}
-      //         setDataInitializedSteps={() =>
-      //           setDataInitializedSteps((prev) => [...prev, 'review_Activate'])
-      //         }
-      //       />
-      //     );
+      case 'review_Activate':
+        return (
+          <KYCFinalReview
+            currData={formData}
+            percent={(p) => updateStepPercent('review_Activate', p)}
+            setActiveStepId={setActiveStepId}
+          />
+        );
 
       default:
         return null;

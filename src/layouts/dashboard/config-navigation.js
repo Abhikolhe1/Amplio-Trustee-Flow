@@ -96,7 +96,7 @@ export function useNavData() {
             ],
           },
           {
-            title: t('spvkyc'),
+            title: t('spv kyc applications'),
             path: paths.dashboard.spvkyc.root,
             icon: ICONS.signatories,
             
