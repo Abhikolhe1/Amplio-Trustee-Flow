@@ -3,23 +3,16 @@ import PropTypes from 'prop-types';
 import dayjs from 'dayjs';
 import Iconify from 'src/components/iconify';
 import KycReviewCard from './kyc-review-card';
-
-const documentsUploadData = [
-  { label: 'Trust Deed', value: 'Signed' },
-  { label: 'Escrow Agreement', value: 'Draft' },
-  { label: 'Information Memorandum', value: 'Required' },
-];
+import { format } from 'date-fns';
 
 export default function KYCFinalReview({ currData }) {
+  //  Basic Info
   const basic = currData?.basic_info;
   const basicIdentityData = [
     { label: 'SPV Name', value: basic?.spvName || '--' },
     {
       label: 'SPV Legal Structure',
-      value:
-        basic?.spvStructure === 'trust'
-          ? 'Standalone Passive Vehicle'
-          : basic?.spvStructure || '--',
+      value: basic?.spvStructure ? basic.spvStructure : '--',
     },
     {
       label: 'PSP Partner',
@@ -30,21 +23,26 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Originator (NBFC)', value: basic?.originator || '--' },
   ];
 
+  // Pool Financials
   const pool = currData?.pool_financial;
   const poolFinancialsData = [
     {
       label: 'Pool Limit',
       value: pool?.poolLimit ? `Rs. ${Number(pool.poolLimit).toLocaleString('en-IN')}` : '--',
     },
-    { label: 'Maturity', value: pool?.maturity ? `${pool.maturity} days` : '--' },
+    { label: 'Maturity', value: pool?.maturity ? `${pool.maturity} Months` : '--' },
     {
       label: 'Target Investor Yield',
       value: pool?.targetYield ? `${pool.targetYield}% p.a.` : '--',
     },
     { label: 'Reserve Buffer', value: pool?.reserveBuffer ? `${pool.reserveBuffer}%` : '--' },
-    { label: 'Daily Cutoff', value: pool?.cutoffTime ? `${pool.cutoffTime} IST` : '--' },
+    {
+      label: 'Cutoff Time',
+      value: pool?.cutoffTime ? `${format(new Date(pool.cutoffTime), 'hh:mm a')} IST` : '--',
+    },
   ];
 
+  // PTC Parameters
   const ptc = currData?.ptc_parameters;
   const ptcParametersData = [
     { label: 'Face Value per Unit', value: ptc?.faceValue ? `Rs. ${ptc.faceValue}` : '--' },
@@ -52,7 +50,9 @@ export default function KYCFinalReview({ currData }) {
       label: 'Min Investment',
       value:
         ptc?.minInvestment && ptc?.minUnits
-          ? `Rs. ${Number(ptc.minInvestment).toLocaleString('en-IN')} (${Number(ptc.minUnits).toLocaleString('en-IN')} units)`
+          ? `Rs. ${Number(ptc.minInvestment).toLocaleString('en-IN')} (${Number(
+              ptc.minUnits
+            ).toLocaleString('en-IN')} units)`
           : '--',
     },
     {
@@ -64,12 +64,13 @@ export default function KYCFinalReview({ currData }) {
       label: 'Window Frequency',
       value: ptc?.windowFrequency ? `Every ${ptc.windowFrequency} days` : '--',
     },
-    {
-      label: 'Window Duration',
-      value: ptc?.windowDuration ? `${ptc.windowDuration} hours` : '--',
-    },
+    // {
+    //   label: 'Window Duration',
+    //   value: '24 Hrs',
+    // },
   ];
 
+  // Legal Trust Deed
   const legal = currData?.legal_structure;
   const legalTrustDeedData = [
     { label: 'Trust Name', value: legal?.trustName || '--' },
@@ -79,6 +80,7 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Governing Law', value: legal?.governingLaw || '--' },
   ];
 
+  // Escrow Setup
   const escrow = currData?.escrow_setup;
   const bankLabelMap = {
     axis: 'Axis Bank',
@@ -86,6 +88,7 @@ export default function KYCFinalReview({ currData }) {
     icici: 'ICICI Bank',
     kotak: 'Kotak Mahindra Bank',
   };
+
   const generatedEscrowAccounts = escrow?.generatedAccounts || [];
   const escrowAccountsData =
     generatedEscrowAccounts.length > 0
@@ -110,34 +113,51 @@ export default function KYCFinalReview({ currData }) {
           { label: 'Expected Setup Time', value: escrow?.expected || '--' },
         ];
 
+  // Documents
+  const docs = currData?.legal_documents?.documents || [];
+  const documentsUploadData = [
+    {
+      label: 'Trust Deed',
+      value: docs.find((d) => d.title === 'Trust Deed')?.status || '--',
+    },
+    {
+      label: 'Escrow Agreement',
+      value: docs.find((d) => d.title === 'Escrow Agreement')?.status || '--',
+    },
+    {
+      label: 'Information Memorandum',
+      value: docs.find((d) => d.title === 'Information Memorandum (IM)')?.status || '--',
+    },
+  ];
+
+  // Credit Rating
   const creditRating = currData?.credit_rating;
+
   const creditRatingData = [
     { label: 'Credit Rating Agency', value: creditRating?.creditRatingAgency },
-    // { label: 'Application Number', value: creditRating?.applicationNumber },
-    // {
-    //   label: 'Application Date',
-    //   value: creditRating?.applicationDate
-    //     ? dayjs(creditRating.applicationDate).format('DD MMM YYYY')
-    //     : '--',
-    // },
+
     {
       label: 'Rating Date',
       value: creditRating?.ratingDate
-        ? dayjs(creditRating.expectedRatingDate).format('DD MMM YYYY')
+        ? format(new Date(creditRating.ratingDate), 'dd MMM yyyy')
         : '--',
     },
+
     { label: 'Rating Obtained', value: creditRating?.ratingObtained || '--' },
   ];
 
   const isin = currData?.isin_application;
   const isinApplicationData = [
     { label: 'Depository', value: isin?.depositoryId?.toUpperCase() },
+    { label: 'ISIN Number', value: isin?.isinNumber },
     { label: 'Security Type', value: isin?.securityType },
     { label: 'Issue Size', value: isin?.issueSize },
+
     {
       label: 'Issue Date',
-      value: isin?.issueDate ? dayjs(isin.issueDate).format('DD MMM YYYY') : '--',
+      value: isin?.issueDate ? format(new Date(isin.issueDate), 'dd MMM yyyy') : '--',
     },
+
     { label: 'Credit Rating', value: isin?.creditRating },
   ];
 
@@ -163,16 +183,20 @@ export default function KYCFinalReview({ currData }) {
         </Stack>
 
         <Grid container spacing={2}>
+          {/* Basix Info */}
           <KycReviewCard
             title="Basic Identity"
             icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
             data={basicIdentityData}
           />
+          {/* Pool Financials  */}
           <KycReviewCard
             title="Pool Financials"
             icon={<Iconify icon="mdi:finance" width={24} />}
             data={poolFinancialsData}
           />
+
+          {/* PTC Parameters */}
           <KycReviewCard
             title="PTC Parameters"
             icon={<Iconify icon="mdi:tune-variant" width={24} />}
