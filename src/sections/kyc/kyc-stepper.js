@@ -63,6 +63,7 @@ export default function Stepper() {
           <KYCBankDetails
             percent={(p) => updateStepPercent('kyc_bank_details', p)}
             setActiveStepId={() => setActiveStepId('kyc_signatories')}
+            setPreviousStepId={() => setActiveStepId('kyc_company_documents')}
             dataInitializedSteps={dataInitializedSteps}
             setDataInitializedSteps={() =>
               setDataInitializedSteps((prev) => [...prev, 'kyc_bank_details'])
@@ -75,6 +76,7 @@ export default function Stepper() {
           <KYCSignatories
             percent={(p) => updateStepPercent('kyc_signatories', p)}
             setActiveStepId={() => router.push(paths.auth.kyc.kycPending)}
+            setPreviousStepId={() => setActiveStepId('kyc_bank_details')}
             dataInitializedSteps={dataInitializedSteps}
             setDataInitializedSteps={() =>
               setDataInitializedSteps((prev) => [...prev, 'kyc_signatories'])

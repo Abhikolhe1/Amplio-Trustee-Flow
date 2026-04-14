@@ -433,13 +433,14 @@ export default function KYCAddSignatoriesForm({
 
         <DialogActions>
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, p: 2 }}>
-            <Button variant="outlined" onClick={onClose}>
+            <Button variant="outlined" color="primary" onClick={onClose}>
               {isViewMode ? 'Close' : 'Cancel'}
             </Button>
 
             {!isViewMode && (
               <Button
                 type="submit"
+                color="primary"
                 variant="contained"
                 disabled={isSubmitting}
                 startIcon={isSubmitting ? <CircularProgress size={20} /> : null}

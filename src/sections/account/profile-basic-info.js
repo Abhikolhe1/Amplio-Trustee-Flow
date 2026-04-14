@@ -34,9 +34,22 @@ import { useNavigate } from 'react-router';
 import { fData } from 'src/utils/format-number';
 import useGetProfileData from 'src/api/trusteeKyc';
 import { useGetTrusteeEntityTypes } from 'src/api/entityType';
+import { indianStates } from 'src/_mock/_state';
 
 // developer-provided uploaded file path (used as initial avatarUrl)
 const UPLOADED_DEV_FILE = '/mnt/data/Untitled document.docx';
+
+const normalizeStateValue = (stateValue) => {
+  if (!stateValue) return '';
+
+  const normalized = String(stateValue).trim().toLowerCase().replace(/\s+/g, '_');
+  const matchedState = indianStates.find(
+    (state) =>
+      state.value === normalized || state.label.toLowerCase() === String(stateValue).trim().toLowerCase()
+  );
+
+  return matchedState?.value || normalized;
+};
 
 // ----------------------------------------------------------------------
 
@@ -132,7 +145,7 @@ export default function CompanyAccountGeneral() {
 
       msmeUdyamRegistrationNo: p.udyamRegistrationNumber || '',
       city: p.cityOfIncorporation || '',
-      state: p.stateOfIncorporation || '',
+      state: normalizeStateValue(p.stateOfIncorporation),
       country: p.countryOfIncorporation || 'India',
 
       entityType: p?.trusteeEntityTypesId || '',
@@ -300,21 +313,35 @@ export default function CompanyAccountGeneral() {
 
                   <Grid xs={12} md={6}>
                     <Stack spacing={2} direction={{ xs: 'column', sm: 'row' }}>
-                      <RHFTextField name="city" placeholder="City" disabled sx={{ flex: 1 }} />
+                      <RHFTextField
+                        name="city"
+                        label="City"
+                        placeholder="City"
+                        disabled
+                        sx={{ flex: 1 }}
+                        InputLabelProps={{ shrink: true }}
+                      />
                       <RHFSelect
                         name="state"
+                        label="State"
                         disabled
                         sx={{ flex: 1 }}
                         SelectProps={{ displayEmpty: true }}
                       >
-                        <MenuItem value="Maharashtra">Maharashtra</MenuItem>
+                        {indianStates.map((state) => (
+                          <MenuItem key={state.id} value={state.value}>
+                            {state.label}
+                          </MenuItem>
+                        ))}
                       </RHFSelect>
                       <RHFAutocomplete
                         name="country"
+                        label="Country"
                         disabled
                         placeholder="Country"
                         sx={{ flex: 1 }}
                         readOnly
+                        value={watch('country') || null}
                         options={countries.map((c) => c.label)}
                         getOptionLabel={(option) => option}
                         renderOption={(props, option) => {

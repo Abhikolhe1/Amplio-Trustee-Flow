@@ -9,8 +9,6 @@ import Stack from '@mui/material/Stack';
 import Paper from '@mui/material/Paper';
 
 // components
-import { RouterLink } from 'src/routes/components';
-import { paths } from 'src/routes/paths';
 import FormProvider, {
   RHFTextField,
   RHFSelect,
@@ -34,6 +32,7 @@ import { useEffect, useMemo, useState } from 'react';
 export default function KYCBankDetails({
   percent,
   setActiveStepId,
+  setPreviousStepId,
   dataInitializedSteps,
   setDataInitializedSteps,
 }) {
@@ -184,7 +183,6 @@ export default function KYCBankDetails({
 
   useEffect(() => {
     if (bankDetails?.length > 0) {
-      setActiveStepId();
       reset({
         documentType: bankDetails[0]?.bankAccountProofType === 0 ? 'cheque' : 'bank_statement',
         bankName: bankDetails[0]?.bankName || '',
@@ -259,18 +257,16 @@ export default function KYCBankDetails({
                       InputProps={{
                         endAdornment: (
                           <Button
+                            color="primary"
                             variant="contained"
                             size="small"
                             sx={{
                               ml: 1,
-                              bgcolor: '#00328A',
-                              color: 'white',
                               textTransform: 'none',
                               fontWeight: 600,
                               borderRadius: '6px',
                               minHeight: '32px',
                               px: 2,
-                              '&:hover': { bgcolor: '#002670' },
                             }}
                             onClick={async () => {
                               const ifsc = getValues('ifscCode');
@@ -385,11 +381,11 @@ export default function KYCBankDetails({
 
         {/* ---------------- FOOTER BUTTONS ---------------- */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4, mb: 2 }}>
-          <Button component={RouterLink} href={paths.kycCompanyDetails} variant="outlined">
+          <Button variant="outlined" color="primary" onClick={setPreviousStepId}>
             Back
           </Button>
 
-          <Button variant="contained" type="submit">
+          <Button variant="contained" color="primary" type="submit">
             Next
           </Button>
         </Box>

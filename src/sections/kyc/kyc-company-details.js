@@ -1,31 +1,54 @@
 import * as Yup from 'yup';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import LoadingButton from '@mui/lab/LoadingButton';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
-
-import { RouterLink } from 'src/routes/components';
-import { paths } from 'src/routes/paths';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { Card } from '@mui/material';
 
 import FormProvider, { RHFCustomFileUploadBox } from 'src/components/hook-form';
 import { RHFSelect } from 'src/components/hook-form/rhf-select';
-import KYCTitle from './kyc-title';
-import KYCFooter from './kyc-footer';
 
 import { useForm, useWatch } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import YupErrorMessage from 'src/components/error-field/yup-error-messages';
-import axiosInstance from 'src/utils/axios';
 
 import { enqueueSnackbar } from 'notistack';
-
 import { useGetKycSection } from 'src/api/trusteeKyc';
-import { useGetDocumentsByScreen } from 'src/api/documentsByScreen';
+import { yupResolver } from '@hookform/resolvers/yup';
+import axiosInstance from 'src/utils/axios';
+import KYCFooter from './kyc-footer';
 
-// =====================================================================
+const FILE_ACCEPT = {
+  'application/pdf': ['.pdf'],
+  'image/png': ['.png'],
+  'image/jpeg': ['.jpg', '.jpeg'],
+};
+
+const SPECIAL_DOC_VALUES = ['certificate_of_incorporation', 'gst_certificate'];
+
+function getDocStatusMeta(item) {
+  const serverDocument = item?.documentFile;
+  const serverStatus = Number(serverDocument?.status);
+  const rejectionReason = serverStatus === 2 ? serverDocument?.reason : '';
+
+  return {
+    rejectionReason,
+  };
+}
+
+function normalizeFile(file) {
+  if (!file?.id) return null;
+
+  return {
+    ...file,
+    id: file.id,
+    fileUrl: file.fileUrl,
+    fileOriginalName: file.fileOriginalName,
+  };
+}
 
 export default function KYCCompanyDetails({
   percent,
@@ -33,277 +56,417 @@ export default function KYCCompanyDetails({
   dataInitializedSteps,
   setDataInitializedSteps,
 }) {
-  const { kycSectionData, kycSectionLoading } = useGetKycSection(
-    'trustee_documents',
-    '/trustee-kyc/company-details'
+  const { kycSectionData, kycSectionLoading, kycSectionError, refreshKycSection } =
+    useGetKycSection('trustee_documents', '/trustee-kyc/company-details');
+
+  const documents = useMemo(
+    () => (Array.isArray(kycSectionData?.data) ? kycSectionData.data : []),
+    [kycSectionData]
   );
 
-  const { documents, documentsLoading } = useGetDocumentsByScreen('/trustee-kyc/company-details');
-
-  // Store file objects for uploaded docs
-  const [docs, setDocs] = useState({});
-
-  // ========================= FIELD MAP ================================
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const FIELD_MAP = {
-    certificate_of_incorporation: 'certificateOfIncorporation',
-    sebi_registration_certificate: 'sebiCertificate',
-    gst_certificate: 'gstCertificate',
-    moa: 'moaDocument',
-    aoa: 'aoaDocument',
-  };
-
-  // ========================= DOCUMENT MAP =============================
-  const DOCUMENT_MAP = useMemo(() => {
-    if (!documents) return {};
+  const documentsByValue = useMemo(() => {
     const map = {};
 
-    documents.forEach((doc) => {
-      map[doc.value] = doc.id;
+    documents.forEach((item) => {
+      if (item?.documentValue) {
+        map[item.documentValue] = item;
+      }
     });
 
     return map;
   }, [documents]);
 
-  // ========================= DEFAULT VALUES ===========================
-  const defaultValues = useMemo(() => {
-    const result = {};
+  const certificateDoc = documentsByValue.certificate_of_incorporation || null;
+  const gstDoc = documentsByValue.gst_certificate || null;
+  const moaDoc = documentsByValue.moa || null;
+  const aoaDoc = documentsByValue.aoa || null;
 
-    Object.keys(FIELD_MAP).forEach((backendKey) => {
-      const formField = FIELD_MAP[backendKey];
-      const docId = DOCUMENT_MAP[backendKey];
-      result[formField] = docs[docId] ?? null;
+  const defaultMoaAoaType = useMemo(() => {
+    if (moaDoc?.documentFile?.documentFile?.id) return 'moa';
+    if (aoaDoc?.documentFile?.documentFile?.id) return 'aoa';
+    if (moaDoc) return 'moa';
+    if (aoaDoc) return 'aoa';
+    return '';
+  }, [moaDoc, aoaDoc]);
+
+  const defaultValues = useMemo(() => {
+    const values = {};
+
+    documents.forEach((item) => {
+      values[`doc_${item.documentId}`] = normalizeFile(item?.documentFile?.documentFile);
     });
 
-    result.moaAoaType = docs[DOCUMENT_MAP.moa] ? 'moa' : docs[DOCUMENT_MAP.aoa] ? 'aoa' : 'moa';
+    values.moaAoaType = defaultMoaAoaType;
+    return values;
+  }, [documents, defaultMoaAoaType]);
 
-    return result;
-  }, [docs, DOCUMENT_MAP]);
+  const validationSchema = useMemo(() => {
+    const shape = {};
 
-  // ========================= YUP SCHEMA ===============================
-  const CompanyDetailSchema = Yup.object().shape({
-    certificateOfIncorporation: Yup.object().required('Certificate Of Incorporation is Required'),
-    sebiCertificate: Yup.object().required('Sebi Certificate is Required'),
-    gstCertificate: Yup.object().nullable(),
-    moaDocument: Yup.object().nullable(),
-    aoaDocument: Yup.object().nullable(),
-  });
+    if (moaDoc || aoaDoc) {
+      shape.moaAoaType = Yup.string().required('Please select a document type (MoA or AoA)');
+    }
 
-  // ========================= FORM HOOK ================================
+    if (certificateDoc?.documentId) {
+      shape[`doc_${certificateDoc.documentId}`] = Yup.object()
+        .nullable()
+        .required(`${certificateDoc.documentLabel || 'Certificate of Incorporation'} is required`)
+        .test(
+          'has-id',
+          `${certificateDoc.documentLabel || 'Certificate of Incorporation'} is required`,
+          (val) => Boolean(val?.id)
+        );
+    }
+
+    if (gstDoc?.documentId) {
+      shape[`doc_${gstDoc.documentId}`] = Yup.object()
+        .nullable()
+        .required(`${gstDoc.documentLabel || 'GST Certificate'} is required`)
+        .test('has-id', `${gstDoc.documentLabel || 'GST Certificate'} is required`, (val) =>
+          Boolean(val?.id)
+        );
+    }
+
+    documents.forEach((item) => {
+      if (!item?.documentId) return;
+      if (SPECIAL_DOC_VALUES.includes(item.documentValue)) return;
+
+      if (item.documentValue === 'moa' || item.documentValue === 'aoa') {
+        shape[`doc_${item.documentId}`] = Yup.object()
+          .nullable()
+          .test('selected-doc-required', `${item.documentLabel} is required`, function (val) {
+            const selectedType = this.parent?.moaAoaType;
+            if (selectedType !== item.documentValue) {
+              return true;
+            }
+
+            return Boolean(val?.id);
+          });
+
+        return;
+      }
+
+      if (item.isMandatory) {
+        shape[`doc_${item.documentId}`] = Yup.object()
+          .nullable()
+          .required(`${item.documentLabel} is required`)
+          .test('has-id', `${item.documentLabel} is required`, (val) => Boolean(val?.id));
+      } else {
+        shape[`doc_${item.documentId}`] = Yup.object().nullable().optional();
+      }
+    });
+
+    return Yup.object().shape(shape);
+  }, [documents, certificateDoc, gstDoc, moaDoc, aoaDoc]);
 
   const methods = useForm({
-    resolver: yupResolver(CompanyDetailSchema),
-    defaultValues,
+    defaultValues: {},
+    resolver: yupResolver(validationSchema),
   });
 
   const {
     reset,
-    setValue,
-    watch,
     control,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { isSubmitting },
   } = methods;
 
+  const values = useWatch({ control });
   const moaAoaType = useWatch({ control, name: 'moaAoaType' });
-  const values = watch();
+  const prevPercentRef = useRef(null);
 
-  // =====================================================================
-  useEffect(() => {
-    if (
-      !kycSectionData ||
-      kycSectionLoading ||
-      !DOCUMENT_MAP ||
-      Object.keys(DOCUMENT_MAP).length === 0
-    )
-      return;
+  const selectedMoaAoaDoc = useMemo(() => {
+    if (moaAoaType === 'aoa' && aoaDoc) return aoaDoc;
+    if (moaAoaType === 'moa' && moaDoc) return moaDoc;
+    if (moaDoc) return moaDoc;
+    if (aoaDoc) return aoaDoc;
+    return null;
+  }, [moaAoaType, moaDoc, aoaDoc]);
 
-    const filled = {};
-    (kycSectionData.data || []).forEach((item) => {
-      const file = item?.documentFile?.documentFile ?? null;
-      filled[item.documentId] = file;
+  const mandatoryDocumentIds = useMemo(() => {
+    const mandatoryIds = new Set();
+
+    if (certificateDoc?.documentId) mandatoryIds.add(certificateDoc.documentId);
+    if (gstDoc?.documentId) mandatoryIds.add(gstDoc.documentId);
+    if (selectedMoaAoaDoc?.documentId) mandatoryIds.add(selectedMoaAoaDoc.documentId);
+
+    documents.forEach((item) => {
+      if (
+        item?.isMandatory &&
+        !SPECIAL_DOC_VALUES.includes(item.documentValue) &&
+        item.documentValue !== 'moa' &&
+        item.documentValue !== 'aoa'
+      ) {
+        mandatoryIds.add(item.documentId);
+      }
     });
 
-    setDocs(filled);
+    return Array.from(mandatoryIds);
+  }, [documents, certificateDoc, gstDoc, selectedMoaAoaDoc]);
 
-    // ✅ Reset form ONLY when initial data loads
-    const initialValues = {};
-    Object.keys(FIELD_MAP).forEach((backendKey) => {
-      const formField = FIELD_MAP[backendKey];
-      const docId = DOCUMENT_MAP[backendKey];
-      initialValues[formField] = filled[docId] ?? null;
-    });
-    initialValues.moaAoaType = filled[DOCUMENT_MAP.moa]
-      ? 'moa'
-      : filled[DOCUMENT_MAP.aoa]
-      ? 'aoa'
-      : 'moa';
+  const remainingDocuments = useMemo(() => {
+    const excludedIds = new Set(
+      [certificateDoc?.documentId, gstDoc?.documentId, moaDoc?.documentId, aoaDoc?.documentId].filter(
+        Boolean
+      )
+    );
 
-    reset(initialValues);
-    if (!dataInitializedSteps.includes('kyc_company_documents')) {
-      setDataInitializedSteps();
-      setActiveStepId();
-    }
-  }, [kycSectionData, kycSectionLoading, DOCUMENT_MAP, reset, setDataInitializedSteps, dataInitializedSteps, setActiveStepId, FIELD_MAP]);
+    return documents.filter((item) => !excludedIds.has(item.documentId));
+  }, [documents, certificateDoc, gstDoc, moaDoc, aoaDoc]);
 
+  const hasServerData = useMemo(
+    () => documents.some((item) => item?.documentFile?.documentFile?.id),
+    [documents]
+  );
 
-  // Reset form on docs change
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
 
-  // =====================================================================
-  // Percent calculation
-  const calculatePercent = () => {
-    let valid = 0;
+  useEffect(() => {
+    if (!mandatoryDocumentIds.length) {
+      if (prevPercentRef.current !== 0) {
+        prevPercentRef.current = 0;
+        percent(0);
+      }
+      return;
+    }
 
-    if (values.certificateOfIncorporation && !errors.certificateOfIncorporation) valid++;
-    if (values.sebiCertificate && !errors.sebiCertificate) valid++;
+    const uploadedMandatoryCount = mandatoryDocumentIds.filter((id) =>
+      Boolean(values?.[`doc_${id}`]?.id)
+    ).length;
 
-    return Math.round((valid / 2) * 100);
-  };
+    const calculatedPercent = Math.round(
+      (uploadedMandatoryCount / mandatoryDocumentIds.length) * 100
+    );
+
+    if (prevPercentRef.current !== calculatedPercent) {
+      prevPercentRef.current = calculatedPercent;
+      percent(calculatedPercent);
+    }
+  }, [mandatoryDocumentIds, values, percent]);
 
   useEffect(() => {
-    percent(calculatePercent());
-  }, [values, errors]);
+    if (!mandatoryDocumentIds.length) return;
+    if (!hasServerData) return;
 
-  // =====================================================================
-  // Submit handler
-  const onSubmit = handleSubmit(async (data) => {
+    const isStepComplete = mandatoryDocumentIds.every((id) => Boolean(values?.[`doc_${id}`]?.id));
+
+    if (isStepComplete && !dataInitializedSteps?.includes('kyc_company_documents')) {
+      setDataInitializedSteps();
+      setActiveStepId();
+    }
+  }, [
+    mandatoryDocumentIds,
+    values,
+    hasServerData,
+    dataInitializedSteps,
+    setDataInitializedSteps,
+    setActiveStepId,
+  ]);
+
+  const onSubmit = handleSubmit(async (formData) => {
     try {
-      const usersId = sessionStorage.getItem('trustee_user_id');
-      if (!usersId) return enqueueSnackbar('User ID missing', { variant: 'error' });
+      const usersId =
+        sessionStorage.getItem('trustee_user_id') || sessionStorage.getItem('trustee_profile_id');
 
-      const uploadedDocuments = [];
+      if (!usersId) {
+        enqueueSnackbar('User ID missing', { variant: 'error' });
+        return;
+      }
 
-      Object.keys(FIELD_MAP).forEach((backendKey) => {
-        const formField = FIELD_MAP[backendKey];
-        const uploaded = data[formField];
+      const uploadedDocuments = documents
+        .map((item) => {
+          if (
+            (item.documentValue === 'moa' || item.documentValue === 'aoa') &&
+            selectedMoaAoaDoc &&
+            item.documentId !== selectedMoaAoaDoc.documentId
+          ) {
+            return null;
+          }
 
-        if (uploaded?.id) {
-          uploadedDocuments.push({
-            documentsId: DOCUMENT_MAP[backendKey],
-            documentsFileId: uploaded.id,
-          });
-        }
-      });
+          const uploadedFile = formData?.[`doc_${item.documentId}`];
+          if (!uploadedFile?.id) return null;
+
+          return {
+            trusteeKycDocumentRequirementsId: item.documentId,
+            documentsFileId: uploadedFile.id,
+            mode: 1,
+            status: 0,
+          };
+        })
+        .filter(Boolean);
+
+      if (!uploadedDocuments.length) {
+        enqueueSnackbar('Please upload at least one document', { variant: 'error' });
+        return;
+      }
 
       const payload = {
         usersId,
         documents: uploadedDocuments,
       };
 
-      const final = await axiosInstance.post('/trustee-profiles/kyc-upload-documents', payload);
+      const hasExistingDocs = documents.some((doc) => doc?.documentFile?.documentFile?.id);
 
-      if (final?.data?.success) {
-        enqueueSnackbar('Documents Uploaded Successfully', { variant: 'success' });
-        percent(100);
-        setActiveStepId();
+      const response = hasExistingDocs
+        ? await axiosInstance.patch('/trustee-profiles/kyc-upload-documents', payload)
+        : await axiosInstance.post('/trustee-profiles/kyc-upload-documents', payload);
+
+      if (!response?.data?.success) {
+        enqueueSnackbar(response?.data?.message || 'Unable to upload documents', {
+          variant: 'error',
+        });
+        return;
       }
+
+      await refreshKycSection();
+      enqueueSnackbar('Documents uploaded successfully', { variant: 'success' });
+      setActiveStepId();
     } catch (error) {
-      enqueueSnackbar('Error uploading documents', { variant: 'error' });
+      const message = error?.error?.message || error?.message || 'Error uploading documents';
+
+      enqueueSnackbar(message, { variant: 'error' });
     }
   });
 
-  // =====================================================================
+  const renderDocumentField = (item, mandatory = false) => {
+    if (!item?.documentId) return null;
+
+    const fieldName = `doc_${item.documentId}`;
+    const { rejectionReason } = getDocStatusMeta(item);
+
+    return (
+      <Box key={item.documentId}>
+        <RHFCustomFileUploadBox
+          name={fieldName}
+          label={`${item.documentLabel}${mandatory ? ' *' : ''}`}
+          icon="mdi:file-document-outline"
+          accept={FILE_ACCEPT}
+        />
+
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 1 }}>
+          {rejectionReason && (
+            <Typography variant="caption" color="error.main">
+              Reason: {rejectionReason}
+            </Typography>
+          )}
+        </Stack>
+      </Box>
+    );
+  };
+
   return (
     <Container>
-      <KYCTitle title="Trustee Company Details" subtitle="Submit required company documents." />
+      <Card
+        sx={{
+          p: 4,
+          borderRadius: 3,
+          width: '100%',
+          boxShadow: '0px 8px 25px rgba(0,0,0,0.08)',
+          position: 'relative',
+          overflow: 'hidden',
+          minHeight: 600,
+        }}
+      >
+        <Stack spacing={0.5} alignItems="flex-start" sx={{ mb: 4 }}>
+          <Typography
+            variant="h3"
+            color="primary"
+            sx={{
+              fontWeight: 700,
+              textAlign: 'left',
+            }}
+          >
+            Trustee Company Details
+          </Typography>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 500,
+              color: '#000000',
+              textAlign: 'left',
+            }}
+          >
+            Submit required company documents.
+          </Typography>
+        </Stack>
 
-      <FormProvider methods={methods} onSubmit={onSubmit}>
-        <Paper sx={{ p: 3, mt: 3 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {/* ================= COI ================= */}
-            <RHFCustomFileUploadBox
-              name="certificateOfIncorporation"
-              label="Certificate of Incorporation*"
-              existing={docs[DOCUMENT_MAP.certificate_of_incorporation]}
-              icon="mdi:certificate-outline"
-              accept={{
-                'application/pdf': ['.pdf'],
-                'image/png': ['.png'],
-                'image/jpeg': ['.jpg', '.jpeg'],
-              }}
-            />
-            <YupErrorMessage name="certificateOfIncorporation" />
+        <FormProvider methods={methods} onSubmit={onSubmit}>
+          <Paper sx={{ p: 3, mt: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {kycSectionLoading && (
+                <Typography variant="body2" color="text.secondary">
+                  Loading required documents...
+                </Typography>
+              )}
 
-            {/* ================= SEBI ================= */}
-            <RHFCustomFileUploadBox
-              name="sebiCertificate"
-              label="SEBI Registration Certificate*"
-              existing={docs[DOCUMENT_MAP.sebi_registration_certificate]}
-              icon="mdi:briefcase-outline"
-              accept={{
-                'application/pdf': ['.pdf'],
-                'image/png': ['.png'],
-                'image/jpeg': ['.jpg', '.jpeg'],
-              }}
-            />
-            <YupErrorMessage name="sebiCertificate" />
+              {kycSectionError && (
+                <Typography variant="body2" color="error.main">
+                  {typeof kycSectionError === 'string'
+                    ? kycSectionError
+                    : kycSectionError?.message ||
+                      kycSectionError?.error?.message ||
+                      'Unable to load required documents'}
+                </Typography>
+              )}
 
-            {/* ================= MOA / AOA TYPE ================= */}
-            <RHFSelect name="moaAoaType" label="Select Document Type">
-              <MenuItem value="moa">MoA - Memorandum of Association</MenuItem>
-              <MenuItem value="aoa">AoA - Articles of Association</MenuItem>
-            </RHFSelect>
+              {!kycSectionLoading && !kycSectionError && !certificateDoc && (
+                <Typography variant="body2" color="error.main">
+                  Certificate of Incorporation requirement is missing from backend config.
+                </Typography>
+              )}
 
-            {/* ================= MOA ================= */}
-            {moaAoaType === 'moa' && (
-              <RHFCustomFileUploadBox
-                name="moaDocument"
-                label="MoA - Memorandum of Association"
-                existing={docs[DOCUMENT_MAP.moa]}
-                icon="mdi:file-document-edit-outline"
-                accept={{
-                  'application/pdf': ['.pdf'],
-                  'image/png': ['.png'],
-                  'image/jpeg': ['.jpg', '.jpeg'],
-                }}
-              />
-            )}
+              {!kycSectionLoading && !kycSectionError && !gstDoc && (
+                <Typography variant="body2" color="error.main">
+                  GST requirement is missing from backend config.
+                </Typography>
+              )}
 
-            {/* ================= AOA ================= */}
-            {moaAoaType === 'aoa' && (
-              <RHFCustomFileUploadBox
-                name="aoaDocument"
-                label="AoA - Articles of Association"
-                existing={docs[DOCUMENT_MAP.aoa]}
-                icon="mdi:file-document-edit-outline"
-                accept={{
-                  'application/pdf': ['.pdf'],
-                  'image/png': ['.png'],
-                  'image/jpeg': ['.jpg', '.jpeg'],
-                }}
-              />
-            )}
+              {!kycSectionLoading && !kycSectionError && renderDocumentField(certificateDoc, true)}
 
-            {/* ================= GST ================= */}
-            <RHFCustomFileUploadBox
-              name="gstCertificate"
-              label="GST Certificate"
-              icon="mdi:earth"
-              existing={docs[DOCUMENT_MAP.gst_certificate]}
-              accept={{
-                'application/pdf': ['.pdf'],
-                'image/png': ['.png'],
-                'image/jpeg': ['.jpg', '.jpeg'],
-              }}
-            />
+              {!kycSectionLoading && !kycSectionError && renderDocumentField(gstDoc, true)}
+
+              {!kycSectionLoading && !kycSectionError && (moaDoc || aoaDoc) && (
+                <>
+                  <RHFSelect name="moaAoaType" label="Select Document Type">
+                    {moaDoc && <MenuItem value="moa">MoA - Memorandum of Association</MenuItem>}
+                    {aoaDoc && <MenuItem value="aoa">AoA - Articles of Association</MenuItem>}
+                  </RHFSelect>
+                  {renderDocumentField(selectedMoaAoaDoc, true)}
+                </>
+              )}
+
+              {!kycSectionLoading &&
+                !kycSectionError &&
+                remainingDocuments.map((item) =>
+                  renderDocumentField(item, Boolean(item?.isMandatory))
+                )}
+
+            </Box>
+          </Paper>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, mt: 4 }}>
+            <LoadingButton
+              type="submit"
+              color="primary"
+              variant="contained"
+              loading={isSubmitting}
+            >
+              Next
+            </LoadingButton>
           </Box>
-        </Paper>
-
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button component={RouterLink} href={paths.kycBasicInfo} variant="outlined">
-            Back
-          </Button>
-
-          <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-            Next
-          </LoadingButton>
-        </Box>
-      </FormProvider>
+        </FormProvider>
+      </Card>
 
       <KYCFooter />
     </Container>
   );
 }
+
+KYCCompanyDetails.propTypes = {
+  percent: PropTypes.func.isRequired,
+  setActiveStepId: PropTypes.func.isRequired,
+  dataInitializedSteps: PropTypes.array,
+  setDataInitializedSteps: PropTypes.func,
+};

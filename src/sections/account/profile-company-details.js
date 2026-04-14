@@ -48,13 +48,13 @@ export default function KYCSignatories({ trusteeProfile }) {
             <TableBody>
               {documents.map((doc) => (
                 <TableRow key={doc.id}>
-                  <TableCell>{doc.documents?.name || 'NA'}</TableCell>
+                  <TableCell>{doc.trusteeKycDocumentRequirements?.documentLabel || 'NA'}</TableCell>
 
                   <TableCell>
                     <Button
                       variant="outlined"
                       startIcon={<Iconify icon="mdi:eye" />}
-                      onClick={() => window.open(doc.documentsFile?.fileUrl, '_blank')}
+                      onClick={() => window.open(doc.media?.fileUrl, '_blank')}
                     >
                       Preview
                     </Button>

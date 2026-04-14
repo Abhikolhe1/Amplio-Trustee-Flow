@@ -13,7 +13,7 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { Card } from '@mui/material';
+import { Card, TextField } from '@mui/material';
 // sections
 import KYCTitle from './kyc-title';
 import KYCFooter from './kyc-footer';
@@ -33,13 +33,14 @@ import { useGetTrusteeEntityTypes } from 'src/api/entityType';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
 import { useGetKycProgress } from 'src/api/trusteeKyc';
+import { indianStates } from 'src/_mock/_state';
 
 // ----------------------------------------------------------------------
 
 export default function KYCBasicInfo() {
   const { enqueueSnackbar } = useSnackbar();
   const router = useRouter();
-  const storedProfileId = sessionStorage.getItem('trustee_user_id');
+  const storedProfileId = sessionStorage.getItem('trustee_profile_id');
 
   const sessionId = localStorage.getItem('sessionId');
   const { kycProgress, profileId: fetchedProfileId } = useGetKycProgress(sessionId);
@@ -51,6 +52,7 @@ export default function KYCBasicInfo() {
   const [extractedPanDetails, setExtractedPanDetails] = useState(null);
   // State to store mapped API values
   const [entityOptions, setEntityOptions] = useState([]);
+  const [companyGSTOptions, setCompanyGSTOptions] = useState([]);
   const { EntityTypes, EntityTypesEmpty } = useGetTrusteeEntityTypes();
 
   const [humanInteraction, setHumanInteraction] = useState({
@@ -139,12 +141,24 @@ export default function KYCBasicInfo() {
     formState: { isSubmitting, errors },
   } = methods;
 
+  const cinValue = watch('cin') || '';
   const panFile = useWatch({
     control: methods.control,
     name: 'panFile',
   });
+  const gstinOptions = useMemo(
+    () =>
+      (companyGSTOptions || [])
+        .map((option) => {
+          if (typeof option === 'string') return option;
+          return option?.gstin || option?.GSTIN || '';
+        })
+        .filter(Boolean),
+    [companyGSTOptions]
+  );
 
   const isPanUploaded = Boolean(panFile?.id);
+  const isCinValid = Boolean((cinValue || '').trim());
 
   const onSubmit = handleSubmit(async (formData) => {
     try {
@@ -213,13 +227,18 @@ export default function KYCBasicInfo() {
       const response = await axiosInstance.post('/auth/trustee-registration', payload);
 
       if (response?.data?.success) {
-        const usersId = response?.data?.usersId;
+        const usersId = response?.data?.usersId || response?.data?.profile?.usersId;
+        const profileIdFromResponse =
+          response?.data?.profileId || response?.data?.profile?.id || null;
 
         // ✅ Store it so next page can access it
         if (usersId) {
           sessionStorage.setItem('trustee_user_id', usersId);
         } else {
           console.warn('No usersId found in trustee-registration response');
+        }
+        if (profileIdFromResponse) {
+          sessionStorage.setItem('trustee_profile_id', profileIdFromResponse);
         }
         enqueueSnackbar(response.data.message || 'Trustee Registration Successful', {
           variant: 'success',
@@ -240,7 +259,7 @@ export default function KYCBasicInfo() {
 
   useEffect(() => {
     if (fetchedProfileId) {
-      sessionStorage.setItem('trustee_user_id', fetchedProfileId);
+      sessionStorage.setItem('trustee_profile_id', fetchedProfileId);
     }
   }, [fetchedProfileId]);
 
@@ -277,9 +296,14 @@ export default function KYCBasicInfo() {
           p?.companyPanCards?.extractedCompanyName ||
           '',
 
-        companyEntityTypeId: p?.companyEntityTypeId || '',
+        companyEntityTypeId: p?.trusteeEntityTypesId || p?.companyEntityTypeId || '',
         companySectorTypeId: p?.companySectorTypeId || '',
       });
+      if (p?.GSTIN) {
+        setCompanyGSTOptions([p.GSTIN]);
+      } else {
+        setCompanyGSTOptions([]);
+      }
       if (p?.companyPanCards?.panCardDocument) {
         const serverFile = {
           fileOriginalName: p.companyPanCards.panCardDocument.fileOriginalName,
@@ -352,7 +376,7 @@ export default function KYCBasicInfo() {
     };
 
     extractPanDetails();
-  }, [panFile?.id]);
+  }, [panFile?.id, enqueueSnackbar, setValue]);
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -434,6 +458,7 @@ export default function KYCBasicInfo() {
                           color: 'white',
                           ml: 1,
                         }}
+                        disabled={!isCinValid}
                         onClick={async () => {
                           const cin = getValues('cin');
                           if (!cin) {
@@ -442,16 +467,40 @@ export default function KYCBasicInfo() {
                           }
                           try {
                             const res = await axiosInstance.post('/extraction/company-info', {
-                              CIN: cin,
+                              CIN: cin.trim().toUpperCase(),
                             });
                             const data = res?.data?.data;
                             if (res.data.success && data) {
+                              let fetchedGstins = [];
+
+                              if (data.gstins?.length > 0) {
+                                fetchedGstins = data.gstins;
+                              } else if (data.gstin) {
+                                fetchedGstins = [data.gstin];
+                              }
+
+                              const primaryGstin = fetchedGstins
+                                .map((option) => {
+                                  if (typeof option === 'string') return option;
+                                  return option?.gstin || option?.GSTIN || '';
+                                })
+                                .find(Boolean)
+                                ?.toUpperCase();
+
                               setValue('companyName', data.companyName || '');
-                              setValue('gstin', data.gstin || '');
+                              setCompanyGSTOptions(fetchedGstins);
+                              setValue('gstin', primaryGstin || '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                               setValue(
                                 'dateOfIncorporation',
                                 data.dateOfIncorporation ? new Date(data.dateOfIncorporation) : null
                               );
+                              setValue('msmeUdyamRegistrationNo', data.udyamRegistrationNumber || '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
                               setValue('city', data.cityOfIncorporation || '', {
                                 shouldValidate: true,
                                 shouldDirty: true,
@@ -467,9 +516,17 @@ export default function KYCBasicInfo() {
                                 shouldDirty: true,
                               });
 
+                              setValue('panNumber', data.companyPanNumber || '', {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
                               enqueueSnackbar('CIN details fetched!', { variant: 'success' });
+                            } else {
+                              setCompanyGSTOptions([]);
                             }
                           } catch (err) {
+                            setCompanyGSTOptions([]);
                             enqueueSnackbar('Unable to fetch CIN details', { variant: 'error' });
                           }
                         }}
@@ -491,7 +548,41 @@ export default function KYCBasicInfo() {
               </Grid>
 
               <Grid xs={12} md={4}>
-                <RHFTextField name="gstin" label="GSTIN *" placeholder="Enter GSTIN" />
+                <RHFAutocomplete
+                  name="gstin"
+                  label="GSTIN *"
+                  freeSolo
+                  options={gstinOptions}
+                  getOptionLabel={(option) => option || ''}
+                  isOptionEqualToValue={(option, value) => option === value}
+                  onChange={(_, newValue) => {
+                    setValue('gstin', (newValue || '').toUpperCase(), {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                    handleHumanInteraction('gstin');
+                  }}
+                  onInputChange={(_, newInputValue, reason) => {
+                    if (reason === 'input' || reason === 'clear') {
+                      setValue('gstin', newInputValue?.toUpperCase() || '', {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      });
+                      handleHumanInteraction('gstin');
+                    }
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="GSTIN *"
+                      inputProps={{
+                        ...params.inputProps,
+                        style: { textTransform: 'uppercase' },
+                      }}
+                      onFocus={() => handleHumanInteraction('gstin')}
+                    />
+                  )}
+                />
               </Grid>
               <Grid xs={12} md={4}>
                 <RHFTextField
@@ -549,7 +640,14 @@ export default function KYCBasicInfo() {
 
               <Grid xs={12} md={4}>
                 <RHFSelect name="state" label="State of Incorporation*">
-                  <MenuItem value="Maharashtra">Maharashtra</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select State
+                  </MenuItem>
+                  {indianStates.map((state) => (
+                    <MenuItem key={state.id} value={state.value}>
+                      {state.label}
+                    </MenuItem>
+                  ))}
                 </RHFSelect>
               </Grid>
 

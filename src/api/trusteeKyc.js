@@ -8,8 +8,11 @@ export function useGetKycProgress(sessionId) {
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
 
   useEffect(() => {
-    if (data?.profile?.id) {
+    if (data?.profile?.usersId) {
       sessionStorage.setItem('trustee_user_id', data.profile.usersId);
+    }
+    if (data?.profile?.id) {
+      sessionStorage.setItem('trustee_profile_id', data.profile.id);
     }
   }, [data]);
 
@@ -34,7 +37,7 @@ export function useGetKycSection(section, route = '') {
   const URL =
     section && profileId ? endpoints.trusteeKyc.getSection(section, profileId, route) : null;
 
-  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher, {
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher, {
     keepPreviousData: true,
   });
 
@@ -44,7 +47,12 @@ export function useGetKycSection(section, route = '') {
     kycSectionError: error,
     kycSectionValidating: isValidating,
     kycSectionEmpty: !isLoading && !data,
+    refreshKycSection: () => mutate(),
   };
+}
+
+export function useGetKycDocumentRequirements(route = '') {
+  return useGetKycSection('trustee_documents', route);
 }
 
 export function useGetDetails() {

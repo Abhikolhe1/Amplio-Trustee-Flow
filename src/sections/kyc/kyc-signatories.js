@@ -61,7 +61,7 @@ const rows = [
   ),
 ];
 
-export default function KYCSignatories({ percent, setActiveStepId }) {
+export default function KYCSignatories({ percent, setActiveStepId, setPreviousStepId }) {
   const [open, setOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const { signatories, loading, refreshSignatories } = useGetSignatories();
@@ -137,6 +137,7 @@ export default function KYCSignatories({ percent, setActiveStepId }) {
               }}
             />
             <Button
+              color="primary"
               variant="contained"
               startIcon={<Iconify icon="eva:plus-fill" />}
               onClick={handleOpen}
@@ -238,8 +239,12 @@ export default function KYCSignatories({ percent, setActiveStepId }) {
             </TableBody>
           </Table>
         </TableContainer>
-        <Box sx={{ textAlign: 'right', mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3 }}>
+          <Button variant="outlined" color="primary" onClick={setPreviousStepId}>
+            Back
+          </Button>
           <Button
+            color="primary"
             variant="contained"
             disabled={signatories.length < 1}
             onClick={() => {

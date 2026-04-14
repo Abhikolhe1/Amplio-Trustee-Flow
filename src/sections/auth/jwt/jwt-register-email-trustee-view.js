@@ -58,6 +58,8 @@ export default function JwtRegisterTrusteeByEmailView() {
   const [otpStarted, setOtpStarted] = useState(false);
   const [timer, setTimer] = useState(0);
   const [canResend, setCanResend] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isResendingOtp, setIsResendingOtp] = useState(false);
   const otpRefs = useRef([]);
 
   const searchParams = useSearchParams();
@@ -112,6 +114,7 @@ export default function JwtRegisterTrusteeByEmailView() {
     }
 
     try {
+      setIsSendingOtp(true);
       const res = await axiosInstance.post('/auth/send-email-otp', {
         sessionId,
         email,
@@ -134,6 +137,8 @@ export default function JwtRegisterTrusteeByEmailView() {
       enqueueSnackbar(message, {
         variant: 'error',
       });
+    } finally {
+      setIsSendingOtp(false);
     }
   };
 
@@ -142,6 +147,7 @@ export default function JwtRegisterTrusteeByEmailView() {
     const sessionId = localStorage.getItem('sessionId');
 
     try {
+      setIsResendingOtp(true);
       await axiosInstance.post('/auth/send-email-otp', { sessionId, email });
 
       enqueueSnackbar('OTP resent successfully!', { variant: 'success' });
@@ -161,6 +167,8 @@ export default function JwtRegisterTrusteeByEmailView() {
       enqueueSnackbar(message, {
         variant: 'error',
       });
+    } finally {
+      setIsResendingOtp(false);
     }
   };
 
@@ -274,7 +282,8 @@ export default function JwtRegisterTrusteeByEmailView() {
                     variant="text"
                     size="small"
                     onClick={handleSendOtp}
-                    disabled={isOtpSent}
+                    loading={isSendingOtp}
+                    disabled={isOtpSent || isSendingOtp}
                   >
                     {isOtpSent ? 'OTP Sent' : 'Send OTP'}
                   </LoadingButton>
@@ -296,9 +305,14 @@ export default function JwtRegisterTrusteeByEmailView() {
               ) : (
                 <>
                   Didn't receive OTP?{' '}
-                  <Button variant="text" onClick={handleResendOtp}>
+                  <LoadingButton
+                    variant="text"
+                    loading={isResendingOtp}
+                    onClick={handleResendOtp}
+                    disabled={isResendingOtp}
+                  >
                     Resend OTP
-                  </Button>
+                  </LoadingButton>
                 </>
               )}
             </Typography>
