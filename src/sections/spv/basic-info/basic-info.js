@@ -60,12 +60,12 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
   console.log("id in basic info", id);
   const [spvCounter, setSpvCounter] = useState(1);
 
-  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'basic_info');
+  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'spv_basic_info');
   const [currData, setCurrData] = useState();
 
   const FormSchema = Yup.object().shape({
     pspPartner: Yup.string().required('PSP Partner is required'),
-    spvStructure: Yup.string()
+    legalStructure: Yup.string()
       .required('SPV Legal Structure is required')
       .notOneOf([''], 'Please select SPV structure'),
     originatorName: Yup.string().required('Originator is required'),
@@ -75,7 +75,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
   const defaultValues = useMemo(
     () => ({
       pspPartner: currData?.pspPartner || '',
-      spvStructure: currData?.spvStructure || '',
+      legalStructure: currData?.legalStructure || '',
       originatorName: currData?.originatorName || 'Birbal Plus',
       spvName: currData?.spvName || '',
     }),
@@ -96,7 +96,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
 
   const values = watch();
 
-  const requiredFields = ['pspPartner', 'spvStructure', 'originatorName', 'spvName'];
+  const requiredFields = ['pspPartner', 'legalStructure', 'originatorName', 'spvName'];
 
   useEffect(() => {
     let completed = 0;
@@ -115,7 +115,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
     percent?.(percentValue);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.pspPartner, values.spvStructure, values.originatorName, values.spvName]);
+  }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName]);
 
   const generateSPVName = () => {
     const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
@@ -142,9 +142,10 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
 
   const onSubmit = async (data) => {
     try {
+       console.log(data);
       await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
       // saveStepData(data);
-      console.log(data);
+     
       setActiveStepId('pool_financial');
     }
     catch (error) {
@@ -197,7 +198,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
               </RHFSelect>
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFSelect name="spvStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
+              <RHFSelect name="legalStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
                 {SPV_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
