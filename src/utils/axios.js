@@ -79,6 +79,7 @@ export const endpoints = {
     details: (id) => `/company-entity-types/${id}`,
   },
   documentByScreen: (route) => `/screens/documents-by-screen/${encodeURIComponent(route)}`,
+  
   trusteeKyc: {
     kycProgress: (sessionId) => `/trustee-profiles/kyc-progress/${sessionId}`,
     getSection: (section, profileId, route = '') =>
