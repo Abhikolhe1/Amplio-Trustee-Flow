@@ -13,7 +13,7 @@ import NavItem from './nav-item';
 export default function NavList({ data, depth, hasChild, config }) {
   const pathname = usePathname();
 
-  const active = useActiveLink(data.path, hasChild);
+  const active = useActiveLink(data.path, hasChild || data.deepMatch);
 
   const externalLink = data.path.includes('http');
 

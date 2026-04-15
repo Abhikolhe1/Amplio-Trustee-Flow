@@ -301,7 +301,7 @@ export default function AddressNewForm({ onClose }) {
         <Stack spacing={4}>
           {/* ---------------- File Upload ---------------- */}
           <Stack spacing={2}>
-            <Typography variant="h4">Upload Address Proof</Typography>
+            <Typography variant="h4" color="primary">Upload Address Proof</Typography>
 
             <Box sx={{ width: 200 }}>
               <RHFSelect name="documentType" label="Document Type">
@@ -327,7 +327,7 @@ export default function AddressNewForm({ onClose }) {
           {/* ---------------- Registered Address ---------------- */}
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <Typography variant="h5" sx={{ mb: 2 }}>
+              <Typography variant="h5"color="primary" sx={{ mb: 2 }}>
                 Registered Address
               </Typography>
 
@@ -353,7 +353,7 @@ export default function AddressNewForm({ onClose }) {
             {/* ---------------- Correspondence ---------------- */}
             <Grid item xs={12} md={6}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Typography variant="h5">Correspondence Address</Typography>
+                <Typography variant="h5" color="primary">Correspondence Address</Typography>
 
                 <FormControlLabel
                   control={
@@ -409,7 +409,7 @@ export default function AddressNewForm({ onClose }) {
           {/* ---------------- Buttons ---------------- */}
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
          
-            <LoadingButton type="submit" variant="contained" loading={isUploading} sx={{ ml: 'auto' }}>
+            <LoadingButton type="submit" variant="contained" color="primary" loading={isUploading} sx={{ ml: 'auto' }}>
               Save Changes
             </LoadingButton>
 
