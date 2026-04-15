@@ -110,11 +110,11 @@ export default function KycListView() {
   );
 
   const handleViewRow = useCallback(
-    (id) => {
-      router.push(`${paths.dashboard.spvkyc.new}?applicationId=${id}`);
-    },
-    [router]
-  );
+  (id) => {
+    router.push(paths.dashboard.spvkyc.details(id));
+  },
+  [router]
+);
 
   const handleResetFilters = useCallback(() => {
     setFilters(defaultFilters);

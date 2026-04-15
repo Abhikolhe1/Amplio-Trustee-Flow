@@ -13,7 +13,26 @@ import EscrowSetupView from './escrow/escrowSetup';
 import ISINApplicationView from './isin-application/view/isin-application-view';
 import KYCFinalReview from './final-review/kyc-final-review';
 
-export default function SpvStepper() {
+import { useGetSpvApplication } from 'src/api/spvApplication';
+// import { useParams } from 'src/routes/hook';
+ import { useSearchParams } from "react-router-dom";
+
+
+
+export default function SpvStepper({applicationId}) {
+
+
+
+// const [searchParams] = useSearchParams();
+
+// const applicationId = searchParams.get("applicationId");
+
+// console.log("applicationId:", applicationId);
+
+  const [applicationData, setApplicationData] = useState(null);
+  const { application, applicationLoading } = useGetSpvApplication(applicationId);
+
+
   const steps = [
     { id: 'basic_info', number: 1, lines: ['Basic', 'Info'] },
     { id: 'pool_financial', number: 2, lines: ['Pool', 'Financial'] },
@@ -41,9 +60,9 @@ export default function SpvStepper() {
   });
 
   const [stepsProgress, setStepsProgress] = useState({
-    // basic_info: { percent: 0 },
-    // pool_financial: { percent: 0 },
-    // ptc_parameters: { percent: 0 },
+    basic_info: { percent: 0 },
+    pool_financial: { percent: 0 },
+    ptc_parameters: { percent: 0 },
     legal_structure: { percent: 0 },
     escrow_setup: { percent: 0 },
     legal_documents: { percent: 0 },

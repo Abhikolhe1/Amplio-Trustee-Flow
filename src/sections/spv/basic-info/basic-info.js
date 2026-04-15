@@ -15,6 +15,9 @@ import {
 import { useForm } from 'react-hook-form';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useParams } from 'src/routes/hook';
+import axiosInstance from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
@@ -51,15 +54,21 @@ const PSP_PARTNER = [
   },
 ];
 
-export default function BasicInfo({ percent, setActiveStepId, currData, saveStepData }) {
+export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
+  const params = useParams();
+  const { id } = params;
+  console.log("id in basic info", id);
   const [spvCounter, setSpvCounter] = useState(1);
+
+  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'basic_info');
+  const [currData, setCurrData] = useState();
 
   const FormSchema = Yup.object().shape({
     pspPartner: Yup.string().required('PSP Partner is required'),
     spvStructure: Yup.string()
       .required('SPV Legal Structure is required')
       .notOneOf([''], 'Please select SPV structure'),
-    originator: Yup.string().required('Originator is required'),
+    originatorName: Yup.string().required('Originator is required'),
     spvName: Yup.string().required('SPV Name is required'),
   });
 
@@ -67,7 +76,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     () => ({
       pspPartner: currData?.pspPartner || '',
       spvStructure: currData?.spvStructure || '',
-      originator: currData?.originator || 'Birbal Plus',
+      originatorName: currData?.originatorName || 'Birbal Plus',
       spvName: currData?.spvName || '',
     }),
     [currData]
@@ -87,7 +96,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
 
   const values = watch();
 
-  const requiredFields = ['pspPartner', 'spvStructure', 'originator', 'spvName'];
+  const requiredFields = ['pspPartner', 'spvStructure', 'originatorName', 'spvName'];
 
   useEffect(() => {
     let completed = 0;
@@ -106,7 +115,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     percent?.(percentValue);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.pspPartner, values.spvStructure, values.originator, values.spvName]);
+  }, [values.pspPartner, values.spvStructure, values.originatorName, values.spvName]);
 
   const generateSPVName = () => {
     const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
@@ -132,10 +141,24 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
   };
 
   const onSubmit = async (data) => {
-    saveStepData(data);
-    console.log(data);
-    setActiveStepId('pool_financial');
+    try {
+      await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
+      // saveStepData(data);
+      console.log(data);
+      setActiveStepId('pool_financial');
+    }
+    catch (error) {
+      console.log(error.message);
+    }
+
   };
+
+  useEffect(() => {
+    if (stepData) {
+      setCurrData(stepData);
+    }
+  }, [stepData]);
+
   useEffect(() => {
     if (currData) {
       reset(defaultValues);
@@ -184,7 +207,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
             </Grid>
             <Grid item xs={12} md={6}>
               <RHFTextField
-                name="originator"
+                name="originatorName"
                 label="ORIGINATOR (PLATFORM NBFC)"
                 fullWidth
                 sx={{ mt: 1 }}

@@ -129,6 +129,7 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/spvkyc`,
       list: `${ROOTS.DASHBOARD}/spvkyc/list`,
       new: `${ROOTS.DASHBOARD}/spvkyc/new`,
+      details: (id) =>`${ROOTS.DASHBOARD}/spvkyc/${id}`,
       success: `${ROOTS.DASHBOARD}/spvkyc/success`,
     },
 
