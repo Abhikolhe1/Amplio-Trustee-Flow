@@ -63,6 +63,11 @@ export const endpoints = {
     filterList: (filter) => `/trustee-profiles/authorize-signatory?filter=${filter}`,
     details: (signatoryId) => `/trustee-profiles/authorize-signatory/${signatoryId}`,
   },
+  spvApplication: {
+    list: '/spv-applications',
+    filterList: (filter) => `/trustee-profiles/authorize-signatory?filter=${filter}`,
+    details: (signatoryId) => `/trustee-profiles/authorize-signatory/${signatoryId}`,
+  },
   companyInfo: {
     list: '/api/kyc/issuer_kyc/company-info/',
     filterList: (filter) => `/api/kyc/issuer_kyc/company-info/?filter=${filter}`,

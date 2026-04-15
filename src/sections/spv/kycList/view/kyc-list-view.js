@@ -29,6 +29,8 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 import KycTableToolbar from '../kyc-table-toolbar';
 import KycTableFiltersResult from '../kyc-table-filters-result';
 import KycTableRow from '../kyc-table-row';
+import { useGetSpvApplications } from 'src/api/spvApplication';
+import axiosInstance from 'src/utils/axios';
 
 const TABLE_HEAD = [
   { id: 'applicationId', label: 'Application Id', width: 300 },
@@ -75,8 +77,8 @@ export default function KycListView() {
   const router = useRouter();
   const table = useTable();
   const settings = useSettingsContext();
-  const useGetSpvApplications = {}
-  const { applications, loading } = useGetSpvApplications();
+
+  const { applications, applicationsLoading } = useGetSpvApplications();
 
   const [filters, setFilters] = useState(defaultFilters);
 
@@ -93,7 +95,7 @@ export default function KycListView() {
 
   const denseHeight = table.dense ? 60 : 80;
   const canReset = !isEqual(defaultFilters, filters);
-  const notFound = !loading && !dataFiltered.length;
+  const notFound = !applicationsLoading && !dataFiltered.length;
   const hasApplications = tableData.length > 0;
 
   const handleFilters = useCallback(
@@ -118,6 +120,16 @@ export default function KycListView() {
     setFilters(defaultFilters);
   }, []);
 
+  const createSpvApplication = async() => {
+    try{
+       await axiosInstance.post('/spv-pre/new-application');
+       router.push(paths.dashboard.spvkyc.new)
+    }
+    catch(error){
+      console.log(error.message);
+    }
+
+  }
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
@@ -130,10 +142,11 @@ export default function KycListView() {
         action={
           hasApplications ? (
             <Button
-              component={RouterLink}
+              // component={RouterLink}
+              // href={paths.dashboard.spvkyc.new}
               color="primary"
-              href={paths.dashboard.spvkyc.new}
               variant="contained"
+              onClick={createSpvApplication}
               startIcon={<Iconify icon="mingcute:add-line" />}
             >
               Add SPV
@@ -143,7 +156,7 @@ export default function KycListView() {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      {!loading && !hasApplications && (
+      {!applicationsLoading && !hasApplications && (
         <Card sx={{ p: 6, borderRadius: 3 }}>
           <Box
             sx={{
@@ -180,10 +193,11 @@ export default function KycListView() {
             </Typography>
 
             <Button
-              component={RouterLink}
-              href={paths.dashboard.spvkyc.new}
+              // component={RouterLink}
+              // href={paths.dashboard.spvkyc.new}
               variant="contained"
               size="large"
+              onClick={createSpvApplication}
               startIcon={<Iconify icon="mingcute:add-line" />}
             >
               Add SPV
@@ -221,7 +235,7 @@ export default function KycListView() {
                   rowCount={tableData.length}
                   numSelected={0}
                   onSort={table.onSort}
-                  onSelectAllRows={() => {}}
+                  onSelectAllRows={() => { }}
                 />
 
                 <TableBody>
@@ -235,8 +249,8 @@ export default function KycListView() {
                         key={row.id}
                         row={row}
                         selected={false}
-                        onSelectRow={() => {}}
-                        onDeleteRow={() => {}}
+                        onSelectRow={() => { }}
+                        onDeleteRow={() => { }}
                         onViewRow={() => handleViewRow(row.id)}
                       />
                     ))}
