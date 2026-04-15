@@ -78,7 +78,6 @@ export default function CompanyAccountGeneral() {
     country: Yup.string().required('Country is required'),
     entityType: Yup.string().required('Entity Type is required'),
     panNumber: Yup.string().required('Pan Number is required'),
-    dateOfBirth: Yup.date().nullable().required('Date of Birth is required'),
     panHoldersName: Yup.string().required('Pan Holders Name is required'),
     sector: Yup.string().required('Sector is required'),
     companyLogo: Yup.object().nullable(),
@@ -99,7 +98,6 @@ export default function CompanyAccountGeneral() {
       companyAbout: '',
       entityType: '',
       panNumber: '',
-      dateOfBirth: null,
       panHoldersName: '',
       sector: '',
       companyLogo: null,
@@ -154,12 +152,6 @@ export default function CompanyAccountGeneral() {
       // PAN card mappings
       panNumber:
         p.trusteePanCards?.submittedPanNumber || p.trusteePanCards?.extractedPanNumber || '',
-
-      dateOfBirth: p.trusteePanCards?.submittedDateOfBirth
-        ? dayjs(p.trusteePanCards.submittedDateOfBirth).toDate()
-        : p.trusteePanCards?.extractedDateOfBirth
-        ? dayjs(p.trusteePanCards.extractedDateOfBirth).toDate()
-        : null,
 
       panHoldersName:
         p.trusteePanCards?.submittedTrusteeName || p.trusteePanCards?.extractedTrusteeName || '',
@@ -287,6 +279,7 @@ export default function CompanyAccountGeneral() {
                       control={control}
                       render={({ field, fieldState: { error } }) => (
                         <DatePicker
+                          label="Date of Incorporation"
                           disabled
                           value={field.value}
                           onChange={(newValue) => field.onChange(newValue)}
@@ -388,10 +381,17 @@ export default function CompanyAccountGeneral() {
                 label="PAN Number*"
                 disabled
                 placeholder="Your PAN Number"
+                InputLabelProps={{ shrink: true }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFTextField name="panHoldersName" disabled placeholder="Enter Name as per PAN" />
+              <RHFTextField
+                name="panHoldersName"
+                label="PAN Holder Name*"
+                disabled
+                placeholder="Enter Name as per PAN"
+                InputLabelProps={{ shrink: true }}
+              />
             </Grid>
           </Grid>
           <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
