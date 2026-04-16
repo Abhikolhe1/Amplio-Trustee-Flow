@@ -50,10 +50,13 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
 
   const params = useParams();
   const { id } = params;
-  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'pool_financials');
-  const { prevstepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
-  const [prevData, setPrevData] = useState();
 
+  const { stepData: poolFinancialsData, stepDataLoading: poolFinancialsLoading, } = useGetSpvApplicationStepData(id, 'pool_financials');
+
+  const { stepData: spvBasicInfoData, } = useGetSpvApplicationStepData(id, 'spv_basic_info');
+
+  const [prevData, setPrevData] = useState();
+ 
   const [currData, setCurrData] = useState();
 
   const basic = prevData;
@@ -77,12 +80,8 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
       reserveBufferPercent: pool?.reserveBufferPercent ?? 0.5,
       dailyCutoffTime: pool?.dailyCutoffTime ? new Date(pool.dailyCutoffTime) : null,
 
-      // "poolLimit": 0,
-      // "maturityDaysDays": 0,
-      // "targetYield": 0,
-      // "reserveBufferPercentPercent": 0,
-      // "reserveAmount": 0,
-      // "dailydailyCutoffTime": "string"
+     
+
     }),
     [pool]
   );
@@ -144,16 +143,16 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
     }
   };
   useEffect(() => {
-    if (stepData) {
-      setCurrData(stepData);
+    if (poolFinancialsData) {
+      setCurrData(poolFinancialsData);
     }
-  }, [stepData]);
+  }, [poolFinancialsData]);
 
   useEffect(() => {
-    if (prevstepData) {
-      setPrevData(prevstepData);
+    if (spvBasicInfoData) {
+      setPrevData(spvBasicInfoData);
     }
-  }, [stepData]);
+  }, [spvBasicInfoData]);
 
   useEffect(() => {
     if (currData) {

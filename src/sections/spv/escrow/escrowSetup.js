@@ -4,7 +4,10 @@ import { Box, Container, Stack } from '@mui/system';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
+import axiosInstance from 'src/utils/axios';
+import { useParams } from 'src/routes/hook';
 import * as yup from 'yup';
 
 const ESCROW_ACCOUNT_DEFAULTS = [
@@ -13,73 +16,83 @@ const ESCROW_ACCOUNT_DEFAULTS = [
     title: 'Primary Escrow Account',
     subtitle: 'This account stores transactions that were settled successfully.',
     accountType: 'Collection Escrow',
-    bank: 'Axis Bank',
-    location: 'Pune Main Branch',
+    bankName: 'Axis Bank',
+    branchDetails: 'Pune Main Branch',
     accountNumber: '123456789012',
     ifscCode: 'UTIB0000123',
-    // verification: 'Trustee + Platform Dual Authorization',
-    // expected: '2-3 Business Days',
   },
   {
     accountLabel: 'Escrow Account 2',
     title: 'Buffer Escrow Account',
     subtitle: 'This account stores buffer transactions and reserve funds for protection.',
     accountType: 'Reserve Escrow',
-    bank: 'Axis Bank',
-    location: 'Mumbai Fort Branch',
+    bankName: 'Axis Bank',
+    branchDetails: 'Mumbai Fort Branch',
     accountNumber: '987654321098',
     ifscCode: 'UTIB0000456',
-    // verification: 'Trustee + Platform Dual Authorization',
-    // expected: '2-3 Business Days',
   },
 ];
 
-
+const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
 const accountSchema = yup.object().shape({
   accountType: yup.string().required('Account type is required'),
-  bank: yup.string().required('Bank is required'),
-  location: yup.string().required('Branch / City is required'),
-  // verification: yup.string().required('Verification method is required'),
-  // expected: yup.string().required('Expected setup time is required'),
-  accountNo: yup.number().required('Account Number is required'),
-  ifscCode: yup.string().required('IFSC Code is required').trim().transform((value) => value?.toUpperCase()).matches(/^[A-Z]{4}0[A-Z0-9]{6}$/, 'Enter valid IFSC (e.g., SBIN0001234)')
+  bankName: yup.string().required('Bank name is required'),
+  branchDetails: yup.string().required('Branch details are required'),
+  accountNumber: yup.string().trim().required('Account number is required'),
+  ifscCode: yup
+    .string()
+    .required('IFSC code is required')
+    .trim()
+    .transform((value) => value?.toUpperCase())
+    .matches(IFSC_REGEX, 'Enter valid IFSC (e.g., SBIN0001234)'),
 });
 
-const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+function normalizeEscrowAccount(account = {}, fallback = {}) {
+  const accountNumber =
+    account.accountNumber ?? account.accountNo ?? fallback.accountNumber ?? '';
+  const ifscSource = account.ifscCode ?? fallback.ifscCode ?? '';
 
-function resolveAccountNumber(...values) {
-  return values.find((value) => value !== undefined && value !== null && `${value}`.trim() !== '');
+  return {
+    accountLabel: account.accountLabel || fallback.accountLabel || '',
+    accountType: account.accountType || fallback.accountType || '',
+    bankName: account.bankName || account.bank || fallback.bankName || fallback.bank || '',
+    branchDetails:
+      account.branchDetails || account.location || fallback.branchDetails || fallback.location || '',
+    accountNumber: `${accountNumber}`.trim(),
+    ifscCode: `${ifscSource}`.trim().toUpperCase(),
+  };
 }
 
-function resolveIfscCode(...values) {
-  const validValue = values.find((value) => IFSC_REGEX.test(`${value || ''}`.trim().toUpperCase()));
-  return validValue || '';
+function getSavedAccounts(currData) {
+  if (Array.isArray(currData?.generatedAccounts) && currData.generatedAccounts.length > 0) {
+    return currData.generatedAccounts;
+  }
+
+  if (Array.isArray(currData?.accounts) && currData.accounts.length > 0) {
+    return currData.accounts;
+  }
+
+  if (currData?.bankName || currData?.branchDetails || currData?.accountNumber || currData?.ifscCode) {
+    return [currData];
+  }
+
+  return [];
 }
 
 function getInitialAccount(currData, index) {
-  const savedAccount = currData?.accounts?.[index];
-  const generatedAccount = currData?.generatedAccounts?.[index];
   const fallback = ESCROW_ACCOUNT_DEFAULTS[index];
+  const savedAccounts = getSavedAccounts(currData);
+  const savedAccount = savedAccounts[index];
 
-  return {
-    accountLabel: fallback.accountLabel,
-    accountType: savedAccount?.accountType || generatedAccount?.accountType || fallback.accountType,
-    bank: savedAccount?.bank || generatedAccount?.bank || fallback.bank,
-    location: savedAccount?.location || generatedAccount?.location || fallback.location,
-    // verification:savedAccount?.verification || generatedAccount?.verification || fallback.verification,
-    // expected: savedAccount?.expected || generatedAccount?.expected || fallback.expected,
-    accountNo: resolveAccountNumber( savedAccount?.accountNo, savedAccount?.accountNumber,generatedAccount?.accountNo,generatedAccount?.accountNumber,fallback.accountNumber
-    ),
-    ifscCode: resolveIfscCode(savedAccount?.ifscCode, generatedAccount?.ifscCode, fallback.ifscCode),
-  };
+  return normalizeEscrowAccount(savedAccount, fallback);
 }
 
 function EscrowCard({ title, subtitle, methods, disabled = false }) {
   const isGenerated = !disabled;
 
   return (
-    <FormProvider methods={methods} onSubmit={() => { }}>
+    <FormProvider methods={methods} onSubmit={() => {}}>
       <Card sx={{ p: 3 }}>
         <Stack spacing={1} sx={{ mb: 3 }}>
           <Typography color="primary" variant="h5">
@@ -107,27 +120,10 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
             }}
           >
             <RHFTextField name="accountType" label="Account Type" disabled />
-            <RHFTextField name="bank" label="Bank" disabled />
-            {/* <RHFSelect name="bank" label="Bank" disabled={disabled}>
-              {bankOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </RHFSelect> */}
-            <RHFTextField name="accountNo" label="Account No." disabled />
-            <RHFTextField name="ifscCode" label="IFSC Code" disabled/>
-
-            <RHFTextField name="location" label="Branch / City" disabled/>
-            {/* <RHFTextField name="expected" label="Expected Setup Time" disabled={disabled} /> */}
-
-            {/* <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-              <RHFTextField name="verification" label="Verification Method" disabled={disabled} />
-              <Typography variant="caption" mt={1} color="text.secondary">
-                Bank freezes debit rights. All outflows require Trustee + Platform dual digital
-                signature.
-              </Typography>
-            </Box> */}
+            <RHFTextField name="bankName" label="Bank Name" disabled />
+            <RHFTextField name="accountNumber" label="Account Number" disabled />
+            <RHFTextField name="ifscCode" label="IFSC Code" disabled />
+            <RHFTextField name="branchDetails" label="Branch Details" disabled />
           </Box>
         ) : null}
       </Card>
@@ -142,7 +138,12 @@ EscrowCard.propTypes = {
   title: PropTypes.string.isRequired,
 };
 
-function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
+function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
+  const params = useParams();
+  const { id } = params;
+  const { stepData } = useGetSpvApplicationStepData(id, 'escrow');
+  const [currData, setCurrData] = useState();
+
   const accountOneDefaults = useMemo(() => getInitialAccount(currData, 0), [currData]);
   const accountTwoDefaults = useMemo(() => getInitialAccount(currData, 1), [currData]);
 
@@ -158,10 +159,13 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
     mode: 'onChange',
   });
 
-  const [generatedCount, setGeneratedCount] = useState(() => {
-    const accounts = currData?.accounts || currData?.generatedAccounts || [];
-    return Math.min(accounts.length, 2);
-  });
+  const [generatedCount, setGeneratedCount] = useState(0);
+
+  useEffect(() => {
+    if (stepData) {
+      setCurrData(stepData);
+    }
+  }, [stepData]);
 
   useEffect(() => {
     accountOneMethods.reset(accountOneDefaults);
@@ -172,24 +176,36 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
   }, [accountTwoDefaults, accountTwoMethods]);
 
   useEffect(() => {
-    const accounts = currData?.accounts || currData?.generatedAccounts || [];
+    const accounts = getSavedAccounts(currData);
     setGeneratedCount(Math.min(accounts.length, 2));
   }, [currData]);
 
   useEffect(() => {
     percent?.((generatedCount / 2) * 100);
-  }, [generatedCount]);
+  }, [generatedCount, percent]);
 
-  const persistAccounts = (accounts) => {
-    saveStepData({
-      accounts,
-      generatedAccounts: accounts,
-      verification: accounts[0]?.verification || '',
-      expected: accounts[0]?.expected || '',
-      bank: accounts[0]?.bank || '',
-      location: accounts[0]?.location || '',
-      createdAt: currData?.createdAt || new Date().toISOString(),
-    });
+  const persistAccounts = async (accounts) => {
+    const normalizedAccounts = accounts.map((account, index) =>
+      normalizeEscrowAccount(account, ESCROW_ACCOUNT_DEFAULTS[index])
+    );
+    const primaryAccount = normalizedAccounts[0] || {};
+
+    const payload = {
+      bankName: primaryAccount.bankName || '',
+      branchDetails: primaryAccount.branchDetails || '',
+      accountNumber: primaryAccount.accountNumber || '',
+      ifscCode: primaryAccount.ifscCode || '',
+      generatedAccounts: normalizedAccounts,
+    };
+
+    try {
+      await axiosInstance.patch(`/spv-pre/escrow/${id}`, payload);
+
+      setCurrData(payload);
+      saveStepData?.(payload);
+    } catch (error) {
+      console.error('Error saving escrow data:', error);
+    }
   };
 
   const handleAction = async () => {
@@ -197,13 +213,7 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
       const isValid = await accountOneMethods.trigger();
       if (!isValid) return;
 
-      const firstAccount = {
-        ...accountOneMethods.getValues(),
-        accountLabel: ESCROW_ACCOUNT_DEFAULTS[0].accountLabel,
-      };
-
-      persistAccounts([firstAccount]);
-      setGeneratedCount(1);
+      await persistAccounts([accountOneMethods.getValues()]);
       return;
     }
 
@@ -211,21 +221,11 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
       const isValid = await accountTwoMethods.trigger();
       if (!isValid) return;
 
-      const firstAccount = {
-        ...accountOneMethods.getValues(),
-        accountLabel: ESCROW_ACCOUNT_DEFAULTS[0].accountLabel,
-      };
-      const secondAccount = {
-        ...accountTwoMethods.getValues(),
-        accountLabel: ESCROW_ACCOUNT_DEFAULTS[1].accountLabel,
-      };
-
-      persistAccounts([firstAccount, secondAccount]);
-      setGeneratedCount(2);
+      await persistAccounts([accountOneMethods.getValues(), accountTwoMethods.getValues()]);
       return;
     }
 
-    setActiveStepId('legal_documents');
+    setActiveStepId('documents');
   };
 
   const actionLabel = generatedCount >= 2 ? 'Next' : 'Generate Account';
@@ -244,13 +244,14 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
           subtitle={ESCROW_ACCOUNT_DEFAULTS[0].subtitle}
           methods={accountOneMethods}
           disabled={generatedCount < 1}
-        /> 
-        {generatedCount<1 &&
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="primary" onClick={handleAction}>
-            {actionLabel}
-          </Button>
-        </Box>}
+        />
+        {generatedCount < 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button variant="contained" color="primary" onClick={handleAction}>
+              {actionLabel}
+            </Button>
+          </Box>
+        )}
 
         <EscrowCard
           title={ESCROW_ACCOUNT_DEFAULTS[1].title}
@@ -272,7 +273,7 @@ function EscrowSetupView({ percent, setActiveStepId, currData, saveStepData }) {
 EscrowSetupView.propTypes = {
   currData: PropTypes.object,
   percent: PropTypes.func.isRequired,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };
 

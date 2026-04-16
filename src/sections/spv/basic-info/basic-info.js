@@ -143,7 +143,8 @@ export default function BasicInfo({ percent, setActiveStepId }) {
     try {
       await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
       setActiveStepId('pool_financials');
-    } catch (error) {
+    }
+    catch (error) {
       console.log(error.message);
     }
   };

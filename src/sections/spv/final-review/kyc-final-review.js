@@ -86,14 +86,12 @@ export default function KYCFinalReview({ currData }) {
 
   // Escrow Setup
   const escrow = currData?.escrow_setup;
-  const bankLabelMap = {
-    axis: 'Axis Bank',
-    hdfc: 'HDFC Bank',
-    icici: 'ICICI Bank',
-    kotak: 'Kotak Mahindra Bank',
-  };
-
-  const generatedEscrowAccounts = escrow?.generatedAccounts || [];
+  const generatedEscrowAccounts =
+    escrow?.generatedAccounts?.length > 0
+      ? escrow.generatedAccounts
+      : escrow?.bankName || escrow?.branchDetails || escrow?.accountNumber || escrow?.ifscCode
+        ? [escrow]
+        : [];
   const escrowAccountsData =
     generatedEscrowAccounts.length > 0
       ? generatedEscrowAccounts.flatMap((account, index) => [
@@ -103,18 +101,23 @@ export default function KYCFinalReview({ currData }) {
           },
           {
             label: `Account ${index + 1} Bank`,
-            value: bankLabelMap[account?.bank] || account?.bank || '--',
+            value: account?.bankName || account?.bank || '--',
           },
-          { label: `Account ${index + 1} Branch`, value: account?.location || '--' },
+          {
+            label: `Account ${index + 1} Branch`,
+            value: account?.branchDetails || account?.location || '--',
+          },
+          { label: `Account ${index + 1} Number`, value: account?.accountNumber || '--' },
+          { label: `Account ${index + 1} IFSC`, value: account?.ifscCode || '--' },
         ])
       : [
           {
             label: 'Bank',
-            value: bankLabelMap[escrow?.bank] || escrow?.bank || '--',
+            value: escrow?.bankName || escrow?.bank || '--',
           },
-          { label: 'Branch / City', value: escrow?.location || '--' },
-          { label: 'Verification Method', value: escrow?.verification || '--' },
-          { label: 'Expected Setup Time', value: escrow?.expected || '--' },
+          { label: 'Branch Details', value: escrow?.branchDetails || escrow?.location || '--' },
+          { label: 'Account Number', value: escrow?.accountNumber || '--' },
+          { label: 'IFSC Code', value: escrow?.ifscCode || '--' },
         ];
 
   // Documents

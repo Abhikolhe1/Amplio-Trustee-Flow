@@ -31,7 +31,7 @@ export default function SpvStepper({ applicationId }) {
 
   const [applicationData, setApplicationData] = useState();
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
- 
+  console.log("applicationData", application);
 
   const steps = [
     { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
@@ -71,16 +71,18 @@ export default function SpvStepper({ applicationId }) {
     review_and_Activate: { percent: 0 },
   });
 
-    useEffect(() => {
-    if (applicationData) {
-      setActiveStepId(applicationData);
-    }
-  }, [applicationData]);
+  //   useEffect(() => {
+  //   if (applicationData) {
+  //     setActiveStepId(applicationData);
+  //   }
+  // }, [applicationData]);
 
-  
+
+
+
+
   // useEffect(() => {
   //   const savedStep = localStorage.getItem('activeStepId');
-  //   const savedForm = localStorage.getItem('formData');
   //   const savedProgress = localStorage.getItem('stepsProgress');
 
   //   if (savedStep) setActiveStepId(savedStep);
@@ -90,6 +92,7 @@ export default function SpvStepper({ applicationId }) {
 
   // useEffect(() => {
   //   localStorage.setItem('activeStepId', activeStepId);
+  //   const savedForm = localStorage.getItem('formData');
   // }, [activeStepId]);
 
   // useEffect(() => {
@@ -110,15 +113,93 @@ export default function SpvStepper({ applicationId }) {
   };
 
   const updateStepPercent = (stepId, percent) => {
-    setStepsProgress((prev) => ({
-      ...prev,
-      [stepId]: { percent },
-    }));
+    setStepsProgress((prev) => {
+      if (prev[stepId]?.percent === percent) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [stepId]: { percent },
+      };
+    });
   };
 
-  
+  useEffect(() => {
+    if (application && !applicationLoading) {
+      if (applicationData) return;
+      setApplicationData(application);
+
+      const completedStepCodes =
+        application.completedSteps?.map((step) => step.code) || [];
+
+      let currentStep = 'spv_basic_info';
+
+      if (
+        completedStepCodes.includes('spv_basic_info')
+      ) {
+        updateStepPercent('spv_basic_info', 100);
+        currentStep = 'pool_financials';
+      }
+
+      if (
+        completedStepCodes.includes('pool_financials')
+      ) {
+        updateStepPercent('pool_financials', 100);
+        currentStep = 'ptc_parameters';
+      }
+
+      if (
+        completedStepCodes.includes('ptc_parameters')
+      ) {
+        updateStepPercent('ptc_parameters', 100);
+        currentStep = 'trust_deed';
+      }
+      if (
+        completedStepCodes.includes('trust_deed')
+      ) {
+        updateStepPercent('trust_deed', 100);
+        currentStep = 'escrow';
+      }
+
+      if (
+        completedStepCodes.includes('escrow')
+      ) {
+        updateStepPercent('escrow', 100);
+        currentStep = 'documents';
+      }
+      if (
+        completedStepCodes.includes('documents')
+      ) {
+        updateStepPercent('documents', 100);
+        currentStep = 'credit_rating';
+      }
+
+      if (
+        completedStepCodes.includes('credit_rating')
+      ) {
+        updateStepPercent('credit_rating', 100);
+        currentStep = 'isin_application';
+      }
+      if (
+        completedStepCodes.includes('isin_application')
+      ) {
+        updateStepPercent('isin_application', 100);
+        currentStep = 'review_and_Activate';
+      }
+      if (
+        completedStepCodes.includes('review_and_Activate')
+      ) {
+        updateStepPercent('review_and_Activate', 100);
+        currentStep = 'review_and_Activate';
+      }
+
+      setActiveStepId(currentStep);
+
+    }
+  }, [application, applicationLoading]);
   const handleStepClick = (stepId) => {
-    const currentIndex = steps.findIndex((s) => s.id === applicationData);
+    const currentIndex = steps.findIndex((s) => s.id === activeStepId);
     const targetIndex = steps.findIndex((s) => s.id === stepId);
 
     if (targetIndex === -1) return;
@@ -145,11 +226,11 @@ export default function SpvStepper({ applicationId }) {
     setActiveStepId(stepId);
   };
 
-  useEffect(() => {
-    if (application?.activeStep) {
-      setApplicationData(application?.activeStep.code);
-    }
-  }, [application])
+  // useEffect(() => {
+  //   if (application?.activeStep) {
+  //     setApplicationData(application?.activeStep.code);
+  //   }
+  // }, [application])
 
   const renderForm = () => {
     switch (activeStepId) {
