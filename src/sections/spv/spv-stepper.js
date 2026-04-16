@@ -31,7 +31,7 @@ export default function SpvStepper({ applicationId }) {
 
   const [applicationData, setApplicationData] = useState();
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
-
+ 
 
   const steps = [
     { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
@@ -71,6 +71,13 @@ export default function SpvStepper({ applicationId }) {
     review_and_Activate: { percent: 0 },
   });
 
+    useEffect(() => {
+    if (applicationData) {
+      setActiveStepId(applicationData);
+    }
+  }, [applicationData]);
+
+  
   // useEffect(() => {
   //   const savedStep = localStorage.getItem('activeStepId');
   //   const savedForm = localStorage.getItem('formData');
@@ -109,6 +116,7 @@ export default function SpvStepper({ applicationId }) {
     }));
   };
 
+  
   const handleStepClick = (stepId) => {
     const currentIndex = steps.findIndex((s) => s.id === applicationData);
     const targetIndex = steps.findIndex((s) => s.id === stepId);
@@ -236,6 +244,7 @@ export default function SpvStepper({ applicationId }) {
     }
   };
 
+  //  console.log(applicationData);
   return (
     <Box sx={{ p: 3 }}>
       {/* <Box
