@@ -67,50 +67,51 @@ export const endpoints = {
     list: '/spv-applications',
     filterList: (filter) => `/spv-application?filter=${filter}`,
     details: (applicationId) => `/spv-application/${applicationId}`,
-    dataByStatus: (applicationId, statusValue) => `/spv-applications/${applicationId}/data-by-status/${statusValue}`
+    dataByStatus: (applicationId, statusValue) =>
+      `/spv-applications/${applicationId}/data-by-status/${statusValue}`,
+    poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
+  },
 
-  },
-// bondApplications: {
-//   list: '/bond-applications',
-//   filterList: (filter) => /bond-applications?filter=${filter},
-//   details: (applicationId) => /bond-applications/${applicationId},
-// dataByStatus: (applicationId, statusValue) => /bond-applications/${applicationId}/data-by-status/${statusValue}
-// },
-companyInfo: {
-  list: '/api/kyc/issuer_kyc/company-info/',
+  // bondApplications: {
+  //   list: '/bond-applications',
+  //   filterList: (filter) => /bond-applications?filter=${filter},
+  //   details: (applicationId) => /bond-applications/${applicationId},
+  // dataByStatus: (applicationId, statusValue) => /bond-applications/${applicationId}/data-by-status/${statusValue}
+  // },
+  companyInfo: {
+    list: '/api/kyc/issuer_kyc/company-info/',
     filterList: (filter) => `/api/kyc/issuer_kyc/company-info/?filter=${filter}`,
-      details: (id) => `/api/kyc/issuer_kyc/company-info//${id}`,
+    details: (id) => `/api/kyc/issuer_kyc/company-info//${id}`,
   },
-designation: {
-  list: '/designations',
+  designation: {
+    list: '/designations',
     filterList: (filter) => `/designations?filter=${filter}`,
-      details: (id) => `/designations/${id}`,
+    details: (id) => `/designations/${id}`,
   },
-entityType: {
-  list: '/company-entity-types',
+  entityType: {
+    list: '/company-entity-types',
     filterList: (filter) => `/company-entity-types?filter=${filter}`,
-      details: (id) => `/company-entity-types/${id}`,
+    details: (id) => `/company-entity-types/${id}`,
   },
-documentByScreen: (route) => `/screens/documents-by-screen/${encodeURIComponent(route)}`,
+  documentByScreen: (route) => `/screens/documents-by-screen/${encodeURIComponent(route)}`,
 
   trusteeKyc: {
-  kycProgress: (sessionId) => `/trustee-profiles/kyc-progress/${sessionId}`,
+    kycProgress: (sessionId) => `/trustee-profiles/kyc-progress/${sessionId}`,
     getSection: (section, profileId, route = '') =>
       `/trustee-profiles/kyc-get-data/${section}/${profileId}?route=${encodeURIComponent(route)}`,
-      details: (id) => `/trustee-profiles/bank-details/${id}`,
-        getBankDetails: `/trustee-profiles/bank-details`,
-          getDocuments: `/trustee-profiles/documents`,
-            getProfileData: `/trustee-profiles/me`,
+    details: (id) => `/trustee-profiles/bank-details/${id}`,
+    getBankDetails: `/trustee-profiles/bank-details`,
+    getDocuments: `/trustee-profiles/documents`,
+    getProfileData: `/trustee-profiles/me`,
   },
-trusteeEntityType: {
-  list: '/trustee-entity-types',
+  trusteeEntityType: {
+    list: '/trustee-entity-types',
     filterList: (filter) => `/trustee-entity-types?filter=${filter}`,
-      details: (id) => `/trustee-entity-types/${id}`,
+    details: (id) => `/trustee-entity-types/${id}`,
   },
-sector: {
-  list: '/company-sector-types',
+  sector: {
+    list: '/company-sector-types',
     filterList: (filter) => `/company-sector-types?filter=${filter}`,
-      details: (id) => `/company-sector-types/${id}`,
+    details: (id) => `/company-sector-types/${id}`,
   },
-
 };

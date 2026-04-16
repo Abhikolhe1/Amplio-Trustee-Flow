@@ -83,7 +83,6 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
       // "reserveBufferPercentPercent": 0,
       // "reserveAmount": 0,
       // "dailydailyCutoffTime": "string"
-
     }),
     [pool]
   );
@@ -103,7 +102,13 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
 
   const values = watch();
 
-  const requiredFields = ['poolLimit', 'maturityDays', 'targetYield', 'reserveBufferPercent', 'dailyCutoffTime'];
+  const requiredFields = [
+    'poolLimit',
+    'maturityDays',
+    'targetYield',
+    'reserveBufferPercent',
+    'dailyCutoffTime',
+  ];
 
   useEffect(() => {
     let completed = 0;
@@ -133,12 +138,10 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
     try {
       console.log(data);
       await axiosInstance.patch(`/spv-pre/pool-financials/${id}`, data);
-      setActiveStepId('pool_financial');
-    }
-    catch (error) {
+      setActiveStepId('ptc_parameters');
+    } catch (error) {
       console.log(error.message);
     }
-
   };
   useEffect(() => {
     if (stepData) {
