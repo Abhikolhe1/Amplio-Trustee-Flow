@@ -84,16 +84,14 @@ const getSuggestedMaxInvestPool = (totalUnits, minUnits) => {
 export default function PtcParameters({ percent, setActiveStepId }) {
   const params = useParams();
   const { id } = params;
-  // const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'pool_financials');
-
+   const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'ptc_parameters');
+     console.log('application', stepData);
+  const [currData, setCurrData] = useState();
   const { application } = useGetPoolFinancial(id);
-  console.log('application', application);
+  // console.log('application', application);
 
   const [prevPoolData, setPrevPoolData] = useState({});
-  console.log(prevPoolData);
-
-  const [currData, setCurrData] = useState();
-
+  // console.log(prevPoolData);
   const theme = useTheme();
   const poolLimit = toPositiveInteger(prevPoolData?.poolLimit);
 
@@ -261,6 +259,12 @@ export default function PtcParameters({ percent, setActiveStepId }) {
     values.maxInvestors,
     values.windowFrequency,
   ]);
+
+  useEffect(()=>{
+    if(stepData){
+      setCurrData(stepData);
+    }
+  },[stepData])
 
   useEffect(() => {
     reset(defaultValues);

@@ -5,9 +5,12 @@ import { useForm, useWatch } from 'react-hook-form';
 import FormProvider, { RHFCustomFileUploadBox, RHFSelect, RHFTextField } from 'src/components/hook-form';
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import DocumentCard from 'src/components/card/documentCard';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useParams } from 'src/routes/hook';
+import axiosInstance from 'src/utils/axios';
 
 const EMPTY_ARRAY = [];
 
@@ -16,7 +19,7 @@ const REQUIRED_FIELDS = [
   'trusteeEntity',
   'settlor',
   'governingLaw',
-  'bankruptcy',
+  'bankruptcyClause',
   'trustDuration',
 ];
 
@@ -56,24 +59,6 @@ const hasUploadedFile = (value) => {
   return true;
 };
 
-const getFileStorageKey = (value) => {
-  if (!value) {
-    return '';
-  }
-
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => item?.id || item?.url || item?.name || JSON.stringify(item))
-      .join('|');
-  }
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  return value?.id || value?.url || value?.name || JSON.stringify(value);
-};
-
 const mergeDocuments = (baseDocs, currentDocuments = []) =>
   baseDocs.map((doc) => {
     const found = currentDocuments.find((item) => item.id === doc.id);
@@ -84,11 +69,15 @@ const mergeDocuments = (baseDocs, currentDocuments = []) =>
     };
   });
 
-function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }) {
-  const previousDocumentsKeyRef = useRef('');
+function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
+  const params = useParams();
+  const { id } = params;
 
+  const { stepData } = useGetSpvApplicationStepData(id, 'trust_deed');
+  const [currData, setCurrData] = useState();
 
-  const previousStampFileKeyRef = useRef('');
+  const [savedFirstCardData, setSavedFirstCardData] = useState(null);
+  const [savedSecondCardData, setSavedSecondCardData] = useState(null);
 
   const [isFirstCardSaved, setIsFirstCardSaved] = useState(
     currData?.isFirstCardSaved || false
@@ -117,22 +106,33 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
       settlor: currData?.settlor || 'BirbalPlus',
       governingLaw:
         currData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
-      bankruptcy: currData?.bankruptcy || 'full',
+      bankruptcyClause: currData?.bankruptcyClause || 'full',
       trustDuration: currData?.trustDuration || '',
-      stampFile: currData?.stampFile || null,
+      stampDutyAndRegistrationId: currData?.stampDutyAndRegistrationId || null,
       documents: mergeDocuments(DOCUMENTS, currData?.documents),
     }),
     [currData]
   );
+
+//   {
+//   "trustName": "string",
+//   "trusteeEntity": "string",
+//   "settlor": "string",
+//   "governingLaw": "string",
+//   "bankruptcyClauseClause": "string",
+//   "trustDuration": "string",
+//   "trustDeedDocumentId": "string",
+//   "stampDutyAndRegistrationId": "string"
+// }
 
   const trustSchema = yup.object().shape({
     trustName: yup.string().required('Trust Name Is Required'),
     trusteeEntity: yup.string().required('Trust Entity is Required'),
     settlor: yup.string().required('Settor Info is Required'),
     governingLaw: yup.string().required('Law is Required'),
-    bankruptcy: yup.string().required('Bankruptcy Remoteness Clause is Required'),
+    bankruptcyClause: yup.string().required('bankruptcyClause Remoteness Clause is Required'),
     trustDuration: yup.string().required('Duration Is Required'),
-    stampFile: yup
+    stampDutyAndRegistrationId: yup
       .mixed()
       .test('fileRequired', 'Stamp duty document is required', (value) => hasUploadedFile(value)),
     documents: yup.array().of(
@@ -162,8 +162,11 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     getValues,
     formState: { errors },
   } = methods;
-
-
+  useEffect(() => {
+    if (stepData) {
+      setCurrData(stepData);
+    }
+  }, [stepData]);
 
   useEffect(() => {
     if (currData) {
@@ -171,18 +174,37 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
         trustName: currData?.trustName || 'Axis Trustee Services Ltd',
         trusteeEntity: currData?.trusteeEntity || 'Axis Trustee Services Ltd',
         settlor: currData?.settlor || 'BirbalPlus',
-        governingLaw:
-          currData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
-        bankruptcy: currData?.bankruptcy || 'full',
+        governingLaw:currData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
+        bankruptcyClause: currData?.bankruptcyClause || 'full',
         trustDuration: currData?.trustDuration || '',
-        stampFile: currData?.stampFile || null,
+        stampDutyAndRegistrationId: currData?.stampDutyAndRegistrationId || null,
         documents: mergeDocuments(DOCUMENTS, currData?.documents),
       });
 
       setIsFirstCardSaved(currData?.isFirstCardSaved || false);
       setIsSecondCardSaved(currData?.isSecondCardSaved || false);
+
+      setSavedFirstCardData(currData?.isFirstCardSaved ? {
+              trustName: currData?.trustName || 'Axis Trustee Services Ltd',
+              trusteeEntity: currData?.trusteeEntity || 'Axis Trustee Services Ltd',
+              settlor: currData?.settlor || 'BirbalPlus',
+              governingLaw:
+                currData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
+              bankruptcyClause: currData?.bankruptcyClause || 'full',
+              trustDuration: currData?.trustDuration || '',
+            }
+          : null
+      );
+      
+      setSavedSecondCardData(currData?.isSecondCardSaved ? {
+              documents: mergeDocuments(DOCUMENTS, currData?.documents),
+              stampDutyAndRegistrationId: currData?.stampDutyAndRegistrationId || null,
+            }
+          : null
+      );
     }
   }, [currData, reset]);
+
 
   const watchedFields = useWatch({
     control,
@@ -196,9 +218,9 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
 
   const formDocuments = watchedDocuments || EMPTY_ARRAY;
 
-  const stampFile = useWatch({
+  const stampDutyAndRegistrationId = useWatch({
     control,
-    name: 'stampFile',
+    name: 'stampDutyAndRegistrationId',
   });
 
   useEffect(() => {
@@ -216,7 +238,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
 
     const executionItemsCount = formDocuments.length + 1;
     const completedExecutionItems =
-      completedDocuments + (hasUploadedFile(stampFile) ? 1 : 0);
+      completedDocuments + (hasUploadedFile(stampDutyAndRegistrationId) ? 1 : 0);
 
     const secondCardPercent =
       executionItemsCount > 0
@@ -226,32 +248,7 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
     const totalPercent = firstCardPercent + secondCardPercent;
 
     percent?.(totalPercent);
-  }, [watchedFields, formDocuments, stampFile, percent]);
-
-  useEffect(() => {
-    const documentsKey = JSON.stringify(
-      (formDocuments || []).map((doc) => ({ id: doc.id, status: doc.status }))
-    );
-    const stampFileKey = getFileStorageKey(stampFile);
-
-    const hasDocumentsChanged = previousDocumentsKeyRef.current !== documentsKey;
-    const hasStampFileChanged = previousStampFileKeyRef.current !== stampFileKey;
-
-    previousDocumentsKeyRef.current = documentsKey;
-    previousStampFileKeyRef.current = stampFileKey;
-
-    if (!hasDocumentsChanged && !hasStampFileChanged) {
-      return;
-    }
-
-    saveStepData?.({
-      ...getValues(),
-      documents: formDocuments,
-      stampFile,
-      isFirstCardSaved,
-      isSecondCardSaved,
-    });
-  }, [formDocuments, getValues, isFirstCardSaved, isSecondCardSaved, saveStepData, stampFile]);
+  }, [watchedFields, formDocuments, stampDutyAndRegistrationId, percent]);
 
   const handleFirstCardSave = async () => {
 
@@ -260,59 +257,81 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
       'trusteeEntity',
       'settlor',
       'governingLaw',
-      'bankruptcy',
+      'bankruptcyClause',
       'trustDuration',
     ]);
 
     if (!isValid) return;
 
     const data = getValues();
+    const firstCardData = {
+      trustName: data.trustName,
+      trusteeEntity: data.trusteeEntity,
+      settlor: data.settlor,
+      governingLaw: data.governingLaw,
+      bankruptcyClause: data.bankruptcyClause,
+      trustDuration: data.trustDuration,
+    };
+
+    setSavedFirstCardData(firstCardData);
+    setIsFirstCardSaved(true);
 
     saveStepData({
-      ...data,
+      ...firstCardData,
       isFirstCardSaved: true,
       isSecondCardSaved,
     });
-
-    setIsFirstCardSaved(true);
   };
 
   const handleSecondCardSave = async () => {
-    const isValid = await trigger(['documents', 'stampFile']);
+    const isValid = await trigger(['documents', 'stampDutyAndRegistrationId']);
     const documentsData = getValues('documents') || [];
-    const stampFileData = getValues('stampFile');
+    const stampDutyAndRegistrationIdData = getValues('stampDutyAndRegistrationId');
 
     const allCompleted = documentsData.every(
       (doc) => doc.status === 'COMPLETED' || doc.status === 'SIGNED'
     );
 
-    if (!isValid || !allCompleted || !hasUploadedFile(stampFileData)) {
+    if (!isValid || !allCompleted || !hasUploadedFile(stampDutyAndRegistrationIdData)) {
       return;
     }
 
     const data = getValues();
+    const secondCardData = {
+      documents: data.documents || [],
+      stampDutyAndRegistrationId: data.stampDutyAndRegistrationId || null,
+    };
+
+    setSavedSecondCardData(secondCardData);
+    setIsSecondCardSaved(true);
 
     saveStepData({
-      ...data,
+      ...secondCardData,
       isFirstCardSaved,
       isSecondCardSaved: true,
     });
-
-    setIsSecondCardSaved(true);
   };
 
-  const handleNext = () => {
-    if (!isFirstCardSaved || !isSecondCardSaved) return;
+  const handleNext = async () => {
+    if (!isFirstCardSaved || !isSecondCardSaved || !savedFirstCardData || !savedSecondCardData) {
+      return;
+    }
 
-    const data = getValues();
+    const payload = {
+      ...savedFirstCardData,
+      ...savedSecondCardData,
+      // isFirstCardSaved: true,
+      // isSecondCardSaved: true,
+    };
 
-    saveStepData({
-      ...data,
-      isFirstCardSaved,
-      isSecondCardSaved,
-    });
+    try {
+      await axiosInstance.patch(`/spv-pre/trust-deed/${id}`, payload);
 
-    setActiveStepId('escrow_setup');
+      saveStepData?.(payload);
+      setActiveStepId('escrow');
+    } catch (error) {
+      console.log(error.message);
+    }
   };
 
   return (
@@ -390,8 +409,8 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
             >
               <Box>
                 <RHFSelect
-                  name="bankruptcy"
-                  label="Bankruptcy Remoteness Clause*"
+                  name="bankruptcyClause"
+                  label="bankruptcyClause Remoteness Clause*"
                 >
                   {Clause.map((role) => (
                     <MenuItem key={role.value} value={role.value}>
@@ -425,65 +444,65 @@ function LegelStructureView({ percent, setActiveStepId, currData, saveStepData }
             </Button>
           </Box>
         </Card>
- {isFirstCardSaved && 
-        <Card sx={{ p: 3, mt: 3 }}>
-          <Typography variant="subtitle1" color="primary" mb={2}>
-            Execution Status
-          </Typography>
+        {isFirstCardSaved &&
+          <Card sx={{ p: 3, mt: 3 }}>
+            <Typography variant="subtitle1" color="primary" mb={2}>
+              Execution Status
+            </Typography>
 
-          <Stack spacing={2}>
-            {formDocuments.map((doc, index) => (
-              <DocumentCard
-                key={doc.id}
-                title={doc.title}
-                description={doc.description}
-                icon={doc.icon}
-                status={doc.status}
-                docLink={doc.docLink}
-                button={doc.button}
-                onSign={() => {
-                  setValue(`documents.${index}.status`, 'COMPLETED', {
-                    shouldValidate: true,
-                    shouldDirty: true,
-                    shouldTouch: true,
-                  });
-                }}
-              />
-            ))}
-            <Box>
-            <Typography  variant='subtitle1'>Stamp Duty & Registration — Locked</Typography>
-            <Typography pb={2} variant='body2'>Maharashtra Stamp Act applicable · ₹500 stamp duty</Typography>
-            <RHFCustomFileUploadBox
-              name="stampFile"
-              label="Document Upload*"
-              icon="mdi:file-document-outline"
-             accept={{ 'application/pdf': ['.pdf'] }}
-            />
-            {errors.stampFile && (
-              <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
-                {errors.stampFile.message}
-              </Typography>
+            <Stack spacing={2}>
+              {formDocuments.map((doc, index) => (
+                <DocumentCard
+                  key={doc.id}
+                  title={doc.title}
+                  description={doc.description}
+                  icon={doc.icon}
+                  status={doc.status}
+                  docLink={doc.docLink}
+                  button={doc.button}
+                  onSign={() => {
+                    setValue(`documents.${index}.status`, 'COMPLETED', {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
+                  }}
+                />
+              ))}
+              <Box>
+                <Typography variant='subtitle1'>Stamp Duty & Registration — Locked</Typography>
+                <Typography pb={2} variant='body2'>Maharashtra Stamp Act applicable · ₹500 stamp duty</Typography>
+                <RHFCustomFileUploadBox
+                  name="stampDutyAndRegistrationId"
+                  label="Document Upload*"
+                  icon="mdi:file-document-outline"
+                  accept={{ 'application/pdf': ['.pdf'] }}
+                />
+                {errors.stampDutyAndRegistrationId && (
+                  <Typography color="error" variant="caption" sx={{ mt: 1, display: 'block' }}>
+                    {errors.stampDutyAndRegistrationId.message}
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
+
+            {errors.documents && (
+              <Typography color="error">Please complete all required documents</Typography>
             )}
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                onClick={handleSecondCardSave}
+                disabled={!isFirstCardSaved}
+              >
+                Save
+              </Button>
             </Box>
-          </Stack>
-
-          {errors.documents && (
-            <Typography color="error">Please complete all required documents</Typography>
-          )}
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button
-              type="button"
-              variant="contained"
-              color="primary"
-              onClick={handleSecondCardSave}
-              disabled={!isFirstCardSaved}
-            >
-              Save
-            </Button>
-          </Box>
-        </Card>
-}
+          </Card>
+        }
 
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
           <Button

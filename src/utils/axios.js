@@ -70,6 +70,7 @@ export const endpoints = {
     dataByStatus: (applicationId, statusValue) =>
       `/spv-applications/${applicationId}/data-by-status/${statusValue}`,
     poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
+    getSpvDocument: (applicationId) => `/spv-pre/documents/${applicationId}`,
   },
 
   // bondApplications: {

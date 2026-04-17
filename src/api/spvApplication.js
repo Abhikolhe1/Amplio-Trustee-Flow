@@ -40,10 +40,7 @@ export function useGetSpvApplication(applicationId) {
 }
 
 export function useGetSpvApplicationStepData(applicationId, statusValue) {
-  const URL =
-    applicationId && statusValue
-      ? endpoints.spvApplication.dataByStatus(applicationId, statusValue)
-      : null;
+  const URL =applicationId && statusValue? endpoints.spvApplication.dataByStatus(applicationId, statusValue): null;
 
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
   console.log('Data', data);
@@ -73,6 +70,24 @@ export function useGetPoolFinancial(applicationId) {
       applicationLoading: isLoading,
       applicationError: error,
       applicationValidating: isValidating,
+    }),
+    [data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+}
+
+export function useGetSpvDocument(applicationId) {
+  //   console.log('applicationId', applicationId);
+  const URL = applicationId ? endpoints.spvApplication.getSpvDocument(applicationId) : null;
+
+  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+  const memoizedValue = useMemo(
+    () => ({
+      spvDocuments: data?.documents,
+      spvDocumentsLoading: isLoading,
+      spvDocumentsError: error,
+      spvDocumentsValidating: isValidating,
     }),
     [data, error, isLoading, isValidating]
   );
