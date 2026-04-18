@@ -26,6 +26,7 @@ export default function SignatoiresDetailsView() {
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs
+       heading="Details"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Signatories', href: paths.dashboard.signatories.root },

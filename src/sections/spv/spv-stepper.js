@@ -13,66 +13,87 @@ import EscrowSetupView from './escrow/escrowSetup';
 import ISINApplicationView from './isin-application/view/isin-application-view';
 import KYCFinalReview from './final-review/kyc-final-review';
 
-export default function SpvStepper() {
+import { useGetSpvApplication } from 'src/api/spvApplication';
+// import { useParams } from 'src/routes/hook';
+import { useSearchParams } from "react-router-dom";
+
+
+
+export default function SpvStepper({ applicationId }) {
+  const [applicationData, setApplicationData] = useState();
+  const { application, applicationLoading } = useGetSpvApplication(applicationId);
+  const mapBackendStepToUiStep = (stepCode) =>
+    stepCode === 'review_and_submit' ? 'review_and_Activate' : stepCode;
+
   const steps = [
-    { id: 'basic_info', number: 1, lines: ['Basic', 'Info'] },
-    { id: 'pool_financial', number: 2, lines: ['Pool', 'Financial'] },
+    { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
+    { id: 'pool_financials', number: 2, lines: ['Pool', 'Financial'] },
     { id: 'ptc_parameters', number: 3, lines: ['PTC', 'Parameters'] },
-    { id: 'legal_structure', number: 4, lines: ['Legal', 'Structure'] },
-    { id: 'escrow_setup', number: 5, lines: ['Escrow', 'Setup'] },
-    { id: 'legal_documents', number: 6, lines: ['Legal', 'Documents'] },
+    { id: 'trust_deed', number: 4, lines: ['Legal', 'Structure'] },
+    { id: 'escrow', number: 5, lines: ['Escrow', 'Setup'] },
+    { id: 'documents', number: 6, lines: ['Legal', 'Documents'] },
     { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
     { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
-    { id: 'review_Activate', number: 9, lines: ['Review', 'Activate'] },
+    { id: 'review_and_Activate', number: 9, lines: ['Review', 'Activate'] },
   ];
 
-  const [activeStepId, setActiveStepId] = useState('basic_info');
+  const [activeStepId, setActiveStepId] = useState('spv_basic_info');
 
   const [formData, setFormData] = useState({
-    basic_info: {},
-    pool_financial: {},
+    spv_basic_info: {},
+    pool_financials: {},
     ptc_parameters: {},
-    legal_structure: {documents: []},
-    escrow_setup: {},
-    legal_documents: { documents: [] },
+    trust_deed: { documents: [] },
+    escrow: {},
+    documents: { documents: [] },
     credit_rating: {},
     isin_application: {},
-    review_Activate: {},
+    review_and_Activate: {},
   });
 
   const [stepsProgress, setStepsProgress] = useState({
-    basic_info: { percent: 0 },
-    pool_financial: { percent: 0 },
+    spv_basic_info: { percent: 0 },
+    pool_financials: { percent: 0 },
     ptc_parameters: { percent: 0 },
-    legal_structure: { percent: 0 },
-    escrow_setup: { percent: 0 },
-    legal_documents: { percent: 0 },
+    trust_deed: { percent: 0 },
+    escrow: { percent: 0 },
+    documents: { percent: 0 },
     credit_rating: { percent: 0 },
     isin_application: { percent: 0 },
-    review_Activate: { percent: 0 },
+    review_and_Activate: { percent: 0 },
   });
 
-  useEffect(() => {
-    const savedStep = localStorage.getItem('activeStepId');
-    const savedForm = localStorage.getItem('formData');
-    const savedProgress = localStorage.getItem('stepsProgress');
+  //   useEffect(() => {
+  //   if (applicationData) {
+  //     setActiveStepId(applicationData);
+  //   }
+  // }, [applicationData]);
 
-    if (savedStep) setActiveStepId(savedStep);
-    if (savedForm) setFormData(JSON.parse(savedForm));
-    if (savedProgress) setStepsProgress(JSON.parse(savedProgress));
-  }, []);
 
-  useEffect(() => {
-    localStorage.setItem('activeStepId', activeStepId);
-  }, [activeStepId]);
 
-  useEffect(() => {
-    localStorage.setItem('formData', JSON.stringify(formData));
-  }, [formData]);
 
-  useEffect(() => {
-    localStorage.setItem('stepsProgress', JSON.stringify(stepsProgress));
-  }, [stepsProgress]);
+
+  // useEffect(() => {
+  //   const savedStep = localStorage.getItem('activeStepId');
+  //   const savedProgress = localStorage.getItem('stepsProgress');
+
+  //   if (savedStep) setActiveStepId(savedStep);
+  //   if (savedForm) setFormData(JSON.parse(savedForm));
+  //   if (savedProgress) setStepsProgress(JSON.parse(savedProgress));
+  // }, []);
+
+  // useEffect(() => {
+  //   localStorage.setItem('activeStepId', activeStepId);
+  //   const savedForm = localStorage.getItem('formData');
+  // }, [activeStepId]);
+
+  // useEffect(() => {
+  //   localStorage.setItem('formData', JSON.stringify(formData));
+  // }, [formData]);
+
+  // useEffect(() => {
+  //   localStorage.setItem('stepsProgress', JSON.stringify(stepsProgress));
+  // }, [stepsProgress]);
 
   const saveStepData = (stepId, data) => {
     setFormData((prev) => {
@@ -84,12 +105,95 @@ export default function SpvStepper() {
   };
 
   const updateStepPercent = (stepId, percent) => {
-    setStepsProgress((prev) => ({
-      ...prev,
-      [stepId]: { percent },
-    }));
+    setStepsProgress((prev) => {
+      if (prev[stepId]?.percent === percent) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [stepId]: { percent },
+      };
+    });
   };
 
+  useEffect(() => {
+    if (application && !applicationLoading) {
+      if (applicationData) return;
+      setApplicationData(application);
+
+      const activeBackendStep = application.activeStep?.code || 'spv_basic_info';
+      const activeUiStep = mapBackendStepToUiStep(activeBackendStep);
+      const completedStepCodes =
+        application.completedSteps
+          ?.map((step) => step.code)
+          .filter((code) => code !== activeBackendStep) || [];
+
+      let currentStep = activeUiStep;
+
+      if (
+        completedStepCodes.includes('spv_basic_info')
+      ) {
+        updateStepPercent('spv_basic_info', 100);
+        currentStep = 'pool_financials';
+      }
+
+      if (
+        completedStepCodes.includes('pool_financials')
+      ) {
+        updateStepPercent('pool_financials', 100);
+        currentStep = 'ptc_parameters';
+      }
+
+      if (
+        completedStepCodes.includes('ptc_parameters')
+      ) {
+        updateStepPercent('ptc_parameters', 100);
+        currentStep = 'trust_deed';
+      }
+      if (
+        completedStepCodes.includes('trust_deed')
+      ) {
+        updateStepPercent('trust_deed', 100);
+        currentStep = 'escrow';
+      }
+
+      if (
+        completedStepCodes.includes('escrow')
+      ) {
+        updateStepPercent('escrow', 100);
+        currentStep = 'documents';
+      }
+      if (
+        completedStepCodes.includes('documents')
+      ) {
+        updateStepPercent('documents', 100);
+        currentStep = 'credit_rating';
+      }
+
+      if (
+        completedStepCodes.includes('credit_rating')
+      ) {
+        updateStepPercent('credit_rating', 100);
+        currentStep = 'isin_application';
+      }
+      if (
+        completedStepCodes.includes('isin_application')
+      ) {
+        updateStepPercent('isin_application', 100);
+        currentStep = 'review_and_Activate';
+      }
+      if (
+        completedStepCodes.includes('review_and_submit')
+      ) {
+        updateStepPercent('review_and_Activate', 100);
+        currentStep = 'review_and_Activate';
+      }
+
+      setActiveStepId(currentStep);
+
+    }
+  }, [application, applicationLoading]);
   const handleStepClick = (stepId) => {
     const currentIndex = steps.findIndex((s) => s.id === activeStepId);
     const targetIndex = steps.findIndex((s) => s.id === stepId);
@@ -118,25 +222,31 @@ export default function SpvStepper() {
     setActiveStepId(stepId);
   };
 
+  // useEffect(() => {
+  //   if (application?.activeStep) {
+  //     setApplicationData(application?.activeStep.code);
+  //   }
+  // }, [application])
+
   const renderForm = () => {
     switch (activeStepId) {
-      case 'basic_info':
+      case 'spv_basic_info':
         return (
           <BasicInfo
-            currData={formData.basic_info}
-            percent={(p) => updateStepPercent('basic_info', p)}
+            currData={formData.spv_basic_info}
+            percent={(p) => updateStepPercent('spv_basic_info', p)}
             setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('basic_info', data)}
+            saveStepData={(data) => saveStepData('spv_basic_info', data)}
           />
         );
 
-      case 'pool_financial':
+      case 'pool_financials':
         return (
           <PoolFinancials
-            currData={formData}
-            percent={(p) => updateStepPercent('pool_financial', p)}
+            currData={formData.pool_financials}
+            percent={(p) => updateStepPercent('pool_financials', p)}
             setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('pool_financial', data)}
+            saveStepData={(data) => saveStepData('pool_financials', data)}
           />
         );
 
@@ -144,40 +254,40 @@ export default function SpvStepper() {
         return (
           <PtcParameters
             currData={formData.ptc_parameters}
-            poolData={formData.pool_financial}
+            poolData={formData.pool_financials}
             percent={(p) => updateStepPercent('ptc_parameters', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('ptc_parameters', data)}
           />
         );
 
-      case 'legal_structure':
+      case 'trust_deed':
         return (
           <LegelStructureView
-            currData={formData.legal_structure}
-            percent={(p) => updateStepPercent('legal_structure', p)}
+            currData={formData.trust_deed}
+            percent={(p) => updateStepPercent('trust_deed', p)}
             setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('legal_structure', data)}
+            saveStepData={(data) => saveStepData('trust_deed', data)}
           />
         );
 
-      case 'escrow_setup':
+      case 'escrow':
         return (
           <EscrowSetupView
-            currData={formData.escrow_setup}
-            percent={(p) => updateStepPercent('escrow_setup', p)}
+            currData={formData.escrow}
+            percent={(p) => updateStepPercent('escrow', p)}
             setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('escrow_setup', data)}
+            saveStepData={(data) => saveStepData('escrow', data)}
           />
         );
 
-      case 'legal_documents':
+      case 'documents':
         return (
           <LegalDocument
-            currData={formData.legal_documents}
-            percent={(p) => updateStepPercent('legal_documents', p)}
+            currData={formData.documents}
+            percent={(p) => updateStepPercent('documents', p)}
             setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('legal_documents', data)}
+            saveStepData={(data) => saveStepData('documents', data)}
           />
         );
 
@@ -195,17 +305,18 @@ export default function SpvStepper() {
         return (
           <ISINApplicationView
             currData={formData.isin_application}
+            allData={formData}
             percent={(p) => updateStepPercent('isin_application', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('isin_application', data)}
           />
         );
 
-      case 'review_Activate':
+      case 'review_and_Activate':
         return (
           <KYCFinalReview
             currData={formData}
-            percent={(p) => updateStepPercent('review_Activate', p)}
+            percent={(p) => updateStepPercent('review_and_Activate', p)}
             setActiveStepId={setActiveStepId}
           />
         );

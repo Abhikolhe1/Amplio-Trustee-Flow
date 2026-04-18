@@ -200,7 +200,7 @@ export default function KYCBankDetails() {
             boxShadow: '0px 4px 20px rgba(0,0,0,0.08)',
           }}
         >
-          <Typography variant="h6" sx={{ fontWeight: 500, mb: 2 }}>
+          <Typography variant="h6" color="primary" sx={{ fontWeight: 500, mb: 2 }}>
             Select Document Type:
           </Typography>
 
@@ -383,7 +383,7 @@ export default function KYCBankDetails() {
           {/* ---------------- FOOTER BUTTONS ---------------- */}
           {!isApproved && (
             <Box sx={{ display: 'flex', justifyContent: 'end', mt: 4, mb: 2 }}>
-              <Button variant="contained" type="submit">
+              <Button variant="contained" color="primary" type="submit">
                 {bankDetails?.id ? 'Update' : 'Save'}
               </Button>
             </Box>

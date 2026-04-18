@@ -1,8 +1,9 @@
 import * as Yup from 'yup';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
+  Box,
   Button,
   Card,
   CardContent,
@@ -12,12 +13,18 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import React, { useEffect, useMemo, useState } from 'react';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import { useEffect } from 'react';
+import FormProvider, {
+  RHFCustomFileUploadBox,
+  RHFSelect,
+  RHFTextField,
+} from 'src/components/hook-form';
 // import { DatePicker } from '@mui/x-date-pickers';
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'src/components/snackbar';
 import RHFDatePicker from 'src/components/hook-form/rhf-date-picker';
+import axiosInstance from 'src/utils/axios';
+import { useParams } from 'src/routes/hook';
 
 // a reusable function to calculate form progress
 export const calculateFormProgress = (values) => {
@@ -33,6 +40,25 @@ export const calculateFormProgress = (values) => {
   return Math.round((filled / total) * 100);
 };
 
+// hasuploaded function
+const hasUploadedFile = (value) => {
+  if (!value) {
+    return false;
+  }
+
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+
+  if (typeof value === 'string') {
+    return Boolean(value.trim());
+  }
+
+  return true;
+};
+
+const getMediaId = (value) => (typeof value === 'string' ? value : value?.id || '');
+
 export default function IssuanceDetails({
   selectedDepository,
   creditAgecyWithRating,
@@ -42,6 +68,7 @@ export default function IssuanceDetails({
   saveStepData,
   setActiveStepId,
 }) {
+  const { id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
 
   const securityType = [
@@ -51,18 +78,26 @@ export default function IssuanceDetails({
 
   const issuanceSchema = Yup.object({
     securityType: Yup.string().required('Security Type is required'),
-    // isinPrefix: Yup.string().required('ISIN Prefix is required'),
+    isinNumber: Yup.string()
+      .required('ISIN is required')
+      .transform((value) => value?.trim().toUpperCase())
+      .matches(/^IN[A-Z0-9]{9}[0-9]$/, 'Invalid Indian ISIN, (e.g. INE123A01016 / IN1234567890'),
     issueSize: Yup.string().required(' Issue size is required'),
     // issueSize: Yup.number().typeError('Must be a number').required('Issue Size is required'),
     issueDate: Yup.date().nullable().required('Issue Date is required'),
     creditRating: Yup.string().required('Credit Rating is required'),
+    isisnLetterDoc: Yup.mixed()
+      .required('File is required')
+      .test('fileRequired', 'ISIN Letter is required', (value) => hasUploadedFile(value)),
   });
 
   const defaultValues = {
+    isinNumber: currData?.isinNumber || '',
     securityType: currData?.securityType || 'secure',
-    issueSize: '',
+    issueSize: issueSize ?? currData?.issueSize ?? '',
     issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
     creditRating: '',
+    isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
   };
 
   const methods = useForm({
@@ -80,14 +115,26 @@ export default function IssuanceDetails({
 
   const values = useWatch({ control });
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
     try {
+      const payload = {
+        depositoryId: selectedDepository,
+        securityType: data.securityType,
+        isinNumber: data.isinNumber,
+        issueSize: String(data.issueSize),
+        issueDate: data.issueDate?.toISOString?.() || data.issueDate,
+        creditRating: data.creditRating,
+        isinLetterDocId: getMediaId(data.isisnLetterDoc),
+      };
+      const res = await axiosInstance.patch(`/spv-pre/isin-application/${id}`, payload);
+      const isinApplication = res?.data?.details?.isinApplication || payload;
+
       saveStepData({
-        ...data,
+        ...isinApplication,
         depositoryId: selectedDepository,
       });
       enqueueSnackbar('Data Saved Successfully', { variant: 'success' });
-      setActiveStepId('review_Activate');
+      setActiveStepId('review_and_Activate');
     } catch (error) {
       enqueueSnackbar('Failed to save data', { variant: 'error' });
       throw error;
@@ -96,18 +143,20 @@ export default function IssuanceDetails({
 
   useEffect(() => {
     reset({
-      // securityType: currData?.securityType || 'secure',
-      issueSize: issueSize || '',
+      securityType: currData?.securityType || 'secure',
+      isinNumber: currData?.isinNumber || '',
+      issueSize: issueSize ?? currData?.issueSize ?? '',
       creditRating: creditAgecyWithRating || '',
-      // issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+      issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+      isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
     });
-  }, [issueSize, creditAgecyWithRating]);
+  }, [creditAgecyWithRating, currData, issueSize, reset]);
 
   useEffect(() => {
     // sessionStorage.setItem('issuanceDetails', JSON.stringify(values));
     const progress = calculateFormProgress(values);
     percent(progress);
-  }, [values]);
+  }, [percent, values]);
 
   return (
     <Card sx={{ mt: 3 }}>
@@ -129,17 +178,14 @@ export default function IssuanceDetails({
                   </MenuItem>
                 ))}
               </RHFSelect>
-              {/* <Typography variant="caption" color="text.secondary">
-                Auto-determined by SPV structure · Cannot be changed
-              </Typography> */}
             </Grid>
 
-            {/* <Grid item xs={12} md={6}>
-              <RHFTextField name="isinPrefix" label="ISIN Prefix" />
-              <Typography variant="caption" color="text.secondary">
+            <Grid item xs={12} md={6}>
+              <RHFTextField name="isinNumber" label="ISIN Number" />
+              {/* <Typography variant="caption" color="text.secondary">
                 All Indian securities start with INE
-              </Typography>
-            </Grid> */}
+              </Typography> */}
+            </Grid>
             <Grid item xs={12} md={6}>
               <RHFTextField
                 name="creditRating"
@@ -186,6 +232,30 @@ export default function IssuanceDetails({
               /> */}
             </Grid>
           </Grid>
+          <Box
+            mt={2}
+            columnGap={2}
+            rowGap={3}
+            display="grid"
+            gridTemplateColumns={{
+              xs: 'repeat(1, 1fr)',
+              md: 'repeat(1, 1fr)',
+            }}
+          >
+            <RHFCustomFileUploadBox
+              name="isisnLetterDoc"
+              label="Upload ISIN Application Leter (PDF)"
+              // disabled={disabled}
+              control={control}
+              accept={{
+                'application/pdf': ['.pdf'],
+                'application/msword': ['.doc'],
+                'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [
+                  '.docx',
+                ],
+              }}
+            />
+          </Box>
 
           {/* Button Submit */}
           <Stack mt={2} alignItems="flex-end">

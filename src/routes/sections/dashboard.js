@@ -14,9 +14,10 @@ import { element } from 'prop-types';
 
 // OVERVIEW
 const IndexPage = lazy(() => import('src/pages/dashboard/analytics'));
-// kyc
+//spvkyc
 const SpvCreatePage = lazy(() => import('src/pages/dashboard/spv/new'));
 const SpvListPage = lazy(() => import('src/pages/dashboard/spv/list'));
+const SpvDetailsPage = lazy(() => import('src/pages/dashboard/spv/details'));
 const SpvSuccess = lazy(() => import('src/pages/dashboard/spv/success-screen'));
 
 // const IndexPage = lazy(() => import('src/pages/dashboard/app'));
@@ -136,6 +137,7 @@ export const dashboardRoutes = [
           { element: <SpvListPage />, index: true },
           { path: 'list', element: <SpvListPage /> },
           { path: 'new', element: <SpvCreatePage/> },
+          { path: ':id', element: <SpvDetailsPage/> },
           { path: 'success', element: <SpvSuccess/> },
         ],
       },

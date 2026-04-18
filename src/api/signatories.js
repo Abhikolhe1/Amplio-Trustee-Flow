@@ -41,7 +41,7 @@ export function useGetSignatorie(signatoryId) {
     }),
     [data, error, isLoading, isValidating]
   );
-
+//  console.log("data in axios",memoizedValue);
   return memoizedValue;
 }
 

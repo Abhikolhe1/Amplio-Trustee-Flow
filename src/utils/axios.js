@@ -64,6 +64,33 @@ export const endpoints = {
     filterList: (filter) => `/trustee-profiles/authorize-signatory?filter=${filter}`,
     details: (signatoryId) => `/trustee-profiles/authorize-signatory/${signatoryId}`,
   },
+  spvApplication: {
+    list: '/spv-applications',
+    filterList: (filter) => `/spv-application?filter=${filter}`,
+    details: (applicationId) => `/spv-application/${applicationId}`,
+    dataByStatus: (applicationId, statusValue) =>
+      `/spv-applications/${applicationId}/data-by-status/${statusValue}`,
+    poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
+    getSpvDocument: (applicationId) => `/spv-pre/documents/${applicationId}`,
+  },
+  spvKycDocumentType: {
+    list: '/spv-kyc-document-types',
+  },
+  creditRatingAgencies: {
+    list: '/credit-rating-agencies',
+    details: (id) => `/credit-rating-agencies/${id}`,
+  },
+  creditRatings: {
+    list: '/credit-ratings',
+    details: (id) => `/credit-ratings/${id}`,
+  },
+
+  // bondApplications: {
+  //   list: '/bond-applications',
+  //   filterList: (filter) => /bond-applications?filter=${filter},
+  //   details: (applicationId) => /bond-applications/${applicationId},
+  // dataByStatus: (applicationId, statusValue) => /bond-applications/${applicationId}/data-by-status/${statusValue}
+  // },
   companyInfo: {
     list: '/api/kyc/issuer_kyc/company-info/',
     filterList: (filter) => `/api/kyc/issuer_kyc/company-info/?filter=${filter}`,
@@ -80,6 +107,7 @@ export const endpoints = {
     details: (id) => `/company-entity-types/${id}`,
   },
   documentByScreen: (route) => `/screens/documents-by-screen/${encodeURIComponent(route)}`,
+
   trusteeKyc: {
     kycProgress: (sessionId) => `/trustee-profiles/kyc-progress/${sessionId}`,
     getSection: (section, profileId, route = '') =>

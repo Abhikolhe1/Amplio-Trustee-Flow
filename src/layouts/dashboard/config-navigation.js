@@ -99,7 +99,7 @@ export function useNavData() {
             title: t('spv kyc applications'),
             path: paths.dashboard.spvkyc.root,
             icon: ICONS.signatories,
-            
+            deepMatch: true,
           },
 
           //   // USER

@@ -182,7 +182,7 @@ export default function AddressNewForm({ onClose }) {
       <Stack component={Card} spacing={3} sx={{ p: 3 }}>
         <Stack spacing={4}>
           <Stack spacing={2}>
-            <Typography variant="h4">Upload Address Proof</Typography>
+            <Typography variant="h4" color="primary">Upload Address Proof</Typography>
 
             <Box sx={{ width: 200 }}>
               <RHFSelect name="documentType" label="Document Type">
@@ -303,7 +303,8 @@ export default function AddressNewForm({ onClose }) {
           </Grid>
 
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <LoadingButton type="submit" variant="contained" loading={isUploading} sx={{ ml: 'auto' }}>
+         
+            <LoadingButton type="submit" variant="contained" color="primary" loading={isUploading} sx={{ ml: 'auto' }}>
               Save Changes
             </LoadingButton>
           </Box>

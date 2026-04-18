@@ -73,7 +73,7 @@ export default function SignatoriesListView() {
   const confirm = useBoolean();
 
   const { signatories: Signatories } = useGetSignatories();
-  console.log(Signatories);
+  // console.log(Signatories);
 
   const handleViewRow = useCallback(
     (id) => {

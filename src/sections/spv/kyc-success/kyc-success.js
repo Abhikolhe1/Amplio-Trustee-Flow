@@ -1,133 +1,161 @@
-import React from "react";
-import {
-  Box,
-  Typography,
-  Button,
-  Chip,
-  Stack,
-  Container,
-  Paper,
-} from "@mui/material";
-// import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { useTheme } from "@mui/material/styles";
+import React, { useEffect, useState } from 'react';
+import { Box, Typography, Button, Chip, Stack, Container, Card, Icon } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
+import Iconify from 'src/components/iconify';
+import { format } from 'date-fns';
+import { useRouter } from 'src/routes/hook';
+import { paths } from 'src/routes/paths';
 
 export default function SpvLiveSuccess() {
   const theme = useTheme();
+  const router = useRouter();
+  const [spv, setSpv] = useState('');
 
-  const chips = [
-    { label: "ISIN INE-F2G4-2026-001" },
-    { label: "Pool ₹40,000 / ₹50,00,000" },
-    { label: "Escrow AXIS-ESC-T1-001" },
-    { label: "Rating CRISIL AA (sf)" },
-    { label: "Merchants M1 • M2 • M3" },
-    { label: "Yield 10% p.a." },
-  ];
+  useEffect(() => {
+    const formData = JSON.parse(localStorage.getItem('formData'));
+    const spvName = formData?.basic_info?.spvName;
+    setSpv(spvName);
+  }, []);
+
+  const data = {
+    title: 'SPV is Now Live',
+    description: `${spv}  is active. Razorpay T1 receivables are now being automatically routed to the trust pool. Real-time monitoring enabled.`,
+    timestamp: `${format(new Date(), 'dd MMM yyyy')} · Axis Trustee Services Ltd`,
+    actions: [
+      {
+        label: 'Go to Live Dashboard',
+        variant: 'contained',
+        color: 'success',
+      },
+      // {
+      //   label: 'Create T2 SPV (Next)',
+      //   variant: 'outlined',
+      //   color: 'primary',
+      // },
+    ],
+    chips: [
+      'ISIN INE-F2G4-2026-001',
+      'Pool ₹40,000 / ₹50,00,000',
+      'Escrow AXIS-ESC-T1-001',
+      'Rating CRISIL AA (sf)',
+      'Merchants M1 • M2 • M3',
+      'Yield 10% p.a.',
+    ],
+  };
+
+  const handleDashboard = () => {
+    router.push(paths.dashboard.spvkyc.list);
+  };
 
   return (
-    <Container maxWidth="md">
-      <Paper
-        elevation={0}
-        sx={{
-          textAlign: "center",
-          py: 8,
-          px: 4,
-          borderRadius: 3,
-          backgroundColor: theme.palette.background.paper,
-        }}
-      >
-        <Box display="flex" justifyContent="center" mb={2}>
-          {/* <CheckCircleIcon
-            sx={{
-              fontSize: 70,
-              color: theme.palette.success.main,
-            }}
-          /> */}
-        </Box>
-
-        <Typography
-          variant="h4"
-          fontWeight={700}
-          color={theme.palette.primary.main}
-          gutterBottom
+    <Box
+      sx={{
+        minHeight: '70vh',
+        display: 'flex',
+        justifyContent: 'center', // horizontal center
+        alignItems: 'center',     // vertical center (optional)
+        backgroundColor: theme.palette.background.default,
+      }}
+    >
+      <Container maxWidth="md" >
+        <Card
+          sx={{
+            p: 4,
+            borderRadius: 3,
+            backgroundColor: theme.palette.background.paper,
+          }}
         >
-          SPV is Now Live
-        </Typography>
+          {/* Icon */}
+          <Box display="flex" justifyContent="center" mb={2}>
+            <Iconify
+              icon="mdi:check-circle-outline"
+              width={70}
+              height={70}
+              color={theme.palette.success.main}
+            />
+          </Box>
 
-        <Typography
-          variant="body1"
-          color={theme.palette.text.secondary}
-          maxWidth="600px"
-          mx="auto"
-          mb={4}
-        >
-          RZP-T1-SECURITIZATION-001 is active. Razorpay T1 receivables are now
-          being automatically routed to the trust pool. Real-time monitoring
-          enabled.
-        </Typography>
+          {/* Title */}
+          <Typography
+            variant="h4"
+            // fontWeight={700}
+            color="primary"
+            align="center"
+            gutterBottom
+          >
+            {data.title}
+          </Typography>
 
-        <Stack
-          direction="row"
-          flexWrap="wrap"
-          justifyContent="center"
-          gap={1.5}
-          mb={4}
-        >
-          {chips.map((chip, index) => (
+          {/* Description */}
+          <Typography
+            variant="subtitle2"
+            color={theme.palette.text.secondary}
+            align="center"
+            maxWidth="600px"
+            mx="auto"
+            mb={4}
+          >
+            {data.description}
+          </Typography>
+
+          {/* Chips */}
+          {/* <Stack direction="row" flexWrap="wrap" justifyContent="center" gap={1.5} mb={4}>
+          {data.chips.map((chip, index) => (
             <Chip
               key={index}
-              label={chip.label}
+              label={chip}
               variant="outlined"
               sx={{
                 borderColor: theme.palette.primary.main,
                 color: theme.palette.primary.main,
                 fontWeight: 500,
-                px: 1,
               }}
             />
           ))}
-        </Stack>
+        </Stack> */}
 
-        <Stack direction="row" spacing={2} justifyContent="center" mb={3}>
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: theme.palette.success.main,
-              "&:hover": {
-                backgroundColor: theme.palette.success.dark,
-              },
-              px: 3,
-              py: 1.2,
-              fontWeight: 600,
-            }}
+          {/* Actions */}
+          <Stack direction="row" spacing={2} justifyContent="center" mb={3}>
+            {data.actions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant}
+                sx={{
+                  px: 3,
+                  py: 1.2,
+                  ...(action.color === 'success' && {
+                    backgroundColor: theme.palette.success.main,
+                    '&:hover': {
+                      backgroundColor: theme.palette.success.dark,
+                    },
+                  }),
+                  ...(action.color === 'primary' && {
+                    borderColor: theme.palette.primary.main,
+                    color: theme.palette.primary.main,
+                    '&:hover': {
+                      borderColor: theme.palette.primary.dark,
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                  }),
+                }}
+                onClick={handleDashboard}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </Stack>
+
+          {/* Footer */}
+          <Typography
+            variant="caption"
+            color={theme.palette.text.disabled}
+            align="center"
+            display="block"
           >
-            Go to Live Dashboard →
-          </Button>
-
-          <Button
-            variant="outlined"
-            sx={{
-              borderColor: theme.palette.primary.main,
-              color: theme.palette.primary.main,
-              px: 3,
-              py: 1.2,
-              fontWeight: 600,
-              "&:hover": {
-                borderColor: theme.palette.primary.dark,
-                backgroundColor: theme.palette.action.hover,
-              },
-            }}
-          >
-            Create T2 SPV (Next)
-          </Button>
-        </Stack>
-
-        <Typography
-          variant="caption"
-          color={theme.palette.text.disabled}
-        >
-          System Timestamp: 15 Apr 2026 · FinSecure Trustee Services Ltd.
-        </Typography>
-      </Paper>
-    </Container>
+            {data.timestamp}
+          </Typography>
+        </Card>
+      </Container>
+    </Box>
   );
 }

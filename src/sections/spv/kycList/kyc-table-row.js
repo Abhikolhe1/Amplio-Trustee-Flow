@@ -35,6 +35,7 @@ export default function KycTableRow({
         id,
         applicationId,
         status,
+        statusColor,
         createdAt,
     } = row;
     // console.log("row data",row);
@@ -69,7 +70,7 @@ export default function KycTableRow({
 
 
                 <TableCell>
-                    <Label variant="soft" color={'default'}>
+                    <Label variant="soft" color={statusColor || 'default'}>
                         {status}
                     </Label>
                 </TableCell>

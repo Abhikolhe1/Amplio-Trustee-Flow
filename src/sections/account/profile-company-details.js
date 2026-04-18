@@ -25,7 +25,7 @@ export default function KYCSignatories({ trusteeProfile }) {
   return (
     <Container>
       <Card sx={{ p: 3 }}>
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>
+        <Typography variant="h5" color="primary" sx={{ mb: 2, fontWeight: 700 }}>
           Document Verification
         </Typography>
 

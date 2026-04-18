@@ -15,21 +15,24 @@ import {
 import { useForm } from 'react-hook-form';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useParams } from 'src/routes/hook';
+import axiosInstance from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
 const SPV_OPTIONS = [
   {
     label: 'Standalone Passive Vehicle',
-    value: 'standalone',
+    value: 'Standalone Passive Vehicle',
   },
   {
     label: 'Master Trust Structure',
-    value: 'trust',
+    value: 'Master Trust Structure',
   },
   {
     label: 'Pooled Vehicle Trust',
-    value: 'llp',
+    value: 'Pooled Vehicle Trust',
   },
 ];
 const PSP_PARTNER = [
@@ -51,23 +54,28 @@ const PSP_PARTNER = [
   },
 ];
 
-export default function BasicInfo({ percent, setActiveStepId, currData, saveStepData }) {
+export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
+  const params = useParams();
+  const { id } = params;
   const [spvCounter, setSpvCounter] = useState(1);
+
+  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'spv_basic_info');
+  const [currData, setCurrData] = useState();
 
   const FormSchema = Yup.object().shape({
     pspPartner: Yup.string().required('PSP Partner is required'),
-    spvStructure: Yup.string()
+    legalStructure: Yup.string()
       .required('SPV Legal Structure is required')
       .notOneOf([''], 'Please select SPV structure'),
-    originator: Yup.string().required('Originator is required'),
+    originatorName: Yup.string().required('Originator is required'),
     spvName: Yup.string().required('SPV Name is required'),
   });
 
   const defaultValues = useMemo(
     () => ({
       pspPartner: currData?.pspPartner || '',
-      spvStructure: currData?.spvStructure || '',
-      originator: currData?.originator || '',
+      legalStructure: currData?.legalStructure || '',
+      originatorName: currData?.originatorName || 'Birbal Plus',
       spvName: currData?.spvName || '',
     }),
     [currData]
@@ -87,7 +95,7 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
 
   const values = watch();
 
-  const requiredFields = ['pspPartner', 'spvStructure', 'originator', 'spvName'];
+  const requiredFields = ['pspPartner', 'legalStructure', 'originatorName', 'spvName'];
 
   useEffect(() => {
     let completed = 0;
@@ -106,36 +114,48 @@ export default function BasicInfo({ percent, setActiveStepId, currData, saveStep
     percent?.(percentValue);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.pspPartner, values.spvStructure, values.originator, values.spvName]);
+  }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName]);
 
-const generateSPVName = () => {
-  const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
+  const generateSPVName = () => {
+    const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
 
-  // Convert PSP value to readable code
-  const pspCodeMap = {
-    razorpay: 'RZP',
-    paytm: 'PAYTM',
-    phonepe: 'PHNP',
-    cashfree: 'CSF',
+    // Convert PSP value to readable code
+    const pspCodeMap = {
+      razorpay: 'RZP',
+      paytm: 'PAYTM',
+      phonepe: 'PHNP',
+      cashfree: 'CSF',
+    };
+    const pspCode = pspCodeMap[watch('pspPartner')] || 'GEN';
+    // Year
+    const year = new Date().getFullYear();
+    // Version (incremental)
+    const version = `V${spvCounter}`;
+    // Random Hash (6 chars)
+    const hash = Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Final ID
+    const formattedId = `${pspCode}-${year}-${version}-${hash}`;
+    setValue('spvName', formattedId);
+    setSpvCounter((prev) => prev + 1);
   };
-  const pspCode = pspCodeMap[watch('pspPartner')] || 'GEN';
-  // Year
-  const year = new Date().getFullYear();
-  // Version (incremental)
-  const version = `V${spvCounter}`;
-  // Random Hash (6 chars)
-  const hash = Math.random().toString(36).substring(2, 8).toUpperCase();
-  // Final ID
-  const formattedId = `${pspCode}-${year}-${version}-${hash}`;
-  setValue('spvName', formattedId);
-  setSpvCounter((prev) => prev + 1);
-};
 
   const onSubmit = async (data) => {
-    saveStepData(data);
-    console.log(data);
-    setActiveStepId('pool_financial');
+    try {
+      await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
+      saveStepData?.(data);
+      setActiveStepId('pool_financials');
+    }
+    catch (error) {
+      console.log(error.message);
+    }
   };
+
+  useEffect(() => {
+    if (stepData) {
+      setCurrData(stepData);
+    }
+  }, [stepData]);
+
   useEffect(() => {
     if (currData) {
       reset(defaultValues);
@@ -174,7 +194,7 @@ const generateSPVName = () => {
               </RHFSelect>
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFSelect name="spvStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
+              <RHFSelect name="legalStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
                 {SPV_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -184,11 +204,11 @@ const generateSPVName = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <RHFTextField
-                name="originator"
-                placeholder="FinFlow Capital Pvt. Ltd. (NBFC)"
+                name="originatorName"
                 label="ORIGINATOR (PLATFORM NBFC)"
                 fullWidth
                 sx={{ mt: 1 }}
+                disabled
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -236,6 +256,6 @@ const generateSPVName = () => {
 BasicInfo.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };

@@ -33,11 +33,11 @@ export default function TrusteeBankPage({ trusteeProfile }) {
     <>
       {/* Header */}
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+        <Typography variant="h4" color="primary" sx={{ fontWeight: 700 }}>
           Trustee Bank Details
         </Typography>
 
-        <Button variant="contained" onClick={() => navigate(paths.dashboard.trusteeProfiles.new)}>
+        <Button variant="contained" color="primary" onClick={() => navigate(paths.dashboard.trusteeProfiles.new)}>
           + Create Bank Details
         </Button>
       </Stack>

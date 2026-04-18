@@ -1,6 +1,6 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Container from '@mui/material/Container';
 import { Box, Button, Card, Grid, Stack, Typography } from '@mui/material';
 import { Controller, useForm } from 'react-hook-form';
@@ -10,9 +10,12 @@ import FormProvider, { RHFSlider, RHFSwitch, RHFTextField } from 'src/components
 import { yupResolver } from '@hookform/resolvers/yup';
 import WidgetSummaryCard from 'src/components/card/widget-summary-card';
 import { TimePicker } from '@mui/x-date-pickers';
+import { useParams } from 'src/routes/hook';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import axiosInstance from 'src/utils/axios';
 // ----------------------------------------------------------------------
 
-export default function PoolFinancials({ percent, setActiveStepId, currData, saveStepData }) {
+export default function PoolFinancials({ percent, setActiveStepId, saveStepData }) {
   const sliderStyle = {
     height: 8,
     '& .MuiSlider-track': {
@@ -45,26 +48,40 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
     return number;
   }
 
-  const basic = currData?.basic_info;
+  const params = useParams();
+  const { id } = params;
+
+  const { stepData: poolFinancialsData, stepDataLoading: poolFinancialsLoading, } = useGetSpvApplicationStepData(id, 'pool_financials');
+
+  const { stepData: spvBasicInfoData, } = useGetSpvApplicationStepData(id, 'spv_basic_info');
+
+  const [prevData, setPrevData] = useState();
+ 
+  const [currData, setCurrData] = useState();
+
+  const basic = prevData;
 
   const spvName = basic?.spvName || 'T1 SPV';
 
   const PoolSchema = Yup.object().shape({
-    poolLimit: Yup.string().required('Pool limit is required'),
-    maturity: Yup.string().required('Maturity is required'),
-    targetYield: Yup.string().required('Target Yield is required'),
-    reserveBuffer: Yup.string().required('Reserve Buffer is required'),
-    cutoffTime: Yup.mixed().required('Cutoff time required'),
+    poolLimit: Yup.number().required('Pool limit is required'),
+    maturityDays: Yup.number().required('maturityDays is required'),
+    targetYield: Yup.number().required('Target Yield is required'),
+    reserveBufferPercent: Yup.number().required('Reserve Buffer is required'),
+    dailyCutoffTime: Yup.string().required('Cutoff time required'),
   });
-  const pool = currData?.pool_financial;
+  const pool = currData;
 
   const defaultValues = useMemo(
     () => ({
       poolLimit: pool?.poolLimit ?? 1000000,
-      maturity: pool?.maturity ?? 30,
+      maturityDays: pool?.maturityDays ?? 12,
       targetYield: pool?.targetYield ?? 6,
-      reserveBuffer: pool?.reserveBuffer ?? 0.5,
-      cutoffTime: pool?.cutoffTime ? new Date(pool.cutoffTime) : null,
+      reserveBufferPercent: pool?.reserveBufferPercent ?? 0.5,
+      dailyCutoffTime: pool?.dailyCutoffTime ? new Date(pool.dailyCutoffTime) : null,
+
+     
+
     }),
     [pool]
   );
@@ -84,7 +101,13 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
 
   const values = watch();
 
-  const requiredFields = ['poolLimit', 'maturity', 'targetYield', 'reserveBuffer', 'cutoffTime'];
+  const requiredFields = [
+    'poolLimit',
+    'maturityDays',
+    'targetYield',
+    'reserveBufferPercent',
+    'dailyCutoffTime',
+  ];
 
   useEffect(() => {
     let completed = 0;
@@ -104,17 +127,32 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     values.poolLimit,
-    values.maturity,
+    values.maturityDays,
     values.targetYield,
-    values.reserveBuffer,
-    values.cutoffTime,
+    values.reserveBufferPercent,
+    values.dailyCutoffTime,
   ]);
 
   const onSubmit = async (data) => {
-    saveStepData(data);
-    console.log('FORM DATA:', data);
-    setActiveStepId('ptc_parameters');
+    try {
+      await axiosInstance.patch(`/spv-pre/pool-financials/${id}`, data);
+      saveStepData?.(data);
+      setActiveStepId('ptc_parameters');
+    } catch (error) {
+      console.log(error.message);
+    }
   };
+  useEffect(() => {
+    if (poolFinancialsData) {
+      setCurrData(poolFinancialsData);
+    }
+  }, [poolFinancialsData]);
+
+  useEffect(() => {
+    if (spvBasicInfoData) {
+      setPrevData(spvBasicInfoData);
+    }
+  }, [spvBasicInfoData]);
 
   useEffect(() => {
     if (currData) {
@@ -132,7 +170,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
                 Pool Financial Configuration
               </Typography>
               <Typography variant="body2">
-                Set the pool limit, maturity, yield, discount range, reserve buffer, and daily
+                Set the pool limit, maturityDays, yield, discount range, reserve buffer, and daily
                 cutoff time for the <strong>{spvName}</strong>.
               </Typography>
             </Grid>
@@ -146,8 +184,8 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
 
             <Grid item xs={12} sm={6} lg={3}>
               <WidgetSummaryCard
-                title="Maturity"
-                total={`${values.maturity || 0} days`}
+                title="maturityDays"
+                total={`${values.maturityDays || 0} Months`}
                 timing="Per PTC cycle"
               />
             </Grid>
@@ -163,7 +201,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
             <Grid item xs={12} sm={6} lg={3}>
               <WidgetSummaryCard
                 title="Reserve Buffer"
-                total={`${values.reserveBuffer || 0} %`}
+                total={`${values.reserveBufferPercent || 0} %`}
                 timing="₹1,00,000 required"
               />
             </Grid>
@@ -192,19 +230,19 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack spacing={0.5}>
-                <Typography variant="body2">Maturity (Days)</Typography>
+                <Typography variant="body2">maturityDays (Months)</Typography>
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="caption">30d</Typography>
-                  <Typography variant="caption">120d</Typography>
+                  <Typography variant="caption">12M</Typography>
+                  <Typography variant="caption">36M</Typography>
                 </Stack>
 
                 <RHFSlider
-                  name="maturity"
-                  min={30}
-                  max={120}
+                  name="maturityDays"
+                  min={12}
+                  max={36}
                   step={1}
                   sx={sliderStyle}
-                  valueLabelFormat={(value) => `${formatNumber(value)} days`}
+                  valueLabelFormat={(value) => `${formatNumber(value)} Months`}
                 />
               </Stack>
             </Grid>
@@ -235,7 +273,7 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
                 </Stack>
 
                 <RHFSlider
-                  name="reserveBuffer"
+                  name="reserveBufferPercent"
                   min={0.5}
                   max={10}
                   step={0.1}
@@ -246,15 +284,19 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
             </Grid>
             <Grid item xs={12} md={6}>
               <Controller
-                name="cutoffTime"
+                name="dailyCutoffTime"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <TimePicker
                     label="Cutoff Time"
+                    color="primary"
                     value={field.value || null}
                     onChange={(newValue) => field.onChange(newValue)}
                     ampm={false}
                     slotProps={{
+                      actionBar: {
+                        actions: ['accept'],
+                      },
                       textField: {
                         fullWidth: true,
                         margin: 'normal',
@@ -284,6 +326,6 @@ export default function PoolFinancials({ percent, setActiveStepId, currData, sav
 PoolFinancials.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };

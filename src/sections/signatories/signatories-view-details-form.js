@@ -9,17 +9,28 @@ import { DatePicker } from '@mui/x-date-pickers';
 
 import { useSnackbar } from 'src/components/snackbar';
 import Iconify from 'src/components/iconify';
-import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
+import FormProvider, { RHFCustomFileUploadBox, RHFSelect, RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 
 const ROLES = [
-  { value: 'DIRECTOR', label: 'Director' },
-  { value: 'SIGNATORY', label: 'Signatory' },
-  { value: 'MANAGER', label: 'Manager' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'director', label: 'Director' },
+  { value: 'managing_director', label: 'Managing Director (MD)' },
+  { value: 'wholetime_director', label: 'Whole-Time Director' },
+  { value: 'cfo', label: 'Chief Financial Officer (CFO)' },
+  { value: 'ceo', label: 'Chief Executive Officer (CEO)' },
+  { value: 'authorised_signatory', label: 'Authorised Signatory' },
+  { value: 'partner', label: 'Partner' },
+  { value: 'trustee', label: 'Trustee' },
+  { value: 'proprietor', label: 'Proprietor' },
+  { value: 'trustee_secretary', label: 'Trustee Secretary (CS)' },
+  { value: 'manager', label: 'Manager' },
+  { value: 'authorized_representative', label: 'Authorized Representative' },
+  { value: 'nominee', label: 'Nominee' },
+  { value: 'other', label: 'Other' },
 ];
 
 export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode }) {
+
   const { enqueueSnackbar } = useSnackbar();
   const [extractedPan, setExtractedPan] = useState(null);
   const [isPanUploaded, setIsPanUploaded] = useState(false);
@@ -56,15 +67,13 @@ export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode
 
       // FIXED ROLE MAPPING
       role: currentUser?.designationValue
-        ? ROLES.find((r) => r.label.toLowerCase() === currentUser.designationValue.toLowerCase())
-            ?.value
-        : '',
+        ? ROLES.find((r) => r.value.toLowerCase() === currentUser.designationValue.toLowerCase())?.value : '',
 
       customDesignation:
         currentUser?.designationType === 'CUSTOM' ? currentUser.designationValue : '',
 
-      panCard: currentUser?.panCardFileId || null,
-      boardResolution: currentUser?.boardResolutionFileId || null,
+      panCard: currentUser?.panCardFile || null,
+      boardResolution: currentUser?.boardResolutionFile || null,
 
       submittedPanFullName: currentUser?.submittedPanFullName || '',
       submittedPanNumber: currentUser?.submittedPanNumber || '',
@@ -192,14 +201,19 @@ export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode
 
           {/* PAN Upload */}
           <Grid item xs={12}>
-            {/* <RHFFileUploadBox
+            <RHFCustomFileUploadBox
               name="panCard"
               label="Upload PAN*"
-              accept="application/pdf,image/*"
+              accept={{
+                'image/png': ['.png'],
+                'image/jpeg': ['.jpg', '.jpeg'],
+                'application/pdf': ['.pdf'],
+              }}
               onDrop={(files) => handlePanUpload(files[0])}
-            /> */}
+              disabled
+            />
             <Box sx={{ mb: 3 }}>
-              <Box
+              {/* <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -229,7 +243,7 @@ export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode
                 ) : (
                   <Typography color="text.secondary">No file uploaded.</Typography>
                 )}
-              </Box>
+              </Box> */}
             </Box>
           </Grid>
 
@@ -266,9 +280,13 @@ export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode
           </Grid>
 
           <Grid item xs={12}>
-            {/* <RHFFileUploadBox name="boardResolution" label="Board Resolution*" accept="application/pdf,image/*" /> */}
+            <RHFCustomFileUploadBox name="boardResolution" label="Board Resolution*" accept={{
+                'image/png': ['.png'],
+                'image/jpeg': ['.jpg', '.jpeg'],
+                'application/pdf': ['.pdf'],
+              }} disabled/>
             <Box sx={{ mb: 3 }}>
-              <Box
+              {/* <Box
                 sx={{
                   display: 'flex',
                   alignItems: 'center',
@@ -298,7 +316,7 @@ export default function SignatoriesDetails({ currentUser, isViewMode, isEditMode
                 ) : (
                   <Typography color="text.secondary">No file uploaded.</Typography>
                 )}
-              </Box>
+              </Box> */}
             </Box>
           </Grid>
         </Grid>

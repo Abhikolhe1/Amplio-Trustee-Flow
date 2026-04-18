@@ -1,12 +1,15 @@
 import * as Yup from 'yup';
 import PropTypes from 'prop-types';
 import { useTheme } from '@mui/material/styles';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Container from '@mui/material/Container';
 import { Box, Button, Card, Grid, MenuItem, Stack, Typography } from '@mui/material';
 import { useForm } from 'react-hook-form';
 import FormProvider, { RHFSelect, RHFTextField } from 'src/components/hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { useGetPoolFinancial, useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import axiosInstance from 'src/utils/axios';
+import { useParams } from 'src/routes/hook';
 
 // ----------------------------------------------------------------------
 
@@ -45,20 +48,20 @@ const getDefaultFaceValue = (poolLimit) => {
   return poolLimit;
 };
 
-const getTotalUnits = (poolLimit, faceValue) => {
-  if (!poolLimit || !faceValue || poolLimit % faceValue !== 0) {
+const getTotalUnits = (poolLimit, faceValuePerUnit) => {
+  if (!poolLimit || !faceValuePerUnit || poolLimit % faceValuePerUnit !== 0) {
     return 0;
   }
 
-  return poolLimit / faceValue;
+  return poolLimit / faceValuePerUnit;
 };
 
-const getMinUnits = (minInvestment, faceValue) => {
-  if (!minInvestment || !faceValue) {
+const getMinUnits = (minInvestment, faceValuePerUnit) => {
+  if (!minInvestment || !faceValuePerUnit) {
     return 0;
   }
 
-  return minInvestment / faceValue;
+  return minInvestment / faceValuePerUnit;
 };
 
 const clampValue = (value, min, max) => {
@@ -78,26 +81,46 @@ const getSuggestedMaxInvestPool = (totalUnits, minUnits) => {
   return clampValue(Math.floor(totalUnits / minUnits) || 1, 1, totalUnits);
 };
 
-export default function PtcParameters({
-  percent,
-  setActiveStepId,
-  currData,
-  poolData,
-  saveStepData,
-}) {
+export default function PtcParameters({ percent, saveStepData, setActiveStepId }) {
+  const params = useParams();
+  const { id } = params;
+   const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'ptc_parameters');
+     console.log('application', stepData);
+  const [currData, setCurrData] = useState();
+  const { application } = useGetPoolFinancial(id);
+  // console.log('application', application);
+
+  const [prevPoolData, setPrevPoolData] = useState({});
+  // console.log(prevPoolData);
   const theme = useTheme();
-  const poolLimit = toPositiveInteger(poolData?.poolLimit);
+  const poolLimit = toPositiveInteger(prevPoolData?.poolLimit);
+
+  // {
+  //   "faceValuePerUnit": 0,
+  //   "minInvestment": 0,
+  //   "maxUnitsPerInvestor": 0,
+  //   "maxInvestors": 0,
+  //   "windowFrequency": "string",
+  //   "windowDurationHours": 0
+  // }
 
   const FormSchema = useMemo(
     () =>
       Yup.object().shape({
-        faceValue: Yup.number()
+        faceValuePerUnit: Yup.number()
           .typeError('Face value is required')
           .integer('Face value must be a whole number')
           .min(MIN_FACE_VALUE, `Face value must be at least ${formatCurrency(MIN_FACE_VALUE)}`)
-          .max(poolLimit || Number.MAX_SAFE_INTEGER, 'Face value cannot exceed pool limit')
           .test(
-            'faceValue-divides-pool',
+            'max-limit',
+            `Face value cannot exceed pool limit (${formatCurrency(poolLimit)})`,
+            (value) => {
+              if (!value || !poolLimit) return false;
+              return value <= poolLimit;
+            }
+          )
+          .test(
+            'faceValuePerUnit-divides-pool',
             'Face value must exactly divide the pool limit',
             (value) => {
               if (!poolLimit || !value) return false;
@@ -108,70 +131,79 @@ export default function PtcParameters({
         minInvestment: Yup.number()
           .typeError('Minimum investment is required')
           .integer('Minimum investment must be a whole number')
-          .min(Yup.ref('faceValue'), 'Minimum investment must be at least one PTC unit')
+          .min(Yup.ref('faceValuePerUnit'), 'Minimum investment must be at least one PTC unit')
           .max(poolLimit || Number.MAX_SAFE_INTEGER, 'Minimum investment cannot exceed pool limit')
           .test(
             'minInvestment-multiple',
             'Minimum investment must be a multiple of face value',
             function validateMinInvestment(value) {
-              const faceValue = Number(this.parent.faceValue);
+              const faceValuePerUnit = Number(this.parent.faceValuePerUnit);
 
-              if (!value || !faceValue) return false;
-              return value % faceValue === 0;
+              if (!value || !faceValuePerUnit) return false;
+              return value % faceValuePerUnit === 0;
             }
           )
           .required('Minimum investment is required'),
-        maxPtc: Yup.number()
+        maxUnitsPerInvestor: Yup.number()
           .typeError('Max PTC is required')
           .integer('Max PTC must be a whole number')
-          .test('maxPtc-minUnits', 'Max PTC must be at least minimum units', function validateMaxPtc(value) {
-            const faceValue = Number(this.parent.faceValue);
-            const minInvestment = Number(this.parent.minInvestment);
-            const totalUnits = getTotalUnits(poolLimit, faceValue);
-            const minUnits = getMinUnits(minInvestment, faceValue);
+          .test(
+            'maxPtc-minUnits',
+            'Max PTC must be at least minimum units',
+            function validateMaxPtc(value) {
+              const faceValuePerUnit = Number(this.parent.faceValuePerUnit);
+              const minInvestment = Number(this.parent.minInvestment);
+              const totalUnits = getTotalUnits(poolLimit, faceValuePerUnit);
+              const minUnits = getMinUnits(minInvestment, faceValuePerUnit);
 
-            if (!value || !faceValue || !minInvestment || !totalUnits) return false;
-            return value >= minUnits && value <= totalUnits;
-          })
+              if (!value || !faceValuePerUnit || !minInvestment || !totalUnits) return false;
+              return value >= minUnits && value <= totalUnits;
+            }
+          )
           .required('Max PTC is required'),
-        maxInvestPool: Yup.number()
+        maxInvestors: Yup.number()
           .typeError('Max investors required')
           .integer('Max investors must be a whole number')
           .min(1, 'Max investors must be at least 1')
           .test(
-            'maxInvestPool-totalUnits',
+            'maxInvestors-totalUnits',
             'Max investors cannot exceed total units or over-allocate the pool',
             function validateMaxInvestPool(value) {
-              const faceValue = Number(this.parent.faceValue);
+              const faceValuePerUnit = Number(this.parent.faceValuePerUnit);
               const minInvestment = Number(this.parent.minInvestment);
-              const totalUnits = getTotalUnits(poolLimit, faceValue);
-              const minUnits = getMinUnits(minInvestment, faceValue);
+              const totalUnits = getTotalUnits(poolLimit, faceValuePerUnit);
+              const minUnits = getMinUnits(minInvestment, faceValuePerUnit);
 
-              if (!value || !faceValue || !minInvestment || !totalUnits || !minUnits) return false;
+              if (!value || !faceValuePerUnit || !minInvestment || !totalUnits || !minUnits)
+                return false;
               return value <= totalUnits && value * minUnits <= totalUnits;
             }
           )
           .required('Max investors required'),
         windowFrequency: Yup.string().required('Select frequency'),
+        windowDurationHours: Yup.number().required('Window duration required'),
       }),
     [poolLimit]
   );
 
   const defaultValues = useMemo(() => {
-    const faceValue = toPositiveInteger(currData?.faceValue) || getDefaultFaceValue(poolLimit);
-    const totalUnits = getTotalUnits(poolLimit, faceValue);
-    const minInvestment = toPositiveInteger(currData?.minInvestment) || faceValue;
-    const minUnits = getMinUnits(minInvestment, faceValue);
-    const maxPtc = toPositiveInteger(currData?.maxPtc) || getSuggestedMaxPtc(totalUnits);
-    const maxInvestPool =
-      toPositiveInteger(currData?.maxInvestPool) || getSuggestedMaxInvestPool(totalUnits, minUnits);
+    const faceValuePerUnit =
+      toPositiveInteger(currData?.faceValuePerUnit) || getDefaultFaceValue(poolLimit);
+    const totalUnits = getTotalUnits(poolLimit, faceValuePerUnit);
+    const minInvestment = toPositiveInteger(currData?.minInvestment) || faceValuePerUnit;
+    const minUnits = getMinUnits(minInvestment, faceValuePerUnit);
+    const maxUnitsPerInvestor =
+      toPositiveInteger(currData?.maxUnitsPerInvestor) || getSuggestedMaxPtc(totalUnits);
+    const maxInvestors =
+      toPositiveInteger(currData?.maxInvestors) || getSuggestedMaxInvestPool(totalUnits, minUnits);
 
     return {
-      faceValue,
+      faceValuePerUnit,
       minInvestment,
-      maxPtc,
-      maxInvestPool,
+      maxUnitsPerInvestor,
+      maxInvestors,
       windowFrequency: currData?.windowFrequency || '7',
+      windowDurationHours: 24,
     };
   }, [currData, poolLimit]);
 
@@ -190,16 +222,23 @@ export default function PtcParameters({
   } = methods;
 
   const values = watch();
-  const faceValue = toPositiveInteger(values.faceValue);
+  const faceValuePerUnit = toPositiveInteger(values.faceValuePerUnit);
   const minInvestment = toPositiveInteger(values.minInvestment);
-  const totalUnits = getTotalUnits(poolLimit, faceValue);
-  const minUnits = getMinUnits(minInvestment, faceValue);
-  const maxPtc = toPositiveInteger(values.maxPtc);
-  const maxInvestment = faceValue && maxPtc ? faceValue * maxPtc : 0;
-  const maxInvestPool = toPositiveInteger(values.maxInvestPool);
-  const allocatedUnits = minUnits && maxInvestPool ? minUnits * maxInvestPool : 0;
+  const totalUnits = getTotalUnits(poolLimit, faceValuePerUnit);
+  const minUnits = getMinUnits(minInvestment, faceValuePerUnit);
+  const maxUnitsPerInvestor = toPositiveInteger(values.maxUnitsPerInvestor);
+  const maxInvestment =
+    faceValuePerUnit && maxUnitsPerInvestor ? faceValuePerUnit * maxUnitsPerInvestor : 0;
+  const maxInvestors = toPositiveInteger(values.maxInvestors);
+  const allocatedUnits = minUnits && maxInvestors ? minUnits * maxInvestors : 0;
 
-  const requiredFields = ['faceValue', 'minInvestment', 'maxPtc', 'maxInvestPool', 'windowFrequency'];
+  const requiredFields = [
+    'faceValuePerUnit',
+    'minInvestment',
+    'maxUnitsPerInvestor',
+    'maxInvestors',
+    'windowFrequency',
+  ];
 
   useEffect(() => {
     let completed = 0;
@@ -213,42 +252,44 @@ export default function PtcParameters({
     const percentValue = (completed / requiredFields.length) * 100;
     percent?.(percentValue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.faceValue, values.minInvestment, values.maxPtc, values.maxInvestPool, values.windowFrequency]);
+  }, [
+    values.faceValuePerUnit,
+    values.minInvestment,
+    values.maxUnitsPerInvestor,
+    values.maxInvestors,
+    values.windowFrequency,
+  ]);
+
+  useEffect(()=>{
+    if(stepData){
+      setCurrData(stepData);
+    }
+  },[stepData])
 
   useEffect(() => {
     reset(defaultValues);
   }, [defaultValues, reset]);
 
   useEffect(() => {
-    if (!poolLimit) return;
+    if (!poolLimit || !faceValuePerUnit) return;
 
-    const safeFaceValue =
-      faceValue >= MIN_FACE_VALUE && faceValue <= poolLimit && poolLimit % faceValue === 0
-        ? faceValue
-        : getDefaultFaceValue(poolLimit);
-
-    if (safeFaceValue !== faceValue) {
-      setValue('faceValue', safeFaceValue, { shouldValidate: true, shouldDirty: true });
-    }
-  }, [faceValue, poolLimit, setValue]);
-
-  useEffect(() => {
-    if (!faceValue || !poolLimit) return;
-
-    const nextMinInvestment = clampValue(
-      minInvestment || faceValue,
-      faceValue,
-      poolLimit
-    );
-
-    if (nextMinInvestment % faceValue !== 0) {
-      const roundedMinInvestment = Math.ceil(nextMinInvestment / faceValue) * faceValue;
-      setValue('minInvestment', Math.min(roundedMinInvestment, poolLimit), {
+    if (faceValuePerUnit > poolLimit) {
+      setValue('faceValuePerUnit', poolLimit, {
         shouldValidate: true,
         shouldDirty: true,
       });
-      return;
     }
+  }, [faceValuePerUnit, poolLimit, setValue]);
+
+  useEffect(() => {
+    if (!faceValuePerUnit || !poolLimit) return;
+
+    // Always recompute fresh
+    let nextMinInvestment = faceValuePerUnit;
+
+    // Ensure it's multiple of faceValue (already is)
+    // Clamp to pool limit
+    nextMinInvestment = Math.min(nextMinInvestment, poolLimit);
 
     if (nextMinInvestment !== minInvestment) {
       setValue('minInvestment', nextMinInvestment, {
@@ -256,45 +297,53 @@ export default function PtcParameters({
         shouldDirty: true,
       });
     }
-  }, [faceValue, minInvestment, poolLimit, setValue]);
+  }, [faceValuePerUnit, poolLimit, setValue]);
 
   useEffect(() => {
-    if (!faceValue || !totalUnits || !minUnits) return;
+    if (!faceValuePerUnit || !totalUnits || !minUnits) return;
 
     const nextMaxPtc = clampValue(
-      maxPtc || getSuggestedMaxPtc(totalUnits),
+      getSuggestedMaxPtc(totalUnits),
       Math.max(1, Math.ceil(minUnits)),
       totalUnits
     );
 
-    if (nextMaxPtc !== maxPtc) {
-      setValue('maxPtc', nextMaxPtc, { shouldValidate: true, shouldDirty: true });
-    }
-  }, [faceValue, maxPtc, minUnits, setValue, totalUnits]);
+    setValue('maxUnitsPerInvestor', nextMaxPtc, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [faceValuePerUnit, totalUnits, minUnits, setValue]);
 
   useEffect(() => {
     if (!totalUnits || !minUnits) return;
 
     const nextMaxInvestPool = getSuggestedMaxInvestPool(totalUnits, minUnits);
 
-    if (nextMaxInvestPool !== maxInvestPool) {
-      setValue('maxInvestPool', nextMaxInvestPool, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
+    setValue('maxInvestors', nextMaxInvestPool, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }, [totalUnits, minUnits, setValue]);
+
+  useEffect(() => {
+    if (application) {
+      setPrevPoolData(application);
     }
-  }, [maxInvestPool, minUnits, setValue, totalUnits]);
+  }, [application]);
 
   const onSubmit = async (data) => {
-    saveStepData({
-      ...data,
-      poolLimit,
-      totalUnits,
-      minUnits,
-      maxInvestment,
-      allocatedUnits,
-    });
-    setActiveStepId('legal_structure');
+    // const payload = {
+    //   faceValuePerUnit: data.faceValuePerUnit,
+    //   minInvestment: data.minInvestment,
+    //   maxUnitsPerInvestor: data.maxUnitsPerInvestor,
+    //   maxInvestors: data.maxInvestors,
+    //   windowFrequency: data.windowFrequency,
+    //   windowDurationHours: 24,
+    // };
+
+    await axiosInstance.patch(`/spv-pre/ptc-parameters/${id}`, data);
+    saveStepData?.(data);
+    setActiveStepId('trust_deed');
   };
 
   return (
@@ -325,12 +374,21 @@ export default function PtcParameters({
             <Grid item xs={12} md={6}>
               <RHFTextField
                 type="number"
-                name="faceValue"
+                name="faceValuePerUnit"
                 label="Face Value per PTC Unit (₹)"
                 fullWidth
+                inputProps={{
+                  min: MIN_FACE_VALUE,
+                  max: poolLimit || undefined,
+                }}
               />
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                Pool Limit {formatCurrency(poolLimit)} • Total Units {totalUnits.toLocaleString('en-IN')}
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ mt: 0.5, display: 'block' }}
+              >
+                Pool Limit {formatCurrency(poolLimit)} • Total Units{' '}
+                {totalUnits.toLocaleString('en-IN')}
               </Typography>
             </Grid>
 
@@ -342,31 +400,34 @@ export default function PtcParameters({
                 fullWidth
               />
               <Typography variant="caption" color="text.secondary">
-                Minimum Units = {Number.isInteger(minUnits) ? minUnits.toLocaleString('en-IN') : minUnits}
+                Minimum Units ={' '}
+                {Number.isInteger(minUnits) ? minUnits.toLocaleString('en-IN') : minUnits}
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <RHFTextField
                 type="number"
-                name="maxPtc"
+                name="maxUnitsPerInvestor"
                 label="Max Units per Investor"
                 fullWidth
               />
               <Typography variant="caption" color="text.secondary">
-                Minimum {Math.ceil(minUnits || 0).toLocaleString('en-IN')} units • Maximum {totalUnits.toLocaleString('en-IN')} units
+                Minimum {Math.ceil(minUnits || 0).toLocaleString('en-IN')} units • Maximum{' '}
+                {totalUnits.toLocaleString('en-IN')} units
               </Typography>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <RHFTextField
                 type="number"
-                name="maxInvestPool"
+                name="maxInvestors"
                 label="Max Investors per Pool"
                 fullWidth
               />
               <Typography variant="caption" color="text.secondary">
-                Based on minimum units: {allocatedUnits.toLocaleString('en-IN')} / {totalUnits.toLocaleString('en-IN')} units
+                Based on minimum units: {allocatedUnits.toLocaleString('en-IN')} /{' '}
+                {totalUnits.toLocaleString('en-IN')} units
               </Typography>
             </Grid>
           </Grid>
@@ -389,11 +450,23 @@ export default function PtcParameters({
                 For 30-day maturity: windows at Day 7, 14, 21, 30
               </Typography>
             </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFTextField
+                type="number"
+                name="windowDurationHours"
+                label="Window Duration (hours)"
+                disabled
+              />
+            </Grid>
           </Grid>
 
-
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting || !poolLimit}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSubmitting || !poolLimit}
+            >
               Next
             </Button>
           </Box>
@@ -407,6 +480,6 @@ PtcParameters.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
   poolData: PropTypes.any,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };
