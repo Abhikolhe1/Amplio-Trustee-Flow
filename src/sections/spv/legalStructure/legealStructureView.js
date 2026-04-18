@@ -85,7 +85,7 @@ const getDefaultFormValues = (stepData) => ({
   governingLaw: stepData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
   bankruptcyClause: stepData?.bankruptcyClause || 'full',
   trustDuration: stepData?.trustDuration || '',
-  stampDutyAndRegistrationId: null,
+  stampDutyAndRegistrationId: stepData?.stampDutyAndRegistration || null,
 });
 
 const getTrustDeedDocumentCard = (stepData) => stepData?.document || null;
@@ -207,6 +207,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
   const watchedStampDuty = useWatch({ control, name: 'stampDutyAndRegistrationId' });
   const stampDutyMediaId =
     getMediaId(watchedStampDuty) || getMediaId(getValues('stampDutyAndRegistrationId'));
+  const savedStampDutyMediaId = getMediaId(currData?.stampDutyAndRegistrationId);
 
   useEffect(() => {
     if (!stepData) return;
@@ -217,22 +218,36 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
   }, [saveStepData, stepData]);
 
   useEffect(() => {
-    reset(defaultValues);
-  }, [defaultValues, reset]);
+    const currentStampDutyValue = getValues('stampDutyAndRegistrationId');
+    const nextValues = {
+      ...defaultValues,
+    };
+
+    // Preserve an uploaded-but-not-yet-saved file when backend refreshes this step.
+    if (
+      getMediaId(currentStampDutyValue) &&
+      !getMediaId(currData?.stampDutyAndRegistrationId)
+    ) {
+      nextValues.stampDutyAndRegistrationId = currentStampDutyValue;
+    }
+
+    reset(nextValues);
+  }, [currData?.stampDutyAndRegistrationId, defaultValues, getValues, reset]);
 
   useEffect(() => {
     const filledFields = watchedFields.filter((value) => value !== undefined && value !== null && value !== '').length;
     const formPercent = Math.round((filledFields / FORM_FIELDS.length) * 50);
     const requiredSigners = getRequiredSigners(currData?.document);
     const signedSignerCount = requiredSigners.filter(({ signer }) => signer?.status === 'signed').length;
-    const signerPercent = requiredSigners.length
-      ? signedSignerCount / requiredSigners.length
+    const executionItemCount = requiredSigners.length + 1;
+    const completedExecutionItems =
+      signedSignerCount + (savedStampDutyMediaId ? 1 : 0);
+    const executionPercent = executionItemCount
+      ? Math.round((completedExecutionItems / executionItemCount) * 50)
       : 0;
-    const uploadPercent = stampDutyMediaId ? 0.1 : 0;
-    const executionPercent = Math.round(Math.min(signerPercent + uploadPercent, 1) * 50);
 
     percent?.(formPercent + executionPercent);
-  }, [currData?.document, percent, stampDutyMediaId, watchedFields]);
+  }, [currData?.document, percent, savedStampDutyMediaId, watchedFields]);
 
   const trustDeedDocument = getTrustDeedDocumentCard(currData);
   const documentUrl = trustDeedDocument?.media?.fileUrl || '';
@@ -249,6 +264,19 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
     bankruptcyClause: values.bankruptcyClause,
     trustDuration: values.trustDuration,
   });
+
+  const buildTrustDeedPayload = (values, overrides = {}) => {
+    const payload = {
+      ...buildBasePayload(values),
+      ...overrides,
+    };
+
+    if ('stampDutyAndRegistrationId' in payload) {
+      payload.stampDutyAndRegistrationId = getMediaId(payload.stampDutyAndRegistrationId);
+    }
+
+    return payload;
+  };
 
   const patchTrustDeedDetails = async (payload) => {
     const res = await axiosInstance.patch(`/spv-pre/trust-deed/${id}`, payload);
@@ -289,12 +317,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
     if (!isValid) return;
 
     const values = getValues();
-    const nextData = {
-      ...currData,
-      ...buildBasePayload(values),
-    };
-
-    await patchTrustDeedDetails(nextData);
+    await patchTrustDeedDetails(buildTrustDeedPayload(values));
     setIsFirstCardSaved(true);
   };
 
@@ -314,10 +337,9 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
   const handleUploadSave = async () => {
     if (!stampDutyMediaId) return;
 
-    await patchTrustDeedDetails({
-      ...buildBasePayload(getValues()),
+    await patchTrustDeedDetails(buildTrustDeedPayload(getValues(), {
       stampDutyAndRegistrationId: stampDutyMediaId,
-    });
+    }));
   };
 
   const trustDeedActionButtons = getSignerEntries(trustDeedDocument)
@@ -342,7 +364,8 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
     const valid = await trigger();
     if (!valid) return;
     if (!allRequiredSignersSigned) return;
-    await patchTrustDeedDetails(buildBasePayload(getValues()));
+    if (!savedStampDutyMediaId) return;
+    await patchTrustDeedDetails(buildTrustDeedPayload(getValues()));
     setActiveStepId('escrow');
   };
 
@@ -489,7 +512,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
             variant="contained"
             color="primary"
             onClick={handleNext}
-            disabled={!isFirstCardSaved || !allRequiredSignersSigned}
+            disabled={!isFirstCardSaved || !allRequiredSignersSigned || !savedStampDutyMediaId}
           >
             Next
           </Button>
