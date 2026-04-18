@@ -72,6 +72,17 @@ export const endpoints = {
     poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
     getSpvDocument: (applicationId) => `/spv-pre/documents/${applicationId}`,
   },
+  spvKycDocumentType: {
+    list: '/spv-kyc-document-types',
+  },
+  creditRatingAgencies: {
+    list: '/credit-rating-agencies',
+    details: (id) => `/credit-rating-agencies/${id}`,
+  },
+  creditRatings: {
+    list: '/credit-ratings',
+    details: (id) => `/credit-ratings/${id}`,
+  },
 
   // bondApplications: {
   //   list: '/bond-applications',

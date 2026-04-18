@@ -39,22 +39,42 @@ export function useGetSpvApplication(applicationId) {
   return memoizedValue;
 }
 
+// export function useGetSpvApplicationStepData(applicationId, statusValue) {
+//   const URL = applicationId && statusValue ? endpoints.spvApplication.dataByStatus(applicationId, statusValue) : null;
+
+//   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+//   console.log('Data', data);
+//   const memoizedValue = useMemo(
+//     () => ({
+//       stepData: data?.stepData,
+//       stepDataLoading: isLoading,
+//       stepDataError: error,
+//       stepDataValidating: isValidating,
+//     }),
+//     [data, error, isLoading, isValidating]
+//   );
+
+//   return memoizedValue;
+// }
 export function useGetSpvApplicationStepData(applicationId, statusValue) {
-  const URL =applicationId && statusValue? endpoints.spvApplication.dataByStatus(applicationId, statusValue): null;
+  const URL = applicationId && statusValue ? endpoints.spvApplication.dataByStatus(applicationId, statusValue) : null;
 
-  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
-  console.log('Data', data);
-  const memoizedValue = useMemo(
-    () => ({
-      stepData: data?.stepData,
-      stepDataLoading: isLoading,
-      stepDataError: error,
-      stepDataValidating: isValidating,
-    }),
-    [data, error, isLoading, isValidating]
-  );
 
-  return memoizedValue;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher, {
+    keepPreviousData: true,
+  });
+
+  const refreshDetails = () => {
+    mutate();
+  };
+
+  return {
+    stepData: data?.stepData,
+    stepDataLoading: isLoading,
+    stepDataError: error,
+    stepDataValidating: isValidating,
+    refreshDetails,
+  };
 }
 
 export function useGetPoolFinancial(applicationId) {
@@ -81,13 +101,30 @@ export function useGetSpvDocument(applicationId) {
   //   console.log('applicationId', applicationId);
   const URL = applicationId ? endpoints.spvApplication.getSpvDocument(applicationId) : null;
 
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher);
+
+  const refreshDocumentDetails = () => {
+    mutate();
+  };
+  return {
+    spvDocuments: data?.documents,
+    spvDocumentsLoading: isLoading,
+    spvDocumentsError: error,
+    spvDocumentsValidating: isValidating,
+    refreshDocumentDetails,
+  };
+}
+
+export function useGetSpvKycDocumentTypes() {
+  const URL = endpoints.spvKycDocumentType.list;
+
   const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
   const memoizedValue = useMemo(
     () => ({
-      spvDocuments: data?.documents,
-      spvDocumentsLoading: isLoading,
-      spvDocumentsError: error,
-      spvDocumentsValidating: isValidating,
+      spvKycDocumentTypes: data || [],
+      spvKycDocumentTypesLoading: isLoading,
+      spvKycDocumentTypesError: error,
+      spvKycDocumentTypesValidating: isValidating,
     }),
     [data, error, isLoading, isValidating]
   );

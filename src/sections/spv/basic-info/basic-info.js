@@ -54,7 +54,7 @@ const PSP_PARTNER = [
   },
 ];
 
-export default function BasicInfo({ percent, setActiveStepId }) {
+export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
   const params = useParams();
   const { id } = params;
   const [spvCounter, setSpvCounter] = useState(1);
@@ -142,6 +142,7 @@ export default function BasicInfo({ percent, setActiveStepId }) {
   const onSubmit = async (data) => {
     try {
       await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
+      saveStepData?.(data);
       setActiveStepId('pool_financials');
     }
     catch (error) {
@@ -255,6 +256,6 @@ export default function BasicInfo({ percent, setActiveStepId }) {
 BasicInfo.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };

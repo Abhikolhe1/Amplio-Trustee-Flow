@@ -1,81 +1,137 @@
+import { useEffect, useMemo } from 'react';
 import { Box, Button, Container, Grid, Stack, Typography } from '@mui/material';
-import PropTypes from 'prop-types';
-import dayjs from 'dayjs';
-import Iconify from 'src/components/iconify';
-import KycReviewCard from './kyc-review-card';
 import { format } from 'date-fns';
+import PropTypes from 'prop-types';
+import Iconify from 'src/components/iconify';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useParams, useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hook';
+import KycReviewCard from './kyc-review-card';
 
-export default function KYCFinalReview({ currData }) {
+const getSection = (payload, key, fallbackKey) => {
+  if (!payload) {
+    return payload;
+  }
 
-  const router=useRouter();
-  //  Basic Info
-  const basic = currData?.basic_info;
+  if (payload?.data) {
+    return payload.data;
+  }
+
+  const section = payload?.[key] ?? payload?.[fallbackKey];
+
+  if (section?.data) {
+    return section.data;
+  }
+
+  return section ?? payload;
+};
+
+const formatDate = (value) => {
+  if (!value) return '--';
+  try {
+    return format(new Date(value), 'dd MMM yyyy');
+  } catch (error) {
+    return '--';
+  }
+};
+
+const getDocumentDisplayStatus = (document) => {
+  if (document?.trusteeSignStatus === 'signed') return 'SIGNED';
+  if (document?.trusteeSignStatus) return String(document.trusteeSignStatus).toUpperCase();
+  if (document?.overallSigningStatus) return document.overallSigningStatus.toUpperCase();
+  if (document?.status) return document.status;
+  return '--';
+};
+
+export default function KYCFinalReview({ currData, percent }) {
+  const router = useRouter();
+  const { id } = useParams();
+  const { stepData: basicStepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
+  const { stepData: poolStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
+  const { stepData: ptcStepData } = useGetSpvApplicationStepData(id, 'ptc_parameters');
+  const { stepData: trustDeedStepData } = useGetSpvApplicationStepData(id, 'trust_deed');
+  const { stepData: escrowStepData } = useGetSpvApplicationStepData(id, 'escrow');
+  const { stepData: documentsStepData } = useGetSpvApplicationStepData(id, 'documents');
+  const { stepData: creditRatingStepData } = useGetSpvApplicationStepData(id, 'credit_rating');
+  const { stepData: isinStepData } = useGetSpvApplicationStepData(id, 'isin_application');
+  const localData = useMemo(() => currData || {}, [currData]);
+
+  useEffect(() => {
+    percent?.(100);
+  }, [percent]);
+
+  const basic =
+    getSection(basicStepData, 'basicInfo', 'spv_basic_info') ||
+    localData?.spv_basic_info ||
+    localData?.basicInfo;
+  const pool =
+    getSection(poolStepData, 'poolFinancials', 'pool_financials') || localData?.pool_financials;
+  const ptc =
+    getSection(ptcStepData, 'ptcParameters', 'ptc_parameters') || localData?.ptc_parameters;
+  const legal =
+    getSection(trustDeedStepData, 'trustDeed', 'trust_deed') || localData?.trust_deed;
+  const escrow = getSection(escrowStepData, 'escrow', 'escrow') || localData?.escrow;
+  const escrowAccounts = Array.isArray(escrow)
+    ? escrow
+    : escrow?.accounts || escrow?.generatedAccounts || (escrow ? [escrow] : []);
+  const documents =
+    getSection(documentsStepData, 'documents', 'documents') ||
+    localData?.documents?.documents ||
+    localData?.documents ||
+    [];
+  const creditRating =
+    getSection(creditRatingStepData, 'creditRating', 'credit_rating') || localData?.credit_rating;
+  const isin =
+    getSection(isinStepData, 'isinApplication', 'isin_application') ||
+    localData?.isin_application;
+
   const basicIdentityData = [
     { label: 'SPV Name', value: basic?.spvName || '--' },
-    {
-      label: 'SPV Legal Structure',
-      value: basic?.spvStructure ? basic.spvStructure : '--',
-    },
-    {
-      label: 'PSP Partner',
-      value: basic?.pspPartner
-        ? basic.pspPartner.charAt(0).toUpperCase() + basic.pspPartner.slice(1)
-        : '--',
-    },
-    { label: 'Originator (NBFC)', value: basic?.originator || '--' },
+    { label: 'SPV Legal Structure', value: basic?.legalStructure || '--' },
+    { label: 'PSP Partner', value: basic?.pspPartner || '--' },
+    { label: 'Originator (NBFC)', value: basic?.originatorName || '--' },
   ];
 
-  // Pool Financials
-  const pool = currData?.pool_financial;
   const poolFinancialsData = [
     {
       label: 'Pool Limit',
       value: pool?.poolLimit ? `Rs. ${Number(pool.poolLimit).toLocaleString('en-IN')}` : '--',
     },
-    { label: 'Maturity', value: pool?.maturity ? `${pool.maturity} Months` : '--' },
+    { label: 'Maturity', value: pool?.maturityDays ? `${pool.maturityDays} Months` : '--' },
     {
       label: 'Target Investor Yield',
       value: pool?.targetYield ? `${pool.targetYield}% p.a.` : '--',
     },
-    { label: 'Reserve Buffer', value: pool?.reserveBuffer ? `${pool.reserveBuffer}%` : '--' },
+    {
+      label: 'Reserve Buffer',
+      value: pool?.reserveBufferPercent ? `${pool.reserveBufferPercent}%` : '--',
+    },
     {
       label: 'Cutoff Time',
-      value: pool?.cutoffTime ? `${format(new Date(pool.cutoffTime), 'hh:mm a')} IST` : '--',
+      value: pool?.dailyCutoffTime ? format(new Date(pool.dailyCutoffTime), 'hh:mm a') : '--',
     },
   ];
 
-  // PTC Parameters
-  const ptc = currData?.ptc_parameters;
   const ptcParametersData = [
-    { label: 'Face Value per Unit', value: ptc?.faceValue ? `Rs. ${ptc.faceValue}` : '--' },
+    {
+      label: 'Face Value per Unit',
+      value: ptc?.faceValuePerUnit ? `Rs. ${Number(ptc.faceValuePerUnit).toLocaleString('en-IN')}` : '--',
+    },
     {
       label: 'Min Investment',
-      value:
-        ptc?.minInvestment && ptc?.minUnits
-          ? `Rs. ${Number(ptc.minInvestment).toLocaleString('en-IN')} (${Number(
-              ptc.minUnits
-            ).toLocaleString('en-IN')} units)`
-          : '--',
+      value: ptc?.minInvestment ? `Rs. ${Number(ptc.minInvestment).toLocaleString('en-IN')}` : '--',
     },
     {
       label: 'Max Units per Investor',
-      value: ptc?.maxPtc ? Number(ptc.maxPtc).toLocaleString('en-IN') : '--',
+      value: ptc?.maxUnitsPerInvestor ? Number(ptc.maxUnitsPerInvestor).toLocaleString('en-IN') : '--',
     },
-    { label: 'Max Investors per Pool', value: ptc?.maxInvestPool || '--' },
+    { label: 'Max Investors per Pool', value: ptc?.maxInvestors || '--' },
     {
       label: 'Window Frequency',
       value: ptc?.windowFrequency ? `Every ${ptc.windowFrequency} days` : '--',
     },
-    // {
-    //   label: 'Window Duration',
-    //   value: '24 Hrs',
-    // },
   ];
 
-  // Legal Trust Deed
-  const legal = currData?.legal_structure;
   const legalTrustDeedData = [
     { label: 'Trust Name', value: legal?.trustName || '--' },
     { label: 'Trustee Entity', value: legal?.trusteeEntity || '--' },
@@ -84,126 +140,70 @@ export default function KYCFinalReview({ currData }) {
     { label: 'Governing Law', value: legal?.governingLaw || '--' },
   ];
 
-  // Escrow Setup
-  const escrow = currData?.escrow_setup;
-  const generatedEscrowAccounts =
-    escrow?.generatedAccounts?.length > 0
-      ? escrow.generatedAccounts
-      : escrow?.bankName || escrow?.branchDetails || escrow?.accountNumber || escrow?.ifscCode
-        ? [escrow]
-        : [];
-  const escrowAccountsData =
-    generatedEscrowAccounts.length > 0
-      ? generatedEscrowAccounts.flatMap((account, index) => [
-          {
-            label: `Account ${index + 1}`,
-            value: account?.accountType || account?.accountLabel || '--',
-          },
-          {
-            label: `Account ${index + 1} Bank`,
-            value: account?.bankName || account?.bank || '--',
-          },
-          {
-            label: `Account ${index + 1} Branch`,
-            value: account?.branchDetails || account?.location || '--',
-          },
-          { label: `Account ${index + 1} Number`, value: account?.accountNumber || '--' },
-          { label: `Account ${index + 1} IFSC`, value: account?.ifscCode || '--' },
-        ])
-      : [
-          {
-            label: 'Bank',
-            value: escrow?.bankName || escrow?.bank || '--',
-          },
-          { label: 'Branch Details', value: escrow?.branchDetails || escrow?.location || '--' },
-          { label: 'Account Number', value: escrow?.accountNumber || '--' },
-          { label: 'IFSC Code', value: escrow?.ifscCode || '--' },
-        ];
+  const escrowAccountsData = escrowAccounts.length
+    ? escrowAccounts.flatMap((account, index) => [
+        { label: `Account ${index + 1} Type`, value: account?.accountType || '--' },
+        { label: `Account ${index + 1} Bank`, value: account?.bankName || '--' },
+        { label: `Account ${index + 1} Branch Details`, value: account?.branchDetails || '--' },
+        { label: `Account ${index + 1} Account Number`, value: account?.accountNumber || '--' },
+        { label: `Account ${index + 1} IFSC Code`, value: account?.ifscCode || '--' },
+      ])
+    : [{ label: 'Escrow Accounts', value: '--' }];
 
-  // Documents
-  const docs = currData?.legal_documents?.documents || [];
-  const documentsUploadData = [
-    {
-      label: 'Trust Deed',
-      value: docs.find((d) => d.title === 'Trust Deed')?.status || '--',
-    },
-    {
-      label: 'Escrow Agreement',
-      value: docs.find((d) => d.title === 'Escrow Agreement')?.status || '--',
-    },
-    {
-      label: 'Information Memorandum',
-      value: docs.find((d) => d.title === 'Information Memorandum (IM)')?.status || '--',
-    },
-  ];
-
-  // Credit Rating
-  const creditRating = currData?.credit_rating;
+  const documentsUploadData = documents.length
+    ? documents.map((doc) => ({
+        label:
+          doc?.spvKycDocumentType?.name ||
+          doc?.title ||
+          doc?.value ||
+          doc?.spvKycDocumentType?.value ||
+          'Document',
+        value: getDocumentDisplayStatus(doc),
+      }))
+    : [{ label: 'Documents', value: '--' }];
 
   const creditRatingData = [
-    { label: 'Credit Rating Agency', value: creditRating?.creditRatingAgency },
-
-    {
-      label: 'Rating Date',
-      value: creditRating?.ratingDate
-        ? format(new Date(creditRating.ratingDate), 'dd MMM yyyy')
-        : '--',
-    },
-
-    { label: 'Rating Obtained', value: creditRating?.ratingObtained || '--' },
+    { label: 'Credit Rating Agency', value: creditRating?.creditRatingAgencies?.name || '--' },
+    { label: 'Rating Date', value: formatDate(creditRating?.ratingDate) },
+    { label: 'Rating Obtained', value: creditRating?.creditRatings?.name || '--' },
   ];
 
-  const isin = currData?.isin_application;
   const isinApplicationData = [
-    { label: 'Depository', value: isin?.depositoryId?.toUpperCase() },
-    { label: 'ISIN Number', value: isin?.isinNumber },
-    { label: 'Security Type', value: isin?.securityType },
-    { label: 'Issue Size', value: isin?.issueSize },
-
-    {
-      label: 'Issue Date',
-      value: isin?.issueDate ? format(new Date(isin.issueDate), 'dd MMM yyyy') : '--',
-    },
-
-    { label: 'Credit Rating', value: isin?.creditRating },
+    { label: 'Depository', value: isin?.depositoryId?.toUpperCase() || '--' },
+    { label: 'ISIN Number', value: isin?.isinNumber || '--' },
+    { label: 'Security Type', value: isin?.securityType || '--' },
+    { label: 'Issue Size', value: isin?.issueSize || '--' },
+    { label: 'Issue Date', value: formatDate(isin?.issueDate) },
+    { label: 'Credit Rating', value: isin?.creditRating || '--' },
   ];
 
   const handleSubmit = () => {
     router.push(paths.dashboard.spvkyc.success);
   };
+
   return (
     <Container>
-      <Box
-        sx={{
-          maxWidth: 1200,
-          mx: 'auto',
-        }}
-      >
-        <Stack spacing={1} mt={1} mb={3}>
-          <Typography variant="h4" color="primary">
+      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+        <Stack spacing={1} textAlign="center" mt={1} mb={3}>
+          <Typography variant="h4"  color="primary">
             Review & Activate
           </Typography>
           <Typography variant="subtitle2">
-            Final review of all SPV parameters before activation. Once activated, the pool begins
-            accepting transactions from Razorpay T1 settlements.
+            Final review of all SPV parameters before activation.
           </Typography>
         </Stack>
 
         <Grid container spacing={2}>
-          {/* Basix Info */}
           <KycReviewCard
             title="Basic Identity"
             icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
             data={basicIdentityData}
           />
-          {/* Pool Financials  */}
           <KycReviewCard
             title="Pool Financials"
             icon={<Iconify icon="mdi:finance" width={24} />}
             data={poolFinancialsData}
           />
-
-          {/* PTC Parameters */}
           <KycReviewCard
             title="PTC Parameters"
             icon={<Iconify icon="mdi:tune-variant" width={24} />}
@@ -215,13 +215,12 @@ export default function KYCFinalReview({ currData }) {
             data={legalTrustDeedData}
           />
           <KycReviewCard
-            title="Escrow & Accounts"
+            title="Escrow Setup"
             icon={<Iconify icon="mdi:bank-outline" width={24} />}
             data={escrowAccountsData}
           />
           <KycReviewCard
             title="Documents"
-            status="pending"
             icon={<Iconify icon="mdi:file-document-outline" width={24} />}
             data={documentsUploadData}
           />
@@ -236,17 +235,9 @@ export default function KYCFinalReview({ currData }) {
             data={isinApplicationData}
           />
         </Grid>
+
         <Stack mt={2} alignItems="flex-end">
-          <Button
-            color="primary"
-            variant="contained"
-            sx={(theme) => ({
-              '&:hover': {
-                backgroundColor: theme.palette.primary.main,
-              },
-            })}
-            onClick={handleSubmit}
-          >
+          <Button color="primary" variant="contained" onClick={handleSubmit}>
             Activate
           </Button>
         </Stack>
@@ -257,4 +248,5 @@ export default function KYCFinalReview({ currData }) {
 
 KYCFinalReview.propTypes = {
   currData: PropTypes.any,
+  percent: PropTypes.func,
 };

@@ -81,7 +81,7 @@ const getSuggestedMaxInvestPool = (totalUnits, minUnits) => {
   return clampValue(Math.floor(totalUnits / minUnits) || 1, 1, totalUnits);
 };
 
-export default function PtcParameters({ percent, setActiveStepId }) {
+export default function PtcParameters({ percent, saveStepData, setActiveStepId }) {
   const params = useParams();
   const { id } = params;
    const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'ptc_parameters');
@@ -342,6 +342,7 @@ export default function PtcParameters({ percent, setActiveStepId }) {
     // };
 
     await axiosInstance.patch(`/spv-pre/ptc-parameters/${id}`, data);
+    saveStepData?.(data);
     setActiveStepId('trust_deed');
   };
 
@@ -479,6 +480,6 @@ PtcParameters.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
   poolData: PropTypes.any,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };

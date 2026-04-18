@@ -20,18 +20,10 @@ import { useSearchParams } from "react-router-dom";
 
 
 export default function SpvStepper({ applicationId }) {
-
-
-
-  // const [searchParams] = useSearchParams();
-
-  // const applicationId = searchParams.get("applicationId");
-
-  // console.log("applicationId:", applicationId);
-
   const [applicationData, setApplicationData] = useState();
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
-  console.log("applicationData", application);
+  const mapBackendStepToUiStep = (stepCode) =>
+    stepCode === 'review_and_submit' ? 'review_and_Activate' : stepCode;
 
   const steps = [
     { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
@@ -130,10 +122,14 @@ export default function SpvStepper({ applicationId }) {
       if (applicationData) return;
       setApplicationData(application);
 
+      const activeBackendStep = application.activeStep?.code || 'spv_basic_info';
+      const activeUiStep = mapBackendStepToUiStep(activeBackendStep);
       const completedStepCodes =
-        application.completedSteps?.map((step) => step.code) || [];
+        application.completedSteps
+          ?.map((step) => step.code)
+          .filter((code) => code !== activeBackendStep) || [];
 
-      let currentStep = 'spv_basic_info';
+      let currentStep = activeUiStep;
 
       if (
         completedStepCodes.includes('spv_basic_info')
@@ -188,7 +184,7 @@ export default function SpvStepper({ applicationId }) {
         currentStep = 'review_and_Activate';
       }
       if (
-        completedStepCodes.includes('review_and_Activate')
+        completedStepCodes.includes('review_and_submit')
       ) {
         updateStepPercent('review_and_Activate', 100);
         currentStep = 'review_and_Activate';
@@ -237,16 +233,20 @@ export default function SpvStepper({ applicationId }) {
       case 'spv_basic_info':
         return (
           <BasicInfo
+            currData={formData.spv_basic_info}
             percent={(p) => updateStepPercent('spv_basic_info', p)}
             setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('spv_basic_info', data)}
           />
         );
 
       case 'pool_financials':
         return (
           <PoolFinancials
+            currData={formData.pool_financials}
             percent={(p) => updateStepPercent('pool_financials', p)}
             setActiveStepId={setActiveStepId}
+            saveStepData={(data) => saveStepData('pool_financials', data)}
           />
         );
 
@@ -305,6 +305,7 @@ export default function SpvStepper({ applicationId }) {
         return (
           <ISINApplicationView
             currData={formData.isin_application}
+            allData={formData}
             percent={(p) => updateStepPercent('isin_application', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('isin_application', data)}
@@ -325,7 +326,6 @@ export default function SpvStepper({ applicationId }) {
     }
   };
 
-  //  console.log(applicationData);
   return (
     <Box sx={{ p: 3 }}>
       {/* <Box

@@ -11,8 +11,15 @@ export default function DocumentCard({
     description,
     status,
     onSign,
+    showSignButton = true,
+    signButtonText = "E-Sign",
+    signDisabled = false,
+    showViewButton = true,
+    statusColor,
+    actionButtons = [],
 }) {
     const isSigned = status === "SIGNED" || status === "COMPLETED";
+    const resolvedStatusColor = statusColor || (isSigned ? "success" : status === "LOCKED" ? "default" : "warning");
 
     return (
         <Card
@@ -83,30 +90,47 @@ export default function DocumentCard({
                             fontSize: 12,
                             fontWeight: 600,
                         }}
-                        color={isSigned ? "success" : "warning"}
+                        color={resolvedStatusColor}
                     >
                         {status}
                     </Label>
                 }
 
-                <Button
-                    variant="outlined"
-                    size="medium"
-                    onClick={() => window.open(docLink, "_blank")}
-                >
-                    VIEW
-                </Button>
+                {showViewButton && (
+                    <Button
+                        variant="outlined"
+                        size="medium"
+                        onClick={() => window.open(docLink, "_blank")}
+                        disabled={!docLink}
+                    >
+                        VIEW
+                    </Button>
+                )}
 
-                {!isSigned && (
+                {showSignButton && !isSigned && (
                     <Button
                         variant="contained"
                         size="medium"
                         color="warning"
                         onClick={onSign}
+                        disabled={signDisabled}
                     >
-                        E-Sign
+                        {signButtonText}
                     </Button>
                 )}
+
+                {actionButtons.map((action) => (
+                    <Button
+                        key={action.key || action.label}
+                        variant={action.variant || "contained"}
+                        size={action.size || "medium"}
+                        color={action.color || "warning"}
+                        onClick={action.onClick}
+                        disabled={action.disabled}
+                    >
+                        {action.label}
+                    </Button>
+                ))}
             </Box>
         </Card>
     );

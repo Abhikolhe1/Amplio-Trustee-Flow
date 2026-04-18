@@ -1,5 +1,5 @@
 import * as Yup from 'yup';
-import { Controller, useForm, useWatch } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 
 import {
@@ -13,7 +13,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect } from 'react';
 import FormProvider, {
   RHFCustomFileUploadBox,
   RHFSelect,
@@ -23,6 +23,8 @@ import FormProvider, {
 import PropTypes from 'prop-types';
 import { useSnackbar } from 'src/components/snackbar';
 import RHFDatePicker from 'src/components/hook-form/rhf-date-picker';
+import axiosInstance from 'src/utils/axios';
+import { useParams } from 'src/routes/hook';
 
 // a reusable function to calculate form progress
 export const calculateFormProgress = (values) => {
@@ -55,6 +57,8 @@ const hasUploadedFile = (value) => {
   return true;
 };
 
+const getMediaId = (value) => (typeof value === 'string' ? value : value?.id || '');
+
 export default function IssuanceDetails({
   selectedDepository,
   creditAgecyWithRating,
@@ -64,6 +68,7 @@ export default function IssuanceDetails({
   saveStepData,
   setActiveStepId,
 }) {
+  const { id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
 
   const securityType = [
@@ -89,10 +94,10 @@ export default function IssuanceDetails({
   const defaultValues = {
     isinNumber: currData?.isinNumber || '',
     securityType: currData?.securityType || 'secure',
-    issueSize: '',
+    issueSize: issueSize ?? currData?.issueSize ?? '',
     issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
     creditRating: '',
-    isisnLetterDoc: currData?.isisnLetterDoc || null,
+    isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
   };
 
   const methods = useForm({
@@ -110,14 +115,26 @@ export default function IssuanceDetails({
 
   const values = useWatch({ control });
 
-  const onSubmit = handleSubmit((data) => {
+  const onSubmit = handleSubmit(async (data) => {
     try {
+      const payload = {
+        depositoryId: selectedDepository,
+        securityType: data.securityType,
+        isinNumber: data.isinNumber,
+        issueSize: String(data.issueSize),
+        issueDate: data.issueDate?.toISOString?.() || data.issueDate,
+        creditRating: data.creditRating,
+        isinLetterDocId: getMediaId(data.isisnLetterDoc),
+      };
+      const res = await axiosInstance.patch(`/spv-pre/isin-application/${id}`, payload);
+      const isinApplication = res?.data?.details?.isinApplication || payload;
+
       saveStepData({
-        ...data,
+        ...isinApplication,
         depositoryId: selectedDepository,
       });
       enqueueSnackbar('Data Saved Successfully', { variant: 'success' });
-      setActiveStepId('review_Activate');
+      setActiveStepId('review_and_Activate');
     } catch (error) {
       enqueueSnackbar('Failed to save data', { variant: 'error' });
       throw error;
@@ -126,19 +143,20 @@ export default function IssuanceDetails({
 
   useEffect(() => {
     reset({
-      // securityType: currData?.securityType || 'secure',
-      // isinNumber: '',
-      issueSize: issueSize || '',
+      securityType: currData?.securityType || 'secure',
+      isinNumber: currData?.isinNumber || '',
+      issueSize: issueSize ?? currData?.issueSize ?? '',
       creditRating: creditAgecyWithRating || '',
-      // issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+      issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+      isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
     });
-  }, [issueSize, creditAgecyWithRating]);
+  }, [creditAgecyWithRating, currData, issueSize, reset]);
 
   useEffect(() => {
     // sessionStorage.setItem('issuanceDetails', JSON.stringify(values));
     const progress = calculateFormProgress(values);
     percent(progress);
-  }, [values]);
+  }, [percent, values]);
 
   return (
     <Card sx={{ mt: 3 }}>

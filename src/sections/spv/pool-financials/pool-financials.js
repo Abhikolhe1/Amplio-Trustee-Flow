@@ -15,7 +15,7 @@ import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import axiosInstance from 'src/utils/axios';
 // ----------------------------------------------------------------------
 
-export default function PoolFinancials({ percent, setActiveStepId }) {
+export default function PoolFinancials({ percent, setActiveStepId, saveStepData }) {
   const sliderStyle = {
     height: 8,
     '& .MuiSlider-track': {
@@ -135,8 +135,8 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
 
   const onSubmit = async (data) => {
     try {
-      console.log(data);
       await axiosInstance.patch(`/spv-pre/pool-financials/${id}`, data);
+      saveStepData?.(data);
       setActiveStepId('ptc_parameters');
     } catch (error) {
       console.log(error.message);
@@ -326,6 +326,6 @@ export default function PoolFinancials({ percent, setActiveStepId }) {
 PoolFinancials.propTypes = {
   currData: PropTypes.any,
   percent: PropTypes.func,
-  saveStepData: PropTypes.func.isRequired,
+  saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
 };

@@ -120,16 +120,20 @@ export default function KycListView() {
     setFilters(defaultFilters);
   }, []);
 
-  const createSpvApplication = async() => {
-    try{
-       await axiosInstance.post('/spv-pre/new-application');
-       router.push(paths.dashboard.spvkyc.new)
-    }
-    catch(error){
+  const createSpvApplication = async () => {
+    try {
+      const response = await axiosInstance.post('/spv-pre/new-application');
+      const applicationId = response?.data?.application?.id;
+
+      if (!applicationId) {
+        throw new Error('Application id not found in create response');
+      }
+
+      router.push(paths.dashboard.spvkyc.details(applicationId));
+    } catch (error) {
       console.log(error.message);
     }
-
-  }
+  };
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
       <CustomBreadcrumbs

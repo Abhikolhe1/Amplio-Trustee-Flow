@@ -1,28 +1,31 @@
-import { Box, Button, Card, Container, Stack, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import { Box, Container, Stack, Typography } from '@mui/material';
+import { useState } from 'react';
 import PropTypes from 'prop-types';
 import DepositoryCard from '../depository-card';
 import IssuanceDetails from '../issuance-details';
-import ApplicationTracker from '../application-tracker';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import dayjs from 'dayjs';
+import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useParams } from 'src/routes/hook';
 
-export default function ISINApplicationView({ currData, percent, setActiveStepId, saveStepData }) {
-  // const [isFormComplete, setIsFormComplete] = useState(false);
+export default function ISINApplicationView({
+  currData,
+  allData,
+  percent,
+  setActiveStepId,
+  saveStepData,
+}) {
+  const { id } = useParams();
+  const { stepData: poolFinancialsStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
+
+  console.log('curentData', poolFinancialsStepData)
   const [selectedDepository, setSelectedDepository] = useState(currData?.depositoryId || 'nsdl');
-  const [formData, setFormData] = useState({});
-
-  useEffect(() => {
-    const data = localStorage.getItem('formData');
-    const formData = JSON.parse(data);
-    setFormData(formData);
-  }, []);
-  const creditRatingData = formData?.credit_rating;
+  const creditRatingData = allData?.credit_rating;
   const applicationDate = dayjs(creditRatingData?.ratingDate).format('DD MMM YYYY');
 
-  const ratingObtained = creditRatingData?.ratingObtained;
-  const creditRatingAgency = creditRatingData?.creditRatingAgency;
+  const ratingObtained = creditRatingData?.creditRatings?.name;
+  const creditRatingAgency = creditRatingData?.creditRatingAgencies?.name;
 
   const creditAgecyWithRating =
     creditRatingAgency && ratingObtained
@@ -30,8 +33,10 @@ export default function ISINApplicationView({ currData, percent, setActiveStepId
       : creditRatingAgency || ratingObtained || '';
 
   // console.log('rating obtained', ratingObtained);
-  const poolData = formData?.pool_financial;
-  const issueSize = poolData?.poolLimit;
+  const poolData = allData?.pool_financials?.poolLimit
+    ? allData.pool_financials
+    : poolFinancialsStepData;
+  const issueSize = poolData?.poolLimit ?? currData?.issueSize ?? '';
 
   // const handleNextStep = () => {};
 
@@ -97,6 +102,7 @@ export default function ISINApplicationView({ currData, percent, setActiveStepId
 }
 
 ISINApplicationView.propTypes = {
+  allData: PropTypes.any,
   currData: PropTypes.any,
   percent: PropTypes.func,
   saveStepData: PropTypes.func.isRequired,

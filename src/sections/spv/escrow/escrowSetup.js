@@ -1,21 +1,21 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Alert, Button, Card, Typography } from '@mui/material';
+import { Alert, Button, Card, TextField, Typography } from '@mui/material';
 import { Box, Container, Stack } from '@mui/system';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
+import * as yup from 'yup';
 import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import FormProvider, { RHFTextField } from 'src/components/hook-form';
 import axiosInstance from 'src/utils/axios';
 import { useParams } from 'src/routes/hook';
-import * as yup from 'yup';
 
 const ESCROW_ACCOUNT_DEFAULTS = [
   {
     accountLabel: 'Escrow Account 1',
     title: 'Primary Escrow Account',
     subtitle: 'This account stores transactions that were settled successfully.',
-    accountType: 'Collection Escrow',
+    accountType: 'collection_escrow',
     bankName: 'Axis Bank',
     branchDetails: 'Pune Main Branch',
     accountNumber: '123456789012',
@@ -25,7 +25,7 @@ const ESCROW_ACCOUNT_DEFAULTS = [
     accountLabel: 'Escrow Account 2',
     title: 'Buffer Escrow Account',
     subtitle: 'This account stores buffer transactions and reserve funds for protection.',
-    accountType: 'Reserve Escrow',
+    accountType: 'reserve_escrow',
     bankName: 'Axis Bank',
     branchDetails: 'Mumbai Fort Branch',
     accountNumber: '987654321098',
@@ -34,6 +34,11 @@ const ESCROW_ACCOUNT_DEFAULTS = [
 ];
 
 const IFSC_REGEX = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+
+const ACCOUNT_TYPE_LABELS = {
+  collection_escrow: 'Collection Escrow',
+  reserve_escrow: 'Reserve Escrow',
+};
 
 const accountSchema = yup.object().shape({
   accountType: yup.string().required('Account type is required'),
@@ -52,10 +57,16 @@ function normalizeEscrowAccount(account = {}, fallback = {}) {
   const accountNumber =
     account.accountNumber ?? account.accountNo ?? fallback.accountNumber ?? '';
   const ifscSource = account.ifscCode ?? fallback.ifscCode ?? '';
+  const normalizedAccountType =
+    account.accountType === 'Collection Escrow'
+      ? 'collection_escrow'
+      : account.accountType === 'Reserve Escrow'
+        ? 'reserve_escrow'
+        : account.accountType || fallback.accountType || '';
 
   return {
     accountLabel: account.accountLabel || fallback.accountLabel || '',
-    accountType: account.accountType || fallback.accountType || '',
+    accountType: normalizedAccountType,
     bankName: account.bankName || account.bank || fallback.bankName || fallback.bank || '',
     branchDetails:
       account.branchDetails || account.location || fallback.branchDetails || fallback.location || '',
@@ -80,6 +91,34 @@ function getSavedAccounts(currData) {
   return [];
 }
 
+function buildLocalEscrowState(accounts) {
+  const normalizedAccounts = accounts.map((account, index) =>
+    normalizeEscrowAccount(account, ESCROW_ACCOUNT_DEFAULTS[index])
+  );
+  const primaryAccount = normalizedAccounts[0] || {};
+
+  return {
+    accountType: primaryAccount.accountType || '',
+    bankName: primaryAccount.bankName || '',
+    branchDetails: primaryAccount.branchDetails || '',
+    accountNumber: primaryAccount.accountNumber || '',
+    ifscCode: primaryAccount.ifscCode || '',
+    accounts: normalizedAccounts,
+    generatedAccounts: normalizedAccounts,
+  };
+}
+
+function pickEscrowState(stepData, currentData) {
+  const backendAccounts = getSavedAccounts(stepData);
+  const localAccounts = getSavedAccounts(currentData);
+
+  if (localAccounts.length > backendAccounts.length) {
+    return currentData;
+  }
+
+  return stepData || currentData;
+}
+
 function getInitialAccount(currData, index) {
   const fallback = ESCROW_ACCOUNT_DEFAULTS[index];
   const savedAccounts = getSavedAccounts(currData);
@@ -90,6 +129,8 @@ function getInitialAccount(currData, index) {
 
 function EscrowCard({ title, subtitle, methods, disabled = false }) {
   const isGenerated = !disabled;
+  const accountTypeValue = methods.watch('accountType');
+  const accountTypeLabel = ACCOUNT_TYPE_LABELS[accountTypeValue] || accountTypeValue || '';
 
   return (
     <FormProvider methods={methods} onSubmit={() => {}}>
@@ -119,7 +160,7 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
               md: 'repeat(2, 1fr)',
             }}
           >
-            <RHFTextField name="accountType" label="Account Type" disabled />
+            <TextField label="Account Type" value={accountTypeLabel} disabled fullWidth />
             <RHFTextField name="bankName" label="Bank Name" disabled />
             <RHFTextField name="accountNumber" label="Account Number" disabled />
             <RHFTextField name="ifscCode" label="IFSC Code" disabled />
@@ -138,11 +179,11 @@ EscrowCard.propTypes = {
   title: PropTypes.string.isRequired,
 };
 
-function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
+function EscrowSetupView({ currData: currentData, percent, setActiveStepId, saveStepData }) {
   const params = useParams();
   const { id } = params;
   const { stepData } = useGetSpvApplicationStepData(id, 'escrow');
-  const [currData, setCurrData] = useState();
+  const [currData, setCurrData] = useState(currentData);
 
   const accountOneDefaults = useMemo(() => getInitialAccount(currData, 0), [currData]);
   const accountTwoDefaults = useMemo(() => getInitialAccount(currData, 1), [currData]);
@@ -162,10 +203,11 @@ function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
   const [generatedCount, setGeneratedCount] = useState(0);
 
   useEffect(() => {
-    if (stepData) {
-      setCurrData(stepData);
+    const nextData = pickEscrowState(stepData, currentData);
+    if (nextData) {
+      setCurrData(nextData);
     }
-  }, [stepData]);
+  }, [currentData, stepData]);
 
   useEffect(() => {
     accountOneMethods.reset(accountOneDefaults);
@@ -184,36 +226,38 @@ function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
     percent?.((generatedCount / 2) * 100);
   }, [generatedCount, percent]);
 
-  const persistAccounts = async (accounts) => {
-    const normalizedAccounts = accounts.map((account, index) =>
-      normalizeEscrowAccount(account, ESCROW_ACCOUNT_DEFAULTS[index])
-    );
-    const primaryAccount = normalizedAccounts[0] || {};
-
+  const persistAccount = async (account, index, existingAccounts = []) => {
+    const normalizedAccount = normalizeEscrowAccount(account, ESCROW_ACCOUNT_DEFAULTS[index]);
     const payload = {
-      bankName: primaryAccount.bankName || '',
-      branchDetails: primaryAccount.branchDetails || '',
-      accountNumber: primaryAccount.accountNumber || '',
-      ifscCode: primaryAccount.ifscCode || '',
-      generatedAccounts: normalizedAccounts,
+      accountType: normalizedAccount.accountType || '',
+      bankName: normalizedAccount.bankName || '',
+      branchDetails: normalizedAccount.branchDetails || '',
+      accountNumber: normalizedAccount.accountNumber || '',
+      ifscCode: normalizedAccount.ifscCode || '',
     };
 
     try {
       await axiosInstance.patch(`/spv-pre/escrow/${id}`, payload);
 
-      setCurrData(payload);
-      saveStepData?.(payload);
+      const updatedAccounts = [...existingAccounts];
+      updatedAccounts[index] = normalizedAccount;
+
+      const localState = buildLocalEscrowState(updatedAccounts.filter(Boolean));
+      setCurrData(localState);
+      saveStepData?.(localState);
     } catch (error) {
       console.error('Error saving escrow data:', error);
     }
   };
 
   const handleAction = async () => {
+    const existingAccounts = getSavedAccounts(currData);
+
     if (generatedCount === 0) {
       const isValid = await accountOneMethods.trigger();
       if (!isValid) return;
 
-      await persistAccounts([accountOneMethods.getValues()]);
+      await persistAccount(accountOneMethods.getValues(), 0, existingAccounts);
       return;
     }
 
@@ -221,7 +265,7 @@ function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
       const isValid = await accountTwoMethods.trigger();
       if (!isValid) return;
 
-      await persistAccounts([accountOneMethods.getValues(), accountTwoMethods.getValues()]);
+      await persistAccount(accountTwoMethods.getValues(), 1, existingAccounts);
       return;
     }
 
@@ -260,11 +304,13 @@ function EscrowSetupView({ percent, setActiveStepId, saveStepData }) {
           disabled={generatedCount < 2}
         />
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <Button variant="contained" color="primary" onClick={handleAction}>
-            {actionLabel}
-          </Button>
-        </Box>
+        {generatedCount >= 1 && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button variant="contained" color="primary" onClick={handleAction}>
+              {actionLabel}
+            </Button>
+          </Box>
+        )}
       </Stack>
     </Container>
   );
