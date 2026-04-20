@@ -75,17 +75,43 @@ function normalizeEscrowAccount(account = {}, fallback = {}) {
   };
 }
 
+function getEscrowPayload(data) {
+  if (!data) return data;
+
+  if (data?.data) {
+    return getEscrowPayload(data.data);
+  }
+
+  if (data?.escrow) {
+    return getEscrowPayload(data.escrow);
+  }
+
+  return data;
+}
+
 function getSavedAccounts(currData) {
-  if (Array.isArray(currData?.generatedAccounts) && currData.generatedAccounts.length > 0) {
-    return currData.generatedAccounts;
+  const escrowData = getEscrowPayload(currData);
+
+  if (Array.isArray(escrowData) && escrowData.length > 0) {
+    return escrowData;
   }
 
-  if (Array.isArray(currData?.accounts) && currData.accounts.length > 0) {
-    return currData.accounts;
+  if (Array.isArray(escrowData?.generatedAccounts) && escrowData.generatedAccounts.length > 0) {
+    return escrowData.generatedAccounts;
   }
 
-  if (currData?.bankName || currData?.branchDetails || currData?.accountNumber || currData?.ifscCode) {
-    return [currData];
+  if (Array.isArray(escrowData?.accounts) && escrowData.accounts.length > 0) {
+    return escrowData.accounts;
+  }
+
+  if (
+    escrowData?.bankName ||
+    escrowData?.branchDetails ||
+    escrowData?.accountNumber ||
+    escrowData?.accountNo ||
+    escrowData?.ifscCode
+  ) {
+    return [escrowData];
   }
 
   return [];
@@ -109,14 +135,16 @@ function buildLocalEscrowState(accounts) {
 }
 
 function pickEscrowState(stepData, currentData) {
-  const backendAccounts = getSavedAccounts(stepData);
-  const localAccounts = getSavedAccounts(currentData);
+  const normalizedStepData = getEscrowPayload(stepData);
+  const normalizedCurrentData = getEscrowPayload(currentData);
+  const backendAccounts = getSavedAccounts(normalizedStepData);
+  const localAccounts = getSavedAccounts(normalizedCurrentData);
 
   if (localAccounts.length > backendAccounts.length) {
-    return currentData;
+    return normalizedCurrentData;
   }
 
-  return stepData || currentData;
+  return normalizedStepData || normalizedCurrentData;
 }
 
 function getInitialAccount(currData, index) {
@@ -206,8 +234,9 @@ function EscrowSetupView({ currData: currentData, percent, setActiveStepId, save
     const nextData = pickEscrowState(stepData, currentData);
     if (nextData) {
       setCurrData(nextData);
+      saveStepData?.(buildLocalEscrowState(getSavedAccounts(nextData)));
     }
-  }, [currentData, stepData]);
+  }, [currentData, saveStepData, stepData]);
 
   useEffect(() => {
     accountOneMethods.reset(accountOneDefaults);

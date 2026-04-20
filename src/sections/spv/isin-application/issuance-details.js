@@ -96,7 +96,7 @@ export default function IssuanceDetails({
     securityType: currData?.securityType || 'secure',
     issueSize: issueSize ?? currData?.issueSize ?? '',
     issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
-    creditRating: '',
+    creditRating: creditAgecyWithRating || currData?.creditRating || '',
     isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
   };
 
@@ -146,7 +146,7 @@ export default function IssuanceDetails({
       securityType: currData?.securityType || 'secure',
       isinNumber: currData?.isinNumber || '',
       issueSize: issueSize ?? currData?.issueSize ?? '',
-      creditRating: creditAgecyWithRating || '',
+      creditRating: creditAgecyWithRating || currData?.creditRating || '',
       issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
       isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
     });

@@ -1,5 +1,5 @@
 import { Box, Container, Stack, Typography } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import DepositoryCard from '../depository-card';
 import IssuanceDetails from '../issuance-details';
@@ -8,6 +8,13 @@ import Iconify from 'src/components/iconify';
 import dayjs from 'dayjs';
 import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import { useParams } from 'src/routes/hook';
+
+const getIsinData = (stepData) => {
+  if (!stepData) return {};
+  if (stepData?.data) return getIsinData(stepData.data);
+  if (stepData?.isinApplication) return getIsinData(stepData.isinApplication);
+  return stepData;
+};
 
 export default function ISINApplicationView({
   currData,
@@ -18,11 +25,17 @@ export default function ISINApplicationView({
 }) {
   const { id } = useParams();
   const { stepData: poolFinancialsStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
+  const { stepData: isinStepData } = useGetSpvApplicationStepData(id, 'isin_application');
 
-  console.log('curentData', poolFinancialsStepData)
-  const [selectedDepository, setSelectedDepository] = useState(currData?.depositoryId || 'nsdl');
+  const mergedCurrData = useMemo(
+    () => getIsinData(isinStepData) || currData || {},
+    [currData, isinStepData]
+  );
+  const [selectedDepository, setSelectedDepository] = useState(mergedCurrData?.depositoryId || 'nsdl');
   const creditRatingData = allData?.credit_rating;
-  const applicationDate = dayjs(creditRatingData?.ratingDate).format('DD MMM YYYY');
+  const applicationDate = creditRatingData?.ratingDate
+    ? dayjs(creditRatingData.ratingDate).format('DD MMM YYYY')
+    : '';
 
   const ratingObtained = creditRatingData?.creditRatings?.name;
   const creditRatingAgency = creditRatingData?.creditRatingAgencies?.name;
@@ -30,13 +43,18 @@ export default function ISINApplicationView({
   const creditAgecyWithRating =
     creditRatingAgency && ratingObtained
       ? `${creditRatingAgency}  -  ${ratingObtained}`
-      : creditRatingAgency || ratingObtained || '';
+      : creditRatingAgency || ratingObtained || mergedCurrData?.creditRating || '';
 
   // console.log('rating obtained', ratingObtained);
   const poolData = allData?.pool_financials?.poolLimit
     ? allData.pool_financials
     : poolFinancialsStepData;
-  const issueSize = poolData?.poolLimit ?? currData?.issueSize ?? '';
+  const issueSize = poolData?.poolLimit ?? mergedCurrData?.issueSize ?? '';
+
+  useEffect(() => {
+    setSelectedDepository(mergedCurrData?.depositoryId || 'nsdl');
+    saveStepData?.(mergedCurrData);
+  }, [mergedCurrData, saveStepData]);
 
   // const handleNextStep = () => {};
 
@@ -66,8 +84,8 @@ export default function ISINApplicationView({
           }}
         >
           <Iconify icon="mdi:check-circle" width={18} />
-          Credit Rating Confirmed — {ratingObtained}. Rated on {applicationDate}. ISIN application
-          is now unlocked.
+          Credit Rating Confirmed — {creditAgecyWithRating || '--'}
+          {applicationDate ? `. Rated on ${applicationDate}.` : '.'} ISIN application is now unlocked.
         </Label>
       </Box>
       {/* Depository Card */}
@@ -78,7 +96,7 @@ export default function ISINApplicationView({
         selectedDepository={selectedDepository}
         creditAgecyWithRating={creditAgecyWithRating}
         issueSize={issueSize}
-        currData={currData}
+        currData={mergedCurrData}
         setActiveStepId={setActiveStepId}
         saveStepData={saveStepData}
         percent={percent}

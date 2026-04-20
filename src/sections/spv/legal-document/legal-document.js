@@ -2,7 +2,11 @@ import { Box, Button, Card, Stack, Typography } from '@mui/material';
 import PropTypes from 'prop-types';
 import { useEffect, useMemo, useState } from 'react';
 import DocumentCard from 'src/components/card/documentCard';
-import { useGetSpvDocument, useGetSpvKycDocumentTypes } from 'src/api/spvApplication';
+import {
+  useGetSpvApplicationStepData,
+  useGetSpvDocument,
+  useGetSpvKycDocumentTypes,
+} from 'src/api/spvApplication';
 import axiosInstance from 'src/utils/axios';
 import { useParams } from 'src/routes/hook';
 
@@ -132,16 +136,31 @@ const sortDocuments = (documents) =>
     return normalizedLeftIndex - normalizedRightIndex;
   });
 
-function LegalDocument({ setActiveStepId, percent, saveStepData }) {
+const getStepDocuments = (stepData) => {
+  if (Array.isArray(stepData)) return stepData;
+  if (Array.isArray(stepData?.documents)) return stepData.documents;
+  if (Array.isArray(stepData?.data?.documents)) return stepData.data.documents;
+  if (Array.isArray(stepData?.data)) return stepData.data;
+  return [];
+};
+
+function LegalDocument({ currData, setActiveStepId, percent, saveStepData }) {
   const params = useParams();
   const { id } = params;
+  const { stepData } = useGetSpvApplicationStepData(id, 'documents');
   const { spvDocuments, refreshDocumentDetails } = useGetSpvDocument(id);
   const { spvKycDocumentTypes } = useGetSpvKycDocumentTypes();
   const [documents, setDocuments] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    const typedDocuments = Array.isArray(spvDocuments) ? spvDocuments : [];
+    const typedDocuments = getStepDocuments(stepData).length
+      ? getStepDocuments(stepData)
+      : Array.isArray(spvDocuments)
+        ? spvDocuments
+        : Array.isArray(currData?.documents)
+          ? currData.documents
+          : [];
     const documentTypes = Array.isArray(spvKycDocumentTypes) ? spvKycDocumentTypes : [];
 
     const relevantDocumentTypes = documentTypes.filter((type) => DOCUMENT_ORDER.includes(type?.value));
@@ -162,7 +181,7 @@ function LegalDocument({ setActiveStepId, percent, saveStepData }) {
 
     setDocuments(nextDocuments);
     saveStepData?.({ documents: nextDocuments });
-  }, [saveStepData, spvDocuments, spvKycDocumentTypes]);
+  }, [currData?.documents, saveStepData, spvDocuments, spvKycDocumentTypes, stepData]);
 
   const signingRequiredDocuments = useMemo(
     () => documents.filter((doc) => getRequiredSigners(doc).length > 0),
@@ -308,6 +327,7 @@ refreshDocumentDetails();
 }
 
 LegalDocument.propTypes = {
+  currData: PropTypes.object,
   percent: PropTypes.func,
   saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,

@@ -22,8 +22,15 @@ import { useSearchParams } from "react-router-dom";
 export default function SpvStepper({ applicationId }) {
   const [applicationData, setApplicationData] = useState();
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
+  const getStepKey = (step) => {
+    if (!step) return '';
+    return step.code || step.value || '';
+  };
+
   const mapBackendStepToUiStep = (stepCode) =>
-    stepCode === 'review_and_submit' ? 'review_and_Activate' : stepCode;
+    stepCode === 'review_and_submit' || stepCode === 'review_and_activate'
+      ? 'review_and_Activate'
+      : stepCode;
 
   const steps = [
     { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
@@ -122,11 +129,11 @@ export default function SpvStepper({ applicationId }) {
       if (applicationData) return;
       setApplicationData(application);
 
-      const activeBackendStep = application.activeStep?.code || 'spv_basic_info';
+      const activeBackendStep = getStepKey(application.activeStep) || 'spv_basic_info';
       const activeUiStep = mapBackendStepToUiStep(activeBackendStep);
       const completedStepCodes =
         application.completedSteps
-          ?.map((step) => step.code)
+          ?.map((step) => getStepKey(step))
           .filter((code) => code !== activeBackendStep) || [];
 
       let currentStep = activeUiStep;
@@ -184,7 +191,8 @@ export default function SpvStepper({ applicationId }) {
         currentStep = 'review_and_Activate';
       }
       if (
-        completedStepCodes.includes('review_and_submit')
+        completedStepCodes.includes('review_and_submit') ||
+        completedStepCodes.includes('review_and_activate')
       ) {
         updateStepPercent('review_and_Activate', 100);
         currentStep = 'review_and_Activate';

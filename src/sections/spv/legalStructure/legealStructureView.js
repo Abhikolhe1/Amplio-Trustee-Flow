@@ -340,6 +340,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
     await patchTrustDeedDetails(buildTrustDeedPayload(getValues(), {
       stampDutyAndRegistrationId: stampDutyMediaId,
     }));
+    refreshDetails();
   };
 
   const trustDeedActionButtons = getSignerEntries(trustDeedDocument)
