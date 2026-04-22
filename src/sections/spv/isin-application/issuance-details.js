@@ -13,7 +13,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import FormProvider, {
   RHFCustomFileUploadBox,
   RHFSelect,
@@ -73,8 +73,12 @@ export default function IssuanceDetails({
 
   const securityType = [
     { value: 'secure', label: 'Secure' },
-    { value: 'unsecure', label: 'Unsecure' },
+    {
+      value: 'unsecure', label: 'Unsecure'
+    },
   ];
+
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const issuanceSchema = Yup.object({
     securityType: Yup.string().required('Security Type is required'),
@@ -141,16 +145,26 @@ export default function IssuanceDetails({
     }
   });
 
+
+
   useEffect(() => {
-    reset({
-      securityType: currData?.securityType || 'secure',
-      isinNumber: currData?.isinNumber || '',
-      issueSize: issueSize ?? currData?.issueSize ?? '',
-      creditRating: creditAgecyWithRating || currData?.creditRating || '',
-      issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
-      isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
-    });
-  }, [creditAgecyWithRating, currData, issueSize, reset]);
+    if (!isInitialized && currData) {
+      reset({
+        securityType: currData?.securityType || 'secure',
+        isinNumber: currData?.isinNumber || '',
+        issueSize: issueSize ?? currData?.issueSize ?? '',
+        creditRating: creditAgecyWithRating || currData?.creditRating || '',
+        issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
+        isisnLetterDoc:
+          currData?.isinLetterDoc ||
+          currData?.isinLetterDocId ||
+          currData?.isisnLetterDoc ||
+          null,
+      });
+
+      setIsInitialized(true);
+    }
+  }, [currData, issueSize, creditAgecyWithRating, reset, isInitialized]);
 
   useEffect(() => {
     // sessionStorage.setItem('issuanceDetails', JSON.stringify(values));

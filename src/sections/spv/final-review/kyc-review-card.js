@@ -68,9 +68,19 @@ export default function KycReviewCard({ title, icon, status, data = [] }) {
                 {item.label}
               </Typography>
 
-              <Typography variant="body2" fontWeight={500}>
-                {item.value || '--'}
-              </Typography>
+              {item?.chip ? (
+                <Label
+                  variant="soft"
+                  color={item.chipColor || 'primary'}
+                  sx={{ px: 1, py: 0.5, textTransform: 'uppercase' }}
+                >
+                  {item.value || '--'}
+                </Label>
+              ) : (
+                <Typography variant="body2" fontWeight={500}>
+                  {item.value || '--'}
+                </Typography>
+              )}
             </Stack>
           ))}
         </Stack>

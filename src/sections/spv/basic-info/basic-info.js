@@ -18,6 +18,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import { useParams } from 'src/routes/hook';
 import axiosInstance from 'src/utils/axios';
+import { useGetPsp } from 'src/api/psp-master';
 
 // ----------------------------------------------------------------------
 
@@ -35,31 +36,14 @@ const SPV_OPTIONS = [
     value: 'Pooled Vehicle Trust',
   },
 ];
-const PSP_PARTNER = [
-  {
-    label: 'Razorpay',
-    value: 'razorpay',
-  },
-  {
-    label: 'Paytm',
-    value: 'paytm',
-  },
-  {
-    label: 'PhonePe Business',
-    value: 'phonepe',
-  },
-  {
-    label: 'Cashfree',
-    value: 'cashfree',
-  },
-];
 
 export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
   const params = useParams();
   const { id } = params;
   const [spvCounter, setSpvCounter] = useState(1);
+  const { psp = [] } = useGetPsp();
 
-  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'spv_basic_info');
+  const { stepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
   const [currData, setCurrData] = useState();
 
   const FormSchema = Yup.object().shape({
@@ -73,7 +57,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
 
   const defaultValues = useMemo(
     () => ({
-      pspPartner: currData?.pspPartner || '',
+      pspPartner: currData?.pspMaster?.id || currData?.pspMasterId || currData?.pspPartner || '',
       legalStructure: currData?.legalStructure || '',
       originatorName: currData?.originatorName || 'Birbal Plus',
       spvName: currData?.spvName || '',
@@ -117,36 +101,40 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
   }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName]);
 
   const generateSPVName = () => {
-    const psp = watch('pspPartner')?.toUpperCase() || 'PSP';
+    const selectedPsp = psp.find((item) => String(item.id) === String(watch('pspPartner')));
 
-    // Convert PSP value to readable code
-    const pspCodeMap = {
-      razorpay: 'RZP',
-      paytm: 'PAYTM',
-      phonepe: 'PHNP',
-      cashfree: 'CSF',
-    };
-    const pspCode = pspCodeMap[watch('pspPartner')] || 'GEN';
-    // Year
+    const getPspCode = (name = '') =>
+      name
+        .split(' ')
+        .map((word) => word[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 4) || 'GEN';
+
+    const pspCode = getPspCode(selectedPsp?.name);
     const year = new Date().getFullYear();
-    // Version (incremental)
     const version = `V${spvCounter}`;
-    // Random Hash (6 chars)
     const hash = Math.random().toString(36).substring(2, 8).toUpperCase();
-    // Final ID
     const formattedId = `${pspCode}-${year}-${version}-${hash}`;
+
     setValue('spvName', formattedId);
     setSpvCounter((prev) => prev + 1);
   };
 
   const onSubmit = async (data) => {
     try {
-      await axiosInstance.patch(`/spv-pre/basic-info/${id}`, data);
-      saveStepData?.(data);
+      const { pspPartner, ...restData } = data;
+      const payload = {
+        ...restData,
+        pspMasterId: pspPartner,
+      };
+
+      await axiosInstance.patch(`/spv-pre/basic-info/${id}`, payload);
+      saveStepData?.(payload);
       setActiveStepId('pool_financials');
     }
     catch (error) {
-      console.log(error.message);
+      console.log(error.error.message);
     }
   };
 
@@ -186,9 +174,9 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <RHFSelect name="pspPartner" label="PSP PARTNER" fullWidth sx={{ mt: 1 }}>
-                {PSP_PARTNER.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
+                {psp.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
                   </MenuItem>
                 ))}
               </RHFSelect>
@@ -241,7 +229,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
                 }}
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                <Button type="submit" variant="contained" color="primary">
+                <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
                   Next
                 </Button>
               </Box>

@@ -161,7 +161,7 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
   const accountTypeLabel = ACCOUNT_TYPE_LABELS[accountTypeValue] || accountTypeValue || '';
 
   return (
-    <FormProvider methods={methods} onSubmit={() => {}}>
+    <FormProvider methods={methods} onSubmit={() => { }}>
       <Card sx={{ p: 3 }}>
         <Stack spacing={1} sx={{ mb: 3 }}>
           <Typography color="primary" variant="h5">
@@ -210,7 +210,7 @@ EscrowCard.propTypes = {
 function EscrowSetupView({ currData: currentData, percent, setActiveStepId, saveStepData }) {
   const params = useParams();
   const { id } = params;
-  const { stepData } = useGetSpvApplicationStepData(id, 'escrow');
+  const { stepData, refreshDetails } = useGetSpvApplicationStepData(id, 'escrow');
   const [currData, setCurrData] = useState(currentData);
 
   const accountOneDefaults = useMemo(() => getInitialAccount(currData, 0), [currData]);
@@ -270,7 +270,7 @@ function EscrowSetupView({ currData: currentData, percent, setActiveStepId, save
 
       const updatedAccounts = [...existingAccounts];
       updatedAccounts[index] = normalizedAccount;
-
+      refreshDetails();
       const localState = buildLocalEscrowState(updatedAccounts.filter(Boolean));
       setCurrData(localState);
       saveStepData?.(localState);

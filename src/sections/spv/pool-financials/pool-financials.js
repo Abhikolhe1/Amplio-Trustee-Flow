@@ -184,7 +184,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
 
             <Grid item xs={12} sm={6} lg={3}>
               <WidgetSummaryCard
-                title="maturityDays"
+                title="Maturity Days"
                 total={`${values.maturityDays || 0} Months`}
                 timing="Per PTC cycle"
               />

@@ -1,11 +1,19 @@
 import { useEffect, useMemo } from 'react';
-import { Box, Button, Container, Grid, Stack, Typography } from '@mui/material';
+import { Box, Container, Grid, Stack, Typography } from '@mui/material';
+import LoadingButton from '@mui/lab/LoadingButton';
 import { format } from 'date-fns';
 import PropTypes from 'prop-types';
+import * as Yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useForm } from 'react-hook-form';
 import Iconify from 'src/components/iconify';
+import { useGetPsp } from 'src/api/psp-master';
 import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import { useParams, useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
+import FormProvider, { RHFCheckbox } from 'src/components/hook-form';
+import axiosInstance from 'src/utils/axios';
+import { useSnackbar } from 'src/components/snackbar';
 import KycReviewCard from './kyc-review-card';
 
 const getSection = (payload, key, fallbackKey) => {
@@ -43,9 +51,33 @@ const getDocumentDisplayStatus = (document) => {
   return '--';
 };
 
+const getDocumentStatusChipColor = (status) => {
+  const normalizedStatus = String(status || '').toLowerCase();
+
+  if (['signed', 'completed', 'verified', 'approved', 'success'].includes(normalizedStatus)) {
+    return 'success';
+  }
+
+  return 'primary';
+};
+
+const getPspLabel = (value, pspOptions = []) => {
+  if (!value) return '--';
+
+  if (typeof value === 'object') {
+    return value?.label || value?.name || value?.pspName || value?.id || '--';
+  }
+
+  const matchedPsp = pspOptions.find((option) => String(option?.id || option?._id) === String(value));
+
+  return matchedPsp?.label || matchedPsp?.name || matchedPsp?.pspName || value;
+};
+
 export default function KYCFinalReview({ currData, percent }) {
   const router = useRouter();
   const { id } = useParams();
+  const { enqueueSnackbar } = useSnackbar();
+  const { psp: pspOptions = [] } = useGetPsp();
   const { stepData: basicStepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
   const { stepData: poolStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
   const { stepData: ptcStepData } = useGetSpvApplicationStepData(id, 'ptc_parameters');
@@ -59,6 +91,22 @@ export default function KYCFinalReview({ currData, percent }) {
   useEffect(() => {
     percent?.(100);
   }, [percent]);
+
+  const ReviewSubmitSchema = Yup.object().shape({
+    consent: Yup.boolean().oneOf([true], 'Please confirm before submitting for review'),
+  });
+
+  const methods = useForm({
+    resolver: yupResolver(ReviewSubmitSchema),
+    defaultValues: {
+      consent: false,
+    },
+  });
+
+  const {
+    handleSubmit,
+    formState: { isSubmitting },
+  } = methods;
 
   const basic =
     getSection(basicStepData, 'basicInfo', 'spv_basic_info') ||
@@ -88,7 +136,7 @@ export default function KYCFinalReview({ currData, percent }) {
   const basicIdentityData = [
     { label: 'SPV Name', value: basic?.spvName || '--' },
     { label: 'SPV Legal Structure', value: basic?.legalStructure || '--' },
-    { label: 'PSP Partner', value: basic?.pspPartner || '--' },
+    { label: 'PSP Partner', value: getPspLabel(basic?.pspMaster || basic?.pspPartner, pspOptions) },
     { label: 'Originator (NBFC)', value: basic?.originatorName || '--' },
   ];
 
@@ -159,8 +207,10 @@ export default function KYCFinalReview({ currData, percent }) {
           doc?.spvKycDocumentType?.value ||
           'Document',
         value: getDocumentDisplayStatus(doc),
+        chip: true,
+        chipColor: getDocumentStatusChipColor(getDocumentDisplayStatus(doc)),
       }))
-    : [{ label: 'Documents', value: '--' }];
+    : [{ label: 'Documents', value: '--', chip: true, chipColor: 'primary' }];
 
   const creditRatingData = [
     { label: 'Credit Rating Agency', value: creditRating?.creditRatingAgencies?.name || '--' },
@@ -177,71 +227,104 @@ export default function KYCFinalReview({ currData, percent }) {
     { label: 'Credit Rating', value: isin?.creditRating || '--' },
   ];
 
-  const handleSubmit = () => {
-    router.push(paths.dashboard.spvkyc.success);
+  const onSubmit = async () => {
+    try {
+      const response = await axiosInstance.patch(`/spv-pre/review-submit/${id}`);
+
+      enqueueSnackbar(response?.data?.message || 'Review submitted successfully', {
+        variant: 'success',
+      });
+
+      router.push(paths.dashboard.spvkyc.success);
+    } catch (error) {
+      enqueueSnackbar(error?.error?.message || error?.message || 'Failed to submit review', {
+        variant: 'error',
+      });
+    }
   };
 
   return (
     <Container>
-      <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
-        <Stack spacing={1} textAlign="center" mt={1} mb={3}>
-          <Typography variant="h4"  color="primary">
-            Review & Activate
-          </Typography>
-          <Typography variant="subtitle2">
-            Final review of all SPV parameters before activation.
-          </Typography>
-        </Stack>
+      <FormProvider methods={methods} onSubmit={handleSubmit(onSubmit)}>
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+          <Stack spacing={1} textAlign="center" mt={1} mb={3}>
+            <Typography variant="h4" color="primary">
+              Review & Activate
+            </Typography>
+            <Typography variant="subtitle2">
+              Final review of all SPV parameters before activation.
+            </Typography>
+          </Stack>
 
-        <Grid container spacing={2}>
-          <KycReviewCard
-            title="Basic Identity"
-            icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
-            data={basicIdentityData}
-          />
-          <KycReviewCard
-            title="Pool Financials"
-            icon={<Iconify icon="mdi:finance" width={24} />}
-            data={poolFinancialsData}
-          />
-          <KycReviewCard
-            title="PTC Parameters"
-            icon={<Iconify icon="mdi:tune-variant" width={24} />}
-            data={ptcParametersData}
-          />
-          <KycReviewCard
-            title="Legal & Trust Deed"
-            icon={<Iconify icon="mdi:scale-balance" width={24} />}
-            data={legalTrustDeedData}
-          />
-          <KycReviewCard
-            title="Escrow Setup"
-            icon={<Iconify icon="mdi:bank-outline" width={24} />}
-            data={escrowAccountsData}
-          />
-          <KycReviewCard
-            title="Documents"
-            icon={<Iconify icon="mdi:file-document-outline" width={24} />}
-            data={documentsUploadData}
-          />
-          <KycReviewCard
-            title="Credit Rating"
-            icon={<Iconify icon="mdi:star-check-outline" width={24} />}
-            data={creditRatingData}
-          />
-          <KycReviewCard
-            title="ISIN Application"
-            icon={<Iconify icon="mdi:file-certificate-outline" width={24} />}
-            data={isinApplicationData}
-          />
-        </Grid>
+          <Grid container spacing={2}>
+            <KycReviewCard
+              title="Basic Identity"
+              icon={<Iconify icon="mdi:card-account-details-outline" width={24} />}
+              data={basicIdentityData}
+            />
+            <KycReviewCard
+              title="Pool Financials"
+              icon={<Iconify icon="mdi:finance" width={24} />}
+              data={poolFinancialsData}
+            />
+            <KycReviewCard
+              title="PTC Parameters"
+              icon={<Iconify icon="mdi:tune-variant" width={24} />}
+              data={ptcParametersData}
+            />
+            <KycReviewCard
+              title="Legal & Trust Deed"
+              icon={<Iconify icon="mdi:scale-balance" width={24} />}
+              data={legalTrustDeedData}
+            />
+            <KycReviewCard
+              title="Escrow Setup"
+              icon={<Iconify icon="mdi:bank-outline" width={24} />}
+              data={escrowAccountsData}
+            />
+            <KycReviewCard
+              title="Documents"
+              icon={<Iconify icon="mdi:file-document-outline" width={24} />}
+              data={documentsUploadData}
+            />
+            <KycReviewCard
+              title="Credit Rating"
+              icon={<Iconify icon="mdi:star-check-outline" width={24} />}
+              data={creditRatingData}
+            />
+            <KycReviewCard
+              title="ISIN Application"
+              icon={<Iconify icon="mdi:file-certificate-outline" width={24} />}
+              data={isinApplicationData}
+            />
+          </Grid>
 
-        <Stack mt={2} alignItems="flex-end">
-          <Button color="primary" variant="contained" onClick={handleSubmit}>
-            Activate
-          </Button>
-        </Stack>
-      </Box>
+        
+            <Stack spacing={1.5}>
+              <RHFCheckbox
+                name="consent"
+                label={
+                  <Typography variant="body2">
+                    I agree to electronically sign this application and confirm that I have
+                    reviewed all information provided above.
+                  </Typography>
+                }
+              />
+            </Stack>
+         
+
+          <Stack mt={2} alignItems="flex-end">
+            <LoadingButton
+              color="primary"
+              variant="contained"
+              type="submit"
+              loading={isSubmitting}
+            >
+              Submit For Review
+            </LoadingButton>
+          </Stack>
+        </Box>
+      </FormProvider>
     </Container>
   );
 }

@@ -53,12 +53,17 @@ export const endpoints = {
     details: '/api/product/details',
     search: '/api/product/search',
   },
+    pspMaster: {
+    list: '/psp-masters',
+  },
   scheduler: {
     list: '/schedulers',
     filterList: (filter) => `/schedulers?filter=${filter}`,
     details: (id) => `/schedulers/${id}`,
   },
+
   addressDetails: '/trustee-profiles/address-details',
+
   signatories: {
     list: '/trustee-profiles/authorize-signatory',
     filterList: (filter) => `/trustee-profiles/authorize-signatory?filter=${filter}`,
