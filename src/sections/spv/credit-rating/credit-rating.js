@@ -48,7 +48,7 @@ const getAgencyInitials = (name = '') =>
     .join('')
     .toUpperCase();
 
-function CreditRating({ percent, saveStepData, setActiveStepId }) {
+function CreditRating({ percent, saveStepData, setActiveStepId, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const { stepData } = useGetSpvApplicationStepData(id, 'credit_rating');
@@ -160,14 +160,19 @@ function CreditRating({ percent, saveStepData, setActiveStepId }) {
                         sx={(theme) => ({
                           m: 1,
                           p: 2,
-                          cursor: 'pointer',
+                          cursor: isReadOnly ? 'default' : 'pointer',
                           border: '1px solid',
-                          borderColor: isSelected ? theme.palette.primary.main : theme.palette.divider,
+                          borderColor: isSelected
+                            ? theme.palette.primary.main
+                            : theme.palette.divider,
                           backgroundColor: isSelected
                             ? theme.palette.primary.lighter
                             : theme.palette.background.paper,
                         })}
-                        onClick={() => field.onChange(agency.id)}
+                        onClick={() => {
+                          if (isReadOnly) return;
+                          field.onChange(agency.id);
+                        }}
                       >
                         <Stack direction="row" spacing={1.5} alignItems="center">
                           <Box
@@ -253,7 +258,9 @@ function CreditRating({ percent, saveStepData, setActiveStepId }) {
               display="grid"
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
-              <RHFSelect name="creditRatingsId" label="Rating Obtained">
+              <RHFSelect name="creditRatingsId" label="Rating Obtained" inputProps={{
+                readOnly: isReadOnly,
+              }}>
                 {ratings.map((rating) => (
                   <MenuItem key={rating.id} value={rating.id}>
                     {rating.name}
@@ -262,6 +269,7 @@ function CreditRating({ percent, saveStepData, setActiveStepId }) {
               </RHFSelect>
 
               <RHFDatePicker
+                disabled={isReadOnly}
                 name="ratingDate"
                 label="Rating Date"
                 maxDate={new Date()}
@@ -273,17 +281,20 @@ function CreditRating({ percent, saveStepData, setActiveStepId }) {
               name="ratingLetterId"
               label="Upload Rating Letter (PDF)"
               accept={{ 'application/pdf': ['.pdf'] }}
+              disabled={isReadOnly}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
-                Next
-              </Button>
-            </Box>
+            {!isReadOnly && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                  Next
+                </Button>
+              </Box>
+            )}
           </Stack>
         </Card>
       </Stack>
-    </FormProvider>
+    </FormProvider >
   );
 }
 

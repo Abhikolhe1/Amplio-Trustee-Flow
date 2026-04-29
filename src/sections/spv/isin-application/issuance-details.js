@@ -67,6 +67,7 @@ export default function IssuanceDetails({
   percent,
   saveStepData,
   setActiveStepId,
+  isReadOnly
 }) {
   const { id } = useParams();
   const { enqueueSnackbar } = useSnackbar();
@@ -185,7 +186,10 @@ export default function IssuanceDetails({
           <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               {/* <RHFTextField name="securityType" label="Security Type" /> */}
-              <RHFSelect name="securityType" label="Security Type">
+              <RHFSelect name="securityType" label="Security Type"
+                inputProps={{
+                  readOnly: isReadOnly,
+                }}>
                 {securityType.map((type) => (
                   <MenuItem key={type.value} value={type.value}>
                     {type.label}
@@ -195,7 +199,9 @@ export default function IssuanceDetails({
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <RHFTextField name="isinNumber" label="ISIN Number" />
+              <RHFTextField name="isinNumber" label="ISIN Number" inputProps={{
+                readOnly: isReadOnly,
+              }} />
               {/* <Typography variant="caption" color="text.secondary">
                 All Indian securities start with INE
               </Typography> */}
@@ -204,12 +210,16 @@ export default function IssuanceDetails({
               <RHFTextField
                 name="creditRating"
                 label="Credit Rating"
-                InputProps={{ readOnly: true }}
+                inputProps={{
+                  readOnly: isReadOnly,
+                }}
               />
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <RHFTextField name="issueSize" label="Issue Size" InputProps={{ readOnly: true }} />
+              <RHFTextField name="issueSize" label="Issue Size" inputProps={{
+                readOnly: isReadOnly,
+              }} />
               <Typography variant="caption" color="text.secondary">
                 Pulled from Step 2 · Pool Limit = max issuance size
               </Typography>
@@ -219,6 +229,7 @@ export default function IssuanceDetails({
               {/* <RHFTextField name="issueDate" label="Issue Date" /> */}
 
               <RHFDatePicker
+                disabled={isReadOnly}
                 name="issueDate"
                 label="Issue Date"
                 maxDate={new Date()}
@@ -259,7 +270,7 @@ export default function IssuanceDetails({
             <RHFCustomFileUploadBox
               name="isisnLetterDoc"
               label="Upload ISIN Application Leter (PDF)"
-              // disabled={disabled}
+              disabled={isReadOnly}
               control={control}
               accept={{
                 'application/pdf': ['.pdf'],
@@ -272,16 +283,19 @@ export default function IssuanceDetails({
           </Box>
 
           {/* Button Submit */}
+
           <Stack mt={2} alignItems="flex-end">
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={isSubmitting}
-              color="primary"
-              startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
-            >
-              Save
-            </Button>
+            {!isReadOnly && (
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                color="primary"
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+              >
+                Save
+              </Button>
+            )}
           </Stack>
         </FormProvider>
       </CardContent>

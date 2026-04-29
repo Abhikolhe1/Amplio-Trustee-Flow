@@ -52,6 +52,7 @@ export default function ISINApplicationView({
   percent,
   setActiveStepId,
   saveStepData,
+  isReadOnly
 }) {
   const { id } = useParams();
   const { stepData: poolFinancialsStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
@@ -160,7 +161,7 @@ export default function ISINApplicationView({
         </Label>
       </Box>
       {/* Depository Card */}
-      <DepositoryCard selectedDepository={selectedDepository} onSelect={setSelectedDepository} />
+      <DepositoryCard isReadOnly ={isReadOnly} selectedDepository={selectedDepository} onSelect={setSelectedDepository} />
 
       {/* Issuance Details */}
       <IssuanceDetails
@@ -171,6 +172,7 @@ export default function ISINApplicationView({
         setActiveStepId={setActiveStepId}
         saveStepData={saveStepData}
         percent={percent}
+        isReadOnly ={isReadOnly}
       />
 
       {/* Application Tracker */}

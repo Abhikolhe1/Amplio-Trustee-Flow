@@ -1,7 +1,7 @@
 import { Card, CardContent, Chip, Grid, Stack, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
-function DepositoryCard({ selectedDepository, onSelect }) {
+function DepositoryCard({ selectedDepository, onSelect, isReadOnly }) {
   const options = [
     {
       id: 'nsdl',

@@ -37,7 +37,7 @@ const SPV_OPTIONS = [
   },
 ];
 
-export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
+export default function BasicInfo({ percent, setActiveStepId, saveStepData, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const [spvCounter, setSpvCounter] = useState(1);
@@ -173,7 +173,9 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <RHFSelect name="pspPartner" label="PSP PARTNER" fullWidth sx={{ mt: 1 }}>
+              <RHFSelect name="pspPartner" label="PSP PARTNER" InputProps={{
+                readOnly: isReadOnly
+              }} fullWidth sx={{ mt: 1 }}>
                 {psp.map((option) => (
                   <MenuItem key={option.id} value={option.id}>
                     {option.name}
@@ -182,7 +184,9 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
               </RHFSelect>
             </Grid>
             <Grid item xs={12} md={6}>
-              <RHFSelect name="legalStructure" label="SPV LEGAL STRUCTURE" fullWidth sx={{ mt: 1 }}>
+              <RHFSelect name="legalStructure" label="SPV LEGAL STRUCTURE" InputProps={{
+                readOnly: isReadOnly
+              }} fullWidth sx={{ mt: 1 }}>
                 {SPV_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -195,8 +199,10 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
                 name="originatorName"
                 label="ORIGINATOR (PLATFORM NBFC)"
                 fullWidth
+                InputProps={{
+                  readOnly: isReadOnly
+                }}
                 sx={{ mt: 1 }}
-                disabled
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -205,33 +211,41 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData }) {
                 placeholder="SPV-001"
                 label="AUTO-GENERATED SPV NAME"
                 fullWidth
+
                 sx={{ mt: 1 }}
                 InputProps={{
+                  readOnly: isReadOnly,
+
+
                   endAdornment: (
                     <InputAdornment position="end">
-                      <Button
-                        variant="text"
-                        color="primary"
-                        onClick={generateSPVName}
-                        sx={{
-                          minWidth: 'auto',
-                          px: 1,
-                          fontWeight: 600,
-                          bgcolor: (theme) => theme.palette.primary.lighter,
-                          border: (theme) => `1px solid ${theme.palette.primary.main}`,
-                          borderRadius: 1,
-                        }}
-                      >
-                        Regen
-                      </Button>
+                      {!isReadOnly && (
+                        <Button
+                          variant="text"
+                          color="primary"
+                          onClick={generateSPVName}
+                          sx={{
+                            minWidth: 'auto',
+                            px: 1,
+                            fontWeight: 600,
+                            bgcolor: (theme) => theme.palette.primary.lighter,
+                            border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                            borderRadius: 1,
+                          }}
+                        >
+                          Regen
+                        </Button>
+                      )}
                     </InputAdornment>
                   ),
                 }}
+
               />
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
-                  Next
-                </Button>
+                {!isReadOnly && (
+                  <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
+                    Next
+                  </Button>)}
               </Box>
             </Grid>
           </Grid>

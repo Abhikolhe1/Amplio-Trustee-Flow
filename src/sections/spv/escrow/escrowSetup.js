@@ -155,7 +155,7 @@ function getInitialAccount(currData, index) {
   return normalizeEscrowAccount(savedAccount, fallback);
 }
 
-function EscrowCard({ title, subtitle, methods, disabled = false }) {
+function EscrowCard({ title, subtitle, methods, disabled = false, isReadOnly }) {
   const isGenerated = !disabled;
   const accountTypeValue = methods.watch('accountType');
   const accountTypeLabel = ACCOUNT_TYPE_LABELS[accountTypeValue] || accountTypeValue || '';
@@ -188,11 +188,23 @@ function EscrowCard({ title, subtitle, methods, disabled = false }) {
               md: 'repeat(2, 1fr)',
             }}
           >
-            <TextField label="Account Type" value={accountTypeLabel} disabled fullWidth />
-            <RHFTextField name="bankName" label="Bank Name" disabled />
-            <RHFTextField name="accountNumber" label="Account Number" disabled />
-            <RHFTextField name="ifscCode" label="IFSC Code" disabled />
-            <RHFTextField name="branchDetails" label="Branch Details" disabled />
+            <TextField label="Account Type" value={accountTypeLabel}
+              inputProps={{
+                readOnly: isReadOnly,
+              }}
+              fullWidth />
+            <RHFTextField name="bankName" label="Bank Name" inputProps={{
+              readOnly: isReadOnly,
+            }} />
+            <RHFTextField name="accountNumber" label="Account Number" inputProps={{
+              readOnly: isReadOnly,
+            }} />
+            <RHFTextField name="ifscCode" label="IFSC Code" inputProps={{
+              readOnly: isReadOnly,
+            }} />
+            <RHFTextField name="branchDetails" label="Branch Details" inputProps={{
+              readOnly: isReadOnly,
+            }} />
           </Box>
         ) : null}
       </Card>
@@ -207,7 +219,7 @@ EscrowCard.propTypes = {
   title: PropTypes.string.isRequired,
 };
 
-function EscrowSetupView({ currData: currentData, percent, setActiveStepId, saveStepData }) {
+function EscrowSetupView({ currData: currentData, percent, setActiveStepId, saveStepData, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const { stepData, refreshDetails } = useGetSpvApplicationStepData(id, 'escrow');
@@ -317,6 +329,7 @@ function EscrowSetupView({ currData: currentData, percent, setActiveStepId, save
           subtitle={ESCROW_ACCOUNT_DEFAULTS[0].subtitle}
           methods={accountOneMethods}
           disabled={generatedCount < 1}
+          isReadOnly={isReadOnly}
         />
         {generatedCount < 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -331,11 +344,17 @@ function EscrowSetupView({ currData: currentData, percent, setActiveStepId, save
           subtitle={ESCROW_ACCOUNT_DEFAULTS[1].subtitle}
           methods={accountTwoMethods}
           disabled={generatedCount < 2}
+          isReadOnly={isReadOnly}
         />
 
-        {generatedCount >= 1 && (
+
+        {!isReadOnly && generatedCount >= 1 && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <Button variant="contained" color="primary" onClick={handleAction}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleAction}
+            >
               {actionLabel}
             </Button>
           </Box>

@@ -15,7 +15,7 @@ import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import axiosInstance from 'src/utils/axios';
 // ----------------------------------------------------------------------
 
-export default function PoolFinancials({ percent, setActiveStepId, saveStepData }) {
+export default function PoolFinancials({ percent, setActiveStepId, saveStepData, isReadOnly }) {
   const sliderStyle = {
     height: 8,
     '& .MuiSlider-track': {
@@ -56,7 +56,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
   const { stepData: spvBasicInfoData, } = useGetSpvApplicationStepData(id, 'spv_basic_info');
 
   const [prevData, setPrevData] = useState();
- 
+
   const [currData, setCurrData] = useState();
 
   const basic = prevData;
@@ -80,7 +80,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
       reserveBufferPercent: pool?.reserveBufferPercent ?? 0.5,
       dailyCutoffTime: pool?.dailyCutoffTime ? new Date(pool.dailyCutoffTime) : null,
 
-     
+
 
     }),
     [pool]
@@ -219,6 +219,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
                 </Stack>
 
                 <RHFSlider
+                  disabled={isReadOnly}
                   name="poolLimit"
                   min={1000000}
                   max={50000000}
@@ -237,6 +238,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
                 </Stack>
 
                 <RHFSlider
+                  disabled={isReadOnly}
                   name="maturityDays"
                   min={12}
                   max={36}
@@ -255,6 +257,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
                 </Stack>
 
                 <RHFSlider
+                  disabled={isReadOnly}
                   name="targetYield"
                   min={6}
                   max={20}
@@ -273,6 +276,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
                 </Stack>
 
                 <RHFSlider
+                  disabled={isReadOnly}
                   name="reserveBufferPercent"
                   min={0.5}
                   max={10}
@@ -288,6 +292,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <TimePicker
+                    disabled={isReadOnly}
                     label="Cutoff Time"
                     color="primary"
                     value={field.value || null}
@@ -312,11 +317,12 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData 
               </Typography>
             </Grid>
           </Grid>
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button type="submit" variant="contained" color="primary">
-              Next
-            </Button>
-          </Box>
+          {!isReadOnly && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Button type="submit" variant="contained" color="primary">
+                Next
+              </Button>
+            </Box>)}
         </Card>
       </FormProvider>
     </Container>

@@ -81,11 +81,11 @@ const getSuggestedMaxInvestPool = (totalUnits, minUnits) => {
   return clampValue(Math.floor(totalUnits / minUnits) || 1, 1, totalUnits);
 };
 
-export default function PtcParameters({ percent, saveStepData, setActiveStepId }) {
+export default function PtcParameters({ percent, saveStepData, setActiveStepId, isReadOnly }) {
   const params = useParams();
   const { id } = params;
-   const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'ptc_parameters');
-     console.log('application', stepData);
+  const { stepData, stepDataLoading } = useGetSpvApplicationStepData(id, 'ptc_parameters');
+  console.log('application', stepData);
   const [currData, setCurrData] = useState();
   const { application } = useGetPoolFinancial(id);
   // console.log('application', application);
@@ -260,11 +260,11 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
     values.windowFrequency,
   ]);
 
-  useEffect(()=>{
-    if(stepData){
+  useEffect(() => {
+    if (stepData) {
       setCurrData(stepData);
     }
-  },[stepData])
+  }, [stepData])
 
   useEffect(() => {
     reset(defaultValues);
@@ -380,6 +380,8 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
                 inputProps={{
                   min: MIN_FACE_VALUE,
                   max: poolLimit || undefined,
+                  readOnly: isReadOnly,
+
                 }}
               />
               <Typography
@@ -398,6 +400,10 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
                 name="minInvestment"
                 label="Min Investment per Investor (₹)"
                 fullWidth
+                inputProps={{
+                  readOnly: isReadOnly,
+
+                }}
               />
               <Typography variant="caption" color="text.secondary">
                 Minimum Units ={' '}
@@ -411,6 +417,10 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
                 name="maxUnitsPerInvestor"
                 label="Max Units per Investor"
                 fullWidth
+                inputProps={{
+                  readOnly: isReadOnly,
+
+                }}
               />
               <Typography variant="caption" color="text.secondary">
                 Minimum {Math.ceil(minUnits || 0).toLocaleString('en-IN')} units • Maximum{' '}
@@ -424,6 +434,9 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
                 name="maxInvestors"
                 label="Max Investors per Pool"
                 fullWidth
+                inputProps={{
+                  readOnly: isReadOnly,
+                }}
               />
               <Typography variant="caption" color="text.secondary">
                 Based on minimum units: {allocatedUnits.toLocaleString('en-IN')} /{' '}
@@ -438,7 +451,10 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
 
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
-              <RHFSelect name="windowFrequency" label="Window Frequency">
+              <RHFSelect name="windowFrequency" label="Window Frequency" inputProps={{
+                readOnly: isReadOnly,
+
+              }}>
                 {Window_Frequency.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -455,21 +471,25 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId }
                 type="number"
                 name="windowDurationHours"
                 label="Window Duration (hours)"
-                disabled
+                inputProps={{
+                  readOnly: isReadOnly,
+                }}
               />
             </Grid>
           </Grid>
 
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              color="primary"
-              disabled={isSubmitting || !poolLimit}
-            >
-              Next
-            </Button>
-          </Box>
+          {!isReadOnly && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Button
+                type="submit"
+                variant="contained"
+                color="primary"
+                disabled={isSubmitting || !poolLimit}
+              >
+                Next
+              </Button>
+            </Box>
+          )}
         </Card>
       </FormProvider>
     </Container>

@@ -54,10 +54,10 @@ const getSignerEntries = (document, screenKey = 'documentsScreen') => {
       label: 'Trustee',
       signer: trusteeStatus
         ? {
-            ...(signing?.trustee || {}),
-            status: trusteeStatus,
-            required: signing?.trustee?.required ?? true,
-          }
+          ...(signing?.trustee || {}),
+          status: trusteeStatus,
+          required: signing?.trustee?.required ?? true,
+        }
         : signing?.trustee,
       showSignButton: Boolean(trusteeShowButton),
     },
@@ -144,7 +144,7 @@ const getStepDocuments = (stepData) => {
   return [];
 };
 
-function LegalDocument({ currData, setActiveStepId, percent, saveStepData }) {
+function LegalDocument({ currData, setActiveStepId, percent, saveStepData, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const { stepData } = useGetSpvApplicationStepData(id, 'documents');
@@ -173,8 +173,8 @@ function LegalDocument({ currData, setActiveStepId, percent, saveStepData }) {
     const mergedDocuments =
       relevantDocumentTypes.length > 0
         ? relevantDocumentTypes.map((documentType) =>
-            normalizeDocument(documentsByValue.get(documentType.value), documentType)
-          )
+          normalizeDocument(documentsByValue.get(documentType.value), documentType)
+        )
         : typedDocuments.map((document) => normalizeDocument(document));
 
     const nextDocuments = sortDocuments(mergedDocuments);
@@ -222,8 +222,8 @@ function LegalDocument({ currData, setActiveStepId, percent, saveStepData }) {
 
       const res = await axiosInstance.patch(`/spv-pre/documents/${id}/${document.id}`, payload);
       const updatedDocument = normalizeDocument(res?.data?.details?.document);
-      
-refreshDocumentDetails();
+
+      refreshDocumentDetails();
       setDocuments((prev) =>
         prev.map((item) => (item.value === updatedDocument.value ? updatedDocument : item))
       );
@@ -310,16 +310,18 @@ refreshDocumentDetails();
             ))}
           </Stack>
 
-          <Box display="flex" justifyContent="flex-end">
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleNext}
-              disabled={isSaving || !allRequiredDocumentsSigned}
-            >
-              Next
-            </Button>
-          </Box>
+          {!isReadOnly && (
+            <Box display="flex" justifyContent="flex-end">
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handleNext}
+                disabled={isSaving || !allRequiredDocumentsSigned}
+              >
+                Next
+              </Button>
+            </Box>
+          )}
         </Stack>
       </Card>
     </Box>

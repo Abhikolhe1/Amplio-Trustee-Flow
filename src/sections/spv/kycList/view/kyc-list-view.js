@@ -79,6 +79,7 @@ export default function KycListView() {
   const settings = useSettingsContext();
 
   const { applications, applicationsLoading } = useGetSpvApplications();
+  console.log('Applications DATA', applications)
 
   const [filters, setFilters] = useState(defaultFilters);
 

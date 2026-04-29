@@ -21,7 +21,15 @@ import { useSearchParams } from "react-router-dom";
 
 export default function SpvStepper({ applicationId }) {
   const [applicationData, setApplicationData] = useState();
+
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
+  const [reviewStatus, setReviewStatus] = useState(0);
+  const isReadOnly = reviewStatus === 1;
+
+  console.log('ReviewStatus', reviewStatus)
+  console.log('isReadOnly', isReadOnly)
+
+
   const getStepKey = (step) => {
     if (!step) return '';
     return step.code || step.value || '';
@@ -126,11 +134,22 @@ export default function SpvStepper({ applicationId }) {
 
   useEffect(() => {
     if (application && !applicationLoading) {
+
       if (applicationData) return;
+
       setApplicationData(application);
 
-      const activeBackendStep = getStepKey(application.activeStep) || 'spv_basic_info';
+      // review lock flag from API
+      setReviewStatus(application?.reviewStatus ?? 0);
+
+      console.log('Application:', application);
+      console.log('Review Status:', application?.reviewStatus);
+
+      const activeBackendStep =
+        getStepKey(application.activeStep) || 'spv_basic_info';
+
       const activeUiStep = mapBackendStepToUiStep(activeBackendStep);
+
       const completedStepCodes =
         application.completedSteps
           ?.map((step) => getStepKey(step))
@@ -138,69 +157,49 @@ export default function SpvStepper({ applicationId }) {
 
       let currentStep = activeUiStep;
 
-      if (
-        completedStepCodes.includes('spv_basic_info')
-      ) {
+      if (completedStepCodes.includes('spv_basic_info')) {
         updateStepPercent('spv_basic_info', 100);
         currentStep = 'pool_financials';
       }
 
-      if (
-        completedStepCodes.includes('pool_financials')
-      ) {
+      if (completedStepCodes.includes('pool_financials')) {
         updateStepPercent('pool_financials', 100);
         currentStep = 'ptc_parameters';
       }
 
-      if (
-        completedStepCodes.includes('ptc_parameters')
-      ) {
+      if (completedStepCodes.includes('ptc_parameters')) {
         updateStepPercent('ptc_parameters', 100);
         currentStep = 'trust_deed';
       }
-      if (
-        completedStepCodes.includes('trust_deed')
-      ) {
+
+      if (completedStepCodes.includes('trust_deed')) {
         updateStepPercent('trust_deed', 100);
         currentStep = 'escrow';
       }
 
-      if (
-        completedStepCodes.includes('escrow')
-      ) {
+      if (completedStepCodes.includes('escrow')) {
         updateStepPercent('escrow', 100);
         currentStep = 'documents';
       }
-      if (
-        completedStepCodes.includes('documents')
-      ) {
+
+      if (completedStepCodes.includes('documents')) {
         updateStepPercent('documents', 100);
         currentStep = 'credit_rating';
       }
 
-      if (
-        completedStepCodes.includes('credit_rating')
-      ) {
+      if (completedStepCodes.includes('credit_rating')) {
         updateStepPercent('credit_rating', 100);
         currentStep = 'isin_application';
       }
-      if (
-        completedStepCodes.includes('isin_application')
-      ) {
+
+      if (completedStepCodes.includes('isin_application')) {
         updateStepPercent('isin_application', 100);
-        currentStep = 'review_and_Activate';
-      }
-      if (
-        completedStepCodes.includes('review_and_submit') ||
-        completedStepCodes.includes('review_and_activate')
-      ) {
-        updateStepPercent('review_and_Activate', 100);
         currentStep = 'review_and_Activate';
       }
 
       setActiveStepId(currentStep);
-
     }
+
   }, [application, applicationLoading]);
   const handleStepClick = (stepId) => {
     const currentIndex = steps.findIndex((s) => s.id === activeStepId);
@@ -245,6 +244,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('spv_basic_info', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('spv_basic_info', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -255,6 +255,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('pool_financials', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('pool_financials', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -266,6 +267,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('ptc_parameters', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('ptc_parameters', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -276,6 +278,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('trust_deed', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('trust_deed', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -286,6 +289,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('escrow', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('escrow', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -296,6 +300,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('documents', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('documents', data)}
+            isReadOnly={isReadOnly}
           />
         );
 
@@ -306,6 +311,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('credit_rating', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('credit_rating', data)}
+            isReadOnly ={isReadOnly}
           />
         );
 
@@ -317,6 +323,7 @@ export default function SpvStepper({ applicationId }) {
             percent={(p) => updateStepPercent('isin_application', p)}
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('isin_application', data)}
+            isReadOnly ={isReadOnly}
           />
         );
 

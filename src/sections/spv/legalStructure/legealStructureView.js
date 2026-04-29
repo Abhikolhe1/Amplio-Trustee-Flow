@@ -66,12 +66,12 @@ const hasUploadedFile = (value) => {
   if (value instanceof File) return true;
   return Boolean(
     value?.id ||
-      value?.mediaId ||
-      value?._id ||
-      value?.fileUrl ||
-      value?.name ||
-      value?.fileName ||
-      value?.fileOriginalName
+    value?.mediaId ||
+    value?._id ||
+    value?.fileUrl ||
+    value?.name ||
+    value?.fileName ||
+    value?.fileOriginalName
   );
 };
 
@@ -105,10 +105,10 @@ const getSignerEntries = (document, screenKey = 'trustDeedScreen') => {
       label: 'Trustee',
       signer: trusteeStatus
         ? {
-            ...(signing?.trustee || {}),
-            status: trusteeStatus,
-            required: signing?.trustee?.required ?? true,
-          }
+          ...(signing?.trustee || {}),
+          status: trusteeStatus,
+          required: signing?.trustee?.required ?? true,
+        }
         : signing?.trustee,
       showSignButton: Boolean(trusteeShowButton),
     },
@@ -171,7 +171,7 @@ const normalizeTrustDeed = (data) => {
   };
 };
 
-function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
+function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const { stepData, refreshDetails } = useGetSpvApplicationStepData(id, 'trust_deed');
@@ -398,8 +398,12 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
               display="grid"
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
-              <RHFTextField name="trustName" label="Trust Name (Legal)" disabled />
-              <RHFTextField name="trusteeEntity" label="Trustee Entity" disabled />
+              <RHFTextField name="trustName" label="Trust Name (Legal)" inputProps={{
+                readOnly: isReadOnly,
+              }} />
+              <RHFTextField name="trusteeEntity" label="Trustee Entity" inputProps={{
+                readOnly: isReadOnly,
+              }} />
             </Box>
 
             <Box
@@ -408,8 +412,12 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
               display="grid"
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
-              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" disabled />
-              <RHFSelect name="governingLaw" label="Governing Law*">
+              <RHFTextField name="settlor" label="Settlor (Platform NBFC)" inputProps={{
+                readOnly: isReadOnly,
+              }} />
+              <RHFSelect name="governingLaw" label="Governing Law*" inputProps={{
+                readOnly: isReadOnly,
+              }}>
                 {LAW_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
                     {option.label}
@@ -425,7 +433,9 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
               <Box>
-                <RHFSelect name="bankruptcyClause" label="Bankruptcy Remoteness Clause*">
+                <RHFSelect name="bankruptcyClause" label="Bankruptcy Remoteness Clause*" inputProps={{
+                  readOnly: isReadOnly,
+                }}>
                   {CLAUSE_OPTIONS.map((option) => (
                     <MenuItem key={option.value} value={option.value}>
                       {option.label}
@@ -442,15 +452,20 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
                 label="Trust Duration"
                 type="text"
                 placeholder="5 Years (extendable)"
+                inputProps={{
+                  readOnly: isReadOnly,
+
+                }}
               />
             </Box>
           </Stack>
-
-          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, mr: 3 }}>
-            <Button type="button" variant="contained" color="primary" onClick={handleFirstCardSave}>
-              Save
-            </Button>
-          </Box>
+          {!isReadOnly && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, mr: 3 }}>
+              <Button type="button" variant="contained" color="primary" onClick={handleFirstCardSave}>
+                Save
+              </Button>
+            </Box>
+          )}
         </Card>
 
         {isFirstCardSaved && (
@@ -490,34 +505,39 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData }) {
                   label="Document Upload"
                   icon="mdi:file-document-outline"
                   accept={{ 'application/pdf': ['.pdf'] }}
+                  disabled={isReadOnly}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-                  <Button
-                    type="button"
-                    variant="contained"
-                    color="primary"
-                    onClick={handleUploadSave}
-                    disabled={!stampDutyMediaId || isSubmitting}
-                  >
-                    Save
-                  </Button>
-                </Box>
+                {!isReadOnly && (
+                  <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+                    <Button
+                      type="button"
+                      variant="contained"
+                      color="primary"
+                      onClick={handleUploadSave}
+                      disabled={!stampDutyMediaId || isSubmitting}
+                    >
+                      Save
+                    </Button>
+                  </Box>)}
               </Box>
             </Stack>
           </Card>
         )}
 
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-          <Button
-            type="button"
-            variant="contained"
-            color="primary"
-            onClick={handleNext}
-            disabled={!isFirstCardSaved || !allRequiredSignersSigned || !savedStampDutyMediaId}
-          >
-            Next
-          </Button>
-        </Box>
+
+        {!isReadOnly && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button
+              type="button"
+              variant="contained"
+              color="primary"
+              onClick={handleNext}
+              disabled={!isFirstCardSaved || !allRequiredSignersSigned || !savedStampDutyMediaId}
+            >
+              Next
+            </Button>
+          </Box>
+        )}
       </FormProvider>
     </Box>
   );
