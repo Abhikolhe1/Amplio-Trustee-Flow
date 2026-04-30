@@ -231,7 +231,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
             </Grid>
             <Grid item xs={12} md={6}>
               <Stack spacing={0.5}>
-                <Typography variant="body2">maturityDays (Months)</Typography>
+                <Typography variant="body2">Maturity Days (Months)</Typography>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="caption">12M</Typography>
                   <Typography variant="caption">36M</Typography>
@@ -313,7 +313,7 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
                 )}
               />
               <Typography variant="caption" color="text.secondary">
-                Time window for investor exit/reinvest decision
+                Daily deadline for processing exit or reinvestment requests. Requests after this time will be processed on the next business day.
               </Typography>
             </Grid>
           </Grid>

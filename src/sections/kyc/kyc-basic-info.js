@@ -87,7 +87,9 @@ export default function KYCBasicInfo() {
     gstin: Yup.string().required('GSTIN is required'),
     dateOfIncorporation: Yup.date().required('Date of Incorporation is required'),
     msmeUdyamRegistrationNo: Yup.string().required('MSME Udyam Registration No is required'),
-    sebiRegistrationNumber: Yup.string().required('SEBI Registration Number is required'),
+    sebiRegistrationNumber: Yup.string()
+      .matches(/^IND\d{9}$/, 'Invalid SEBI Registration Number format (Expected: IND followed by 9 digits)')
+      .required('SEBI Registration Number is required'),
     sebiValidityDate: Yup.date().required('SEBI Validity Date is required'),
     city: Yup.string().required('City is required'),
     state: Yup.string().required('State is required'),
@@ -179,21 +181,21 @@ export default function KYCBasicInfo() {
       // Build extracted PAN object
       const extractedPan = extractedPanDetails
         ? {
-            extractedTrusteeName: extractedPanDetails.extractedTrusteeName || '',
-            extractedPanNumber: extractedPanDetails.extractedPanNumber || '',
-          }
+          extractedTrusteeName: extractedPanDetails.extractedTrusteeName || '',
+          extractedPanNumber: extractedPanDetails.extractedPanNumber || '',
+        }
         : undefined;
 
       // Build submitted PAN object
       const submittedPan = humanEdited
         ? {
-            submittedTrusteeName: formData.panHoldersName,
-            submittedPanNumber: formData.panNumber,
-          }
+          submittedTrusteeName: formData.panHoldersName,
+          submittedPanNumber: formData.panNumber,
+        }
         : {
-            submittedTrusteeName: formData.panHoldersName,
-            submittedPanNumber: formData.panNumber,
-          };
+          submittedTrusteeName: formData.panHoldersName,
+          submittedPanNumber: formData.panNumber,
+        };
 
       // FINAL API PAYLOAD — 100% MATCHES THE API FORMAT YOU GAVE
       const payload = {
