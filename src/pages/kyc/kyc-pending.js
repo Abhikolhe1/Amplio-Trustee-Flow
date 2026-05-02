@@ -8,7 +8,7 @@ export default function KYCPendingPage() {
   return (
     <>
       <Helmet>
-        <title> Issuer: KYC Pending</title>
+        <title> Trustee: KYC Pending</title>
       </Helmet>
 
       <KYCPending />

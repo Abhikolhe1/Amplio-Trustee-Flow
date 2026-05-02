@@ -8,7 +8,7 @@ export default function KYCBasicInfoPage() {
   return (
     <>
       <Helmet>
-        <title> Issuer: KYC Basic Info</title>
+        <title> Trustee: KYC Basic Info</title>
       </Helmet>
 
       <KYCBasicInfo />

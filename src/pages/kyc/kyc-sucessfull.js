@@ -8,7 +8,7 @@ export default function KYCSucessfullPage() {
   return (
     <>
       <Helmet>
-        <title> Issuer: KYC Sucess</title>
+        <title> Trustee: KYC Sucess</title>
       </Helmet>
 
       <KYCSucessfull />
