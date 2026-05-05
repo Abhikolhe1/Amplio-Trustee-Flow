@@ -8,8 +8,6 @@ import DashboardLayout from 'src/layouts/dashboard';
 import { LoadingScreen } from 'src/components/loading-screen';
 import { element } from 'prop-types';
 
-
-
 // ----------------------------------------------------------------------
 
 // OVERVIEW
@@ -70,7 +68,8 @@ const SchedulerEditPage = lazy(() => import('src/pages/dashboard/scheduler/edit'
 const SchedulerViewPage = lazy(() => import('src/pages/dashboard/scheduler/view'));
 // TRUSTEE PROFILE FOR KYC
 const TrusteeProfileNewPage = lazy(() => import('src/pages/dashboard/trustee-profiles/new'));
-const TrusteeProfliesDetailsPage = lazy(() => import('src/pages/dashboard/trustee-profiles/details')
+const TrusteeProfliesDetailsPage = lazy(() =>
+  import('src/pages/dashboard/trustee-profiles/details')
 );
 // DESIGNATION
 const DesignationNewPage = lazy(() => import('src/pages/dashboard/designation/new'));
@@ -104,6 +103,11 @@ const ChatPage = lazy(() => import('src/pages/dashboard/chat'));
 const MailPage = lazy(() => import('src/pages/dashboard/mail'));
 const CalendarPage = lazy(() => import('src/pages/dashboard/calendar'));
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
+// SPV MANAGEMENT
+const SpvManagementListPage = lazy(() => import('src/pages/dashboard/spv-management/list'));
+const SpvManagementDetailsPage = lazy(() => import('src/pages/dashboard/spv-management/details'));
+const SpvPoolDetailsPage = lazy(() => import('src/pages/dashboard/spv-management/pool-details'));
+
 // TEST RENDER PAGE BY ROLE
 const PermissionDeniedPage = lazy(() => import('src/pages/dashboard/permission'));
 // BLANK PAGE
@@ -136,9 +140,9 @@ export const dashboardRoutes = [
         children: [
           { element: <SpvListPage />, index: true },
           { path: 'list', element: <SpvListPage /> },
-          { path: 'new', element: <SpvCreatePage/> },
-          { path: ':id', element: <SpvDetailsPage/> },
-          { path: 'success', element: <SpvSuccess/> },
+          { path: 'new', element: <SpvCreatePage /> },
+          { path: ':id', element: <SpvDetailsPage /> },
+          { path: 'success', element: <SpvSuccess /> },
         ],
       },
       {
@@ -160,7 +164,7 @@ export const dashboardRoutes = [
           { path: 'profile', element: <CompanyProfilePage /> },
         ],
       },
-            {
+      {
         path: 'issureservices',
         children: [
           { element: <ROIGuidancePage />, index: true },
@@ -219,6 +223,15 @@ export const dashboardRoutes = [
           { path: ':id/edit', element: <SignatoriesEditPage /> },
           { path: 'new', element: <SignatoriesCreatePage /> },
           { path: ':id', element: <SignatoriesDetailsPage /> },
+        ],
+      },
+      {
+        path: 'spv-management',
+        children: [
+          { element: <SpvManagementListPage />, index: true },
+          { path: 'list', element: <SpvManagementListPage /> },
+          { path: 'pool/:id', element: <SpvPoolDetailsPage /> },
+          { path: ':id', element: <SpvManagementDetailsPage /> },
         ],
       },
 

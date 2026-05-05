@@ -129,10 +129,15 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/spvkyc`,
       list: `${ROOTS.DASHBOARD}/spvkyc/list`,
       new: `${ROOTS.DASHBOARD}/spvkyc/new`,
-      details: (id) =>`${ROOTS.DASHBOARD}/spvkyc/${id}`,
+      details: (id) => `${ROOTS.DASHBOARD}/spvkyc/${id}`,
       success: `${ROOTS.DASHBOARD}/spvkyc/success`,
     },
-
+    spvManagement: {
+      root: `${ROOTS.DASHBOARD}/spv-management`,
+      list: `${ROOTS.DASHBOARD}/spv-management/list`,
+      details: (id) => `${ROOTS.DASHBOARD}/spv-management/${id}`,
+      poolDetails: (id) => `${ROOTS.DASHBOARD}/spv-management/pool/${id}`,
+    },
     pendingAppointments: {
       root: `${ROOTS.DASHBOARD}/pendingAppointments`,
       list: `${ROOTS.DASHBOARD}/pendingAppointments/list`,

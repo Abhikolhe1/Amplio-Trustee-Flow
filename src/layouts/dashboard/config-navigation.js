@@ -96,10 +96,15 @@ export function useNavData() {
             ],
           },
           {
-            title: t('spv kyc applications'),
+            title: t('SPV KYC applications'),
             path: paths.dashboard.spvkyc.root,
             icon: ICONS.signatories,
             deepMatch: true,
+          },
+          {
+            title: t('SPV Management'),
+            path: paths.dashboard.spvManagement.root,
+            icon: ICONS.company,
           },
 
           //   // USER
