@@ -11,7 +11,11 @@ import FormProvider, {
 } from 'src/components/hook-form';
 import DocumentCard from 'src/components/card/documentCard';
 import Label from 'src/components/label';
-import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { 
+  useGetSpvApplicationStepData, 
+  useGetSpvDocument, 
+  useGetSpvKycDocumentTypes 
+} from 'src/api/spvApplication';
 import { useParams } from 'src/routes/hook';
 import axiosInstance from 'src/utils/axios';
 
@@ -20,15 +24,10 @@ const FORM_FIELDS = [
   'trusteeEntity',
   'settlor',
   'governingLaw',
-  'bankruptcyClause',
   'trustDuration',
 ];
 
 const LAW_OPTIONS = [
-  {
-    value: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
-    label: 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
-  },
   { value: 'Indian Trusts Act, 1882 only', label: 'Indian Trusts Act, 1882 only' },
 ];
 
@@ -42,6 +41,7 @@ const STATUS_LABELS = {
   signed: 'SIGNED',
   locked: 'LOCKED',
   partially_signed: 'PARTIALLY SIGNED',
+  not_required: 'NOT REQUIRED',
 };
 
 const STATUS_COLORS = {
@@ -49,6 +49,28 @@ const STATUS_COLORS = {
   partially_signed: 'info',
   signed: 'success',
   locked: 'default',
+  not_required: 'default',
+};
+
+const DOCUMENT_ORDER = ['trust_deed', 'information_memorandum', 'escrow_agreement'];
+const TRUST_DEED_VALUE = 'trust_deed';
+
+const getSection = (payload, key, fallbackKey) => {
+  if (!payload) {
+    return payload;
+  }
+
+  if (payload?.data) {
+    return payload.data;
+  }
+
+  const section = payload?.[key] ?? payload?.[fallbackKey];
+
+  if (section?.data) {
+    return section.data;
+  }
+
+  return section ?? payload;
 };
 
 const getBackendSignerStatus = (document, signerKey) => {
@@ -57,43 +79,14 @@ const getBackendSignerStatus = (document, signerKey) => {
 };
 
 const getResolvedSignerStatus = (document, signerKey) =>
-  document?.signing?.[signerKey]?.status || getBackendSignerStatus(document, signerKey) || 'pending';
+  document?.signing?.[signerKey]?.status || getBackendSignerStatus(document?.backendDocument || document, signerKey) || 'pending';
 
-const hasUploadedFile = (value) => {
-  if (!value) return false;
-  if (typeof value === 'string') return Boolean(value.trim());
-  if (Array.isArray(value)) return value.length > 0;
-  if (value instanceof File) return true;
-  return Boolean(
-    value?.id ||
-    value?.mediaId ||
-    value?._id ||
-    value?.fileUrl ||
-    value?.name ||
-    value?.fileName ||
-    value?.fileOriginalName
-  );
-};
-
-const getMediaId = (value) =>
-  typeof value === 'string' ? value : value?.id || value?.mediaId || value?._id || '';
-
-const getDefaultFormValues = (stepData) => ({
-  trustName: stepData?.trustName || 'Axis Trustee Services Ltd',
-  trusteeEntity: stepData?.trusteeEntity || 'Axis Trustee Services Ltd',
-  settlor: stepData?.settlor || 'BirbalPlus',
-  governingLaw: stepData?.governingLaw || 'Indian Trusts Act, 1882 + SARFAESI Act, 2002',
-  bankruptcyClause: stepData?.bankruptcyClause || 'full',
-  trustDuration: stepData?.trustDuration || '',
-  stampDutyAndRegistrationId: stepData?.stampDutyAndRegistration || null,
-});
-
-const getTrustDeedDocumentCard = (stepData) => stepData?.document || null;
-
-const getSignerEntries = (document, screenKey = 'trustDeedScreen') => {
-  const screenActions = document?.signingActions?.[screenKey] || {};
+const getSignerEntries = (document) => {
+  const screenActions = document?.signingActions?.trustDeedScreen || document?.signingActions?.documentsScreen || {};
   const signing = document?.signing || {};
-  const trusteeStatus = signing?.trustee?.status || getBackendSignerStatus(document, 'trustee');
+  const documentValue = document?.spvKycDocumentType?.value || document?.value;
+  const trusteeStatus =
+    signing?.trustee?.status || getBackendSignerStatus(document?.backendDocument || document, 'trustee');
   const trusteeShowButton =
     typeof screenActions?.showTrusteeSignButton === 'boolean'
       ? screenActions.showTrusteeSignButton
@@ -115,68 +108,97 @@ const getSignerEntries = (document, screenKey = 'trustDeedScreen') => {
   ].filter(({ signer, showSignButton }) => signer || showSignButton);
 };
 
-const getRequiredSigners = (document, screenKey = 'trustDeedScreen') =>
-  getSignerEntries(document, screenKey).filter(({ signer }) => signer?.required !== false);
+const getRequiredSigners = (document) =>
+  getSignerEntries(document).filter(({ signer }) => signer?.required !== false);
 
-const areAllRequiredSignersSigned = (document, screenKey = 'trustDeedScreen') => {
-  const requiredSigners = getRequiredSigners(document, screenKey);
-
+const areAllRequiredSignersSigned = (document) => {
+  const requiredSigners = getRequiredSigners(document);
   return requiredSigners.length > 0 && requiredSigners.every(({ signer }) => signer?.status === 'signed');
 };
 
-const getOverallStatus = (document) => {
-  if (areAllRequiredSignersSigned(document)) return 'signed';
-
-  const signerEntries = getRequiredSigners(document);
-  if (signerEntries.some(({ signer }) => signer?.status === 'signed')) {
-    return 'partially_signed';
-  }
-
-  return document?.overallSigningStatus || 'pending';
+const getDisplayStatus = (document) => {
+  if (areAllRequiredSignersSigned(document)) return 'SIGNED';
+  return STATUS_LABELS[document?.overallSigningStatus] || 'PENDING';
 };
 
-const buildDocumentDescription = (document, documentName) => {
+const buildSignerDescription = (document) => {
   const signerEntries = getSignerEntries(document);
 
   if (!signerEntries.length) {
-    return `Document: ${documentName}`;
+    return document?.spvKycDocumentType?.description || 'Pending document execution';
   }
 
-  return `${documentName} | ${signerEntries
+  return signerEntries
     .map(
       ({ label, signer }) =>
         `${label}: ${STATUS_LABELS[signer?.status] || signer?.status?.toUpperCase?.() || 'PENDING'}`
     )
-    .join(' | ')}`;
+    .join(' | ');
 };
 
-const normalizeTrustDeed = (data) => {
-  if (!data) return data;
+const normalizeDocument = (document, documentType) => {
+  const trusteeStatus =
+    document?.signing?.trustee?.status || getBackendSignerStatus(document, 'trustee') || 'pending';
 
-  const document = data?.document || null;
-  const trusteeStatus = document?.signing?.trustee?.status || 'pending';
-  const trusteeSignedAt = document?.signing?.trustee?.signedAt || null;
-  const fallbackTrusteeStatus = getBackendSignerStatus(document, 'trustee') || trusteeStatus;
-
-  return {
-    ...data,
-    document,
+  const normalizedDocument = {
+    id: document?.id || null,
+    value: document?.spvKycDocumentType?.value || documentType?.value,
+    title: document?.spvKycDocumentType?.name || documentType?.name || 'SPV Document',
+    description: buildSignerDescription(document || { spvKycDocumentType: documentType }),
+    icon: 'mdi:file-document-outline',
+    docLink: document?.media?.fileUrl || '',
     signing: {
       trustee: {
-        status: fallbackTrusteeStatus,
-        signedAt: trusteeSignedAt,
+        ...(document?.signing?.trustee || {}),
+        status: trusteeStatus,
+        required: document?.signing?.trustee?.required ?? true,
       },
     },
-    overallSigningStatus: getOverallStatus(document),
+    signingActions: document?.signingActions || {},
+    overallSigningStatus: document?.overallSigningStatus || 'pending',
+    backendDocument: document || null,
+  };
+
+  return {
+    ...normalizedDocument,
+    status: getDisplayStatus(normalizedDocument),
   };
 };
+
+const sortDocuments = (documents) =>
+  [...documents].sort((left, right) => {
+    const leftIndex = DOCUMENT_ORDER.indexOf(left.value);
+    const rightIndex = DOCUMENT_ORDER.indexOf(right.value);
+
+    const normalizedLeftIndex = leftIndex === -1 ? Number.MAX_SAFE_INTEGER : leftIndex;
+    const normalizedRightIndex = rightIndex === -1 ? Number.MAX_SAFE_INTEGER : rightIndex;
+
+    return normalizedLeftIndex - normalizedRightIndex;
+  });
+
+const getMediaId = (value) =>
+  typeof value === 'string' ? value : value?.id || value?.mediaId || value?._id || '';
+
+const getDefaultFormValues = (stepData) => ({
+  trustName: stepData?.trustName || 'Axis Trustee Services Ltd',
+  trusteeEntity: stepData?.trusteeEntity || 'Axis Trustee Services Ltd',
+  settlor: stepData?.settlor || 'BirbalPlus',
+  governingLaw: stepData?.governingLaw || 'Indian Trusts Act, 1882 only',
+  trustDuration: stepData?.trustDuration || '',
+  stampDutyAndRegistrationId: stepData?.stampDutyAndRegistration || null,
+});
 
 function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly }) {
   const params = useParams();
   const { id } = params;
   const { stepData, refreshDetails } = useGetSpvApplicationStepData(id, 'trust_deed');
+  const { spvDocuments, refreshDocumentDetails } = useGetSpvDocument(id);
+  const { spvKycDocumentTypes } = useGetSpvKycDocumentTypes();
+
   const [currData, setCurrData] = useState();
+  const [documents, setDocuments] = useState([]);
   const [isFirstCardSaved, setIsFirstCardSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const defaultValues = useMemo(() => getDefaultFormValues(currData), [currData]);
 
   const schema = yup.object().shape({
@@ -184,7 +206,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
     trusteeEntity: yup.string().required('Trustee entity is required'),
     settlor: yup.string().required('Settlor is required'),
     governingLaw: yup.string().required('Governing law is required'),
-    bankruptcyClause: yup.string().required('Bankruptcy clause is required'),
     trustDuration: yup.string().required('Trust duration is required'),
   });
 
@@ -211,11 +232,52 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
 
   useEffect(() => {
     if (!stepData) return;
-    const normalizedData = normalizeTrustDeed(stepData);
-    setCurrData(normalizedData);
+    const data = getSection(stepData, 'trustDeed', 'trust_deed');
+    setCurrData(data);
     setIsFirstCardSaved(true);
-    saveStepData?.(normalizedData);
+    saveStepData?.(data);
   }, [saveStepData, stepData]);
+
+  useEffect(() => {
+    const documentTypes = Array.isArray(spvKycDocumentTypes) ? spvKycDocumentTypes : [];
+    const typedDocuments = Array.isArray(spvDocuments) ? spvDocuments : [];
+    
+    const relevantDocumentTypes = documentTypes.filter((type) => DOCUMENT_ORDER.includes(type?.value));
+    const documentsByValue = new Map(
+      typedDocuments
+        .filter((document) => document?.spvKycDocumentType?.value)
+        .map((document) => [document.spvKycDocumentType.value, document])
+    );
+
+    if (stepData?.document && !documentsByValue.has(TRUST_DEED_VALUE)) {
+      documentsByValue.set(TRUST_DEED_VALUE, stepData.document);
+    }
+
+    const mergedDocuments =
+      relevantDocumentTypes.length > 0
+        ? relevantDocumentTypes.map((documentType) =>
+          normalizeDocument(documentsByValue.get(documentType.value), documentType)
+        )
+        : typedDocuments.map((document) => normalizeDocument(document));
+
+    const nextDocuments = sortDocuments(mergedDocuments);
+    setDocuments(nextDocuments);
+    saveStepData?.({
+      ...(getSection(stepData, 'trustDeed', 'trust_deed') || {}),
+      documents: nextDocuments,
+    });
+  }, [spvDocuments, spvKycDocumentTypes, stepData]);
+
+  const signingRequiredDocuments = useMemo(
+    () => documents.filter((doc) => getRequiredSigners(doc).length > 0),
+    [documents]
+  );
+
+  const allRequiredDocumentsSigned = useMemo(() => {
+    if (signingRequiredDocuments.length === 0) return false;
+
+    return signingRequiredDocuments.every((doc) => areAllRequiredSignersSigned(doc));
+  }, [signingRequiredDocuments]);
 
   useEffect(() => {
     const currentStampDutyValue = getValues('stampDutyAndRegistrationId');
@@ -223,7 +285,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
       ...defaultValues,
     };
 
-    // Preserve an uploaded-but-not-yet-saved file when backend refreshes this step.
     if (
       getMediaId(currentStampDutyValue) &&
       !getMediaId(currData?.stampDutyAndRegistrationId)
@@ -237,31 +298,25 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
   useEffect(() => {
     const filledFields = watchedFields.filter((value) => value !== undefined && value !== null && value !== '').length;
     const formPercent = Math.round((filledFields / FORM_FIELDS.length) * 50);
-    const requiredSigners = getRequiredSigners(currData?.document);
-    const signedSignerCount = requiredSigners.filter(({ signer }) => signer?.status === 'signed').length;
-    const executionItemCount = requiredSigners.length + 1;
-    const completedExecutionItems =
-      signedSignerCount + (savedStampDutyMediaId ? 1 : 0);
+    
+    const executionItemCount = signingRequiredDocuments.length + 1; // docs + stamp duty
+    const signedSignerCount = signingRequiredDocuments.filter((document) =>
+      areAllRequiredSignersSigned(document)
+    ).length;
+    const completedExecutionItems = signedSignerCount + (savedStampDutyMediaId ? 1 : 0);
+    
     const executionPercent = executionItemCount
       ? Math.round((completedExecutionItems / executionItemCount) * 50)
       : 0;
 
     percent?.(formPercent + executionPercent);
-  }, [currData?.document, percent, savedStampDutyMediaId, watchedFields]);
-
-  const trustDeedDocument = getTrustDeedDocumentCard(currData);
-  const documentUrl = trustDeedDocument?.media?.fileUrl || '';
-  const documentName =
-    trustDeedDocument?.media?.fileOriginalName || trustDeedDocument?.media?.fileName || 'Trust deed';
-  const overallStatus = currData?.overallSigningStatus || 'pending';
-  const allRequiredSignersSigned = areAllRequiredSignersSigned(trustDeedDocument);
+  }, [documents, percent, savedStampDutyMediaId, watchedFields, signingRequiredDocuments]);
 
   const buildBasePayload = (values) => ({
     trustName: values.trustName,
     trusteeEntity: values.trusteeEntity,
     settlor: values.settlor,
     governingLaw: values.governingLaw,
-    bankruptcyClause: values.bankruptcyClause,
     trustDuration: values.trustDuration,
   });
 
@@ -281,35 +336,9 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
   const patchTrustDeedDetails = async (payload) => {
     const res = await axiosInstance.patch(`/spv-pre/trust-deed/${id}`, payload);
     const backendData = res?.data?.details?.trustDeed;
-    const normalized = normalizeTrustDeed(backendData);
-    setCurrData(normalized);
-    saveStepData?.(normalized);
-
-    return normalized;
-  };
-
-  const patchTrustDeedDocumentStatus = async (payload) => {
-    let documentId = currData?.document?.id;
-
-    if (!documentId) {
-      const savedData = await patchTrustDeedDetails(buildBasePayload(getValues()));
-      documentId = savedData?.document?.id;
-      if (!documentId) return savedData;
-    }
-
-    const endpoint = `/spv-pre/documents/${id}/${documentId}`;
-    const res = await axiosInstance.patch(endpoint, payload);
-    const document = res?.data?.details?.document;
-    refreshDetails();
-    const nextData = normalizeTrustDeed({
-      ...currData,
-      document,
-    });
-
-    setCurrData(nextData);
-    saveStepData?.(nextData);
-
-    return nextData;
+    setCurrData(backendData);
+    saveStepData?.(backendData);
+    return backendData;
   };
 
   const handleFirstCardSave = async () => {
@@ -319,19 +348,43 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
     const values = getValues();
     await patchTrustDeedDetails(buildTrustDeedPayload(values));
     setIsFirstCardSaved(true);
+    refreshDetails();
   };
 
-  const handleSignerSign = async (signerKey) => {
-    if (!trustDeedDocument?.id) return;
+  const handleSign = async (document, signerKey) => {
+    let documentId = document?.id;
+    if (!documentId && document.value === TRUST_DEED_VALUE) {
+        const savedData = await patchTrustDeedDetails(buildBasePayload(getValues()));
+        documentId = savedData?.document?.id;
+    }
 
-    const signerStatus = getResolvedSignerStatus(trustDeedDocument, signerKey);
-    if (signerStatus === 'signed') return;
+    if (!documentId || !signerKey) return;
+    if (getResolvedSignerStatus(document, signerKey) === 'signed') return;
 
-    const signedAt = new Date().toISOString();
-    await patchTrustDeedDocumentStatus({
-      [`${signerKey}SignStatus`]: 'signed',
-      [`${signerKey}SignedAt`]: signedAt,
-    });
+    setIsSaving(true);
+    try {
+      const signedAt = new Date().toISOString();
+      const payload = {
+        [`${signerKey}SignStatus`]: 'signed',
+        [`${signerKey}SignedAt`]: signedAt,
+      };
+
+      const res = await axiosInstance.patch(`/spv-pre/documents/${id}/${documentId}`, payload);
+      const updatedDocument = normalizeDocument(res?.data?.details?.document);
+
+      refreshDocumentDetails();
+      if (document.value === TRUST_DEED_VALUE) {
+          refreshDetails();
+      }
+      
+      setDocuments((prev) =>
+        prev.map((item) => (item.value === updatedDocument.value ? updatedDocument : item))
+      );
+    } catch (error) {
+      console.error(`Failed to sign document as ${signerKey}`, error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleUploadSave = async () => {
@@ -343,28 +396,32 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
     refreshDetails();
   };
 
-  const trustDeedActionButtons = getSignerEntries(trustDeedDocument)
-    .filter(({ key, signer, showSignButton }) => {
-      if (!showSignButton || !signer || signer.status === 'signed') return false;
-      return true;
-    })
-    .map(({ key, label }) => ({
-      key,
-      label: key === 'trustee' ? 'E-Sign' : `${label} E-Sign`,
-      color: 'warning',
-      disabled: isSubmitting,
-      onClick: () => handleSignerSign(key),
-    }));
+  const getActionButtons = (document) =>
+    getSignerEntries(document)
+      .filter(({ signer, showSignButton }) => showSignButton && signer && signer.status !== 'signed')
+      .map(({ key, label }) => ({
+        key: `${document.value}-${key}`,
+        label: document.value === TRUST_DEED_VALUE && key === 'trustee' ? 'E-Sign' : `${label} E-Sign`,
+        color: 'warning',
+        disabled: isSaving || isSubmitting || (!document.id && document.value !== TRUST_DEED_VALUE),
+        onClick: () => handleSign(document, key),
+      }));
 
-  const primaryTrustDeedAction =
-    trustDeedActionButtons.length === 1 ? trustDeedActionButtons[0] : null;
-  const secondaryTrustDeedActions =
-    trustDeedActionButtons.length > 1 ? trustDeedActionButtons : [];
+  const getPrimaryAction = (document) => {
+    const actions = getActionButtons(document);
+    if (actions.length !== 1) return null;
+    return actions[0];
+  };
+
+  const getSecondaryActions = (document) => {
+    const actions = getActionButtons(document);
+    return actions.length > 1 ? actions : [];
+  };
 
   const handleNext = async () => {
     const valid = await trigger();
     if (!valid) return;
-    if (!allRequiredSignersSigned) return;
+    if (!allRequiredDocumentsSigned) return;
     if (!savedStampDutyMediaId) return;
     await patchTrustDeedDetails(buildTrustDeedPayload(getValues()));
     setActiveStepId('escrow');
@@ -387,8 +444,8 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
           </Box>
 
           <Alert severity="info" sx={{ m: 3 }}>
-            Save the trust deed details first, then e-sign the generated trust deed document from
-            the card below before moving to escrow setup.
+            Save the trust deed details first, then e-sign the generated documents from
+            the list below before moving to escrow setup.
           </Alert>
 
           <Stack spacing={3} p={3}>
@@ -432,20 +489,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
               display="grid"
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
-              <Box>
-                <RHFSelect name="bankruptcyClause" label="Bankruptcy Remoteness Clause*" inputProps={{
-                  readOnly: isReadOnly,
-                }}>
-                  {CLAUSE_OPTIONS.map((option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  ))}
-                </RHFSelect>
-                <Typography variant="body2" mt={1} color="text.secondary">
-                  Full isolation protects investors if the platform defaults.
-                </Typography>
-              </Box>
 
               <RHFTextField
                 name="trustDuration"
@@ -461,7 +504,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
           </Stack>
           {!isReadOnly && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, mr: 3 }}>
-              <Button type="button" variant="contained" color="primary" onClick={handleFirstCardSave}>
+              <Button type="button" variant="contained" color="primary" onClick={handleFirstCardSave} disabled={isSubmitting}>
                 Save
               </Button>
             </Box>
@@ -472,30 +515,34 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
           <Card sx={{ p: 3, mt: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
               <Typography variant="subtitle1" color="primary">
-                Execution Status
+                Legal Documents Execution
               </Typography>
-              <Label color={STATUS_COLORS[overallStatus] || 'warning'}>
-                {STATUS_LABELS[overallStatus] || overallStatus}
-              </Label>
             </Box>
 
             <Stack spacing={2}>
-              <DocumentCard
-                title="Trust Deed"
-                description={buildDocumentDescription(trustDeedDocument, documentName)}
-                icon="mdi:file-document-outline"
-                status={STATUS_LABELS[overallStatus] || overallStatus?.toUpperCase()}
-                statusColor={STATUS_COLORS[overallStatus] || 'warning'}
-                docLink={documentUrl}
-                showViewButton={Boolean(documentUrl)}
-                showSignButton={Boolean(primaryTrustDeedAction)}
-                onSign={primaryTrustDeedAction?.onClick}
-                signButtonText={primaryTrustDeedAction?.label || 'E-Sign'}
-                signDisabled={primaryTrustDeedAction?.disabled || isSubmitting}
-                actionButtons={secondaryTrustDeedActions}
-              />
+              {documents.map((doc) => {
+                const primaryAction = getPrimaryAction(doc);
+                const secondaryActions = getSecondaryActions(doc);
 
-              <Box>
+                return (
+                  <DocumentCard
+                    key={doc.value}
+                    docLink={doc.docLink}
+                    icon={doc.icon}
+                    title={doc.title}
+                    description={doc.description}
+                    status={doc.status}
+                    statusColor={STATUS_COLORS[doc.overallSigningStatus] || STATUS_COLORS.pending}
+                    showSignButton={Boolean(primaryAction)}
+                    onSign={primaryAction?.onClick}
+                    signButtonText={primaryAction?.label || 'E-Sign'}
+                    signDisabled={primaryAction?.disabled || isSaving}
+                    actionButtons={secondaryActions}
+                  />
+                );
+              })}
+
+              <Box mt={3}>
                 <Typography variant="subtitle1">Stamp Duty & Registration</Typography>
                 <Typography pb={2} variant="body2">
                   Upload the executed stamp duty and registration proof.
@@ -524,7 +571,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
           </Card>
         )}
 
-
         {!isReadOnly && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button
@@ -532,7 +578,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
               variant="contained"
               color="primary"
               onClick={handleNext}
-              disabled={!isFirstCardSaved || !allRequiredSignersSigned || !savedStampDutyMediaId}
+              disabled={!isFirstCardSaved || !allRequiredDocumentsSigned || !savedStampDutyMediaId}
             >
               Next
             </Button>
@@ -547,6 +593,7 @@ LegelStructureView.propTypes = {
   percent: PropTypes.func.isRequired,
   saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
+  isReadOnly: PropTypes.bool,
 };
 
 export default LegelStructureView;

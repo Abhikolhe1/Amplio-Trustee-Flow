@@ -68,7 +68,8 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
     maturityDays: Yup.number().required('maturityDays is required'),
     targetYield: Yup.number().required('Target Yield is required'),
     reserveBufferPercent: Yup.number().required('Reserve Buffer is required'),
-    dailyCutoffTime: Yup.string().required('Cutoff time required'),
+    morningCutoffTime: Yup.string().required('Morning cutoff time required'),
+    eveningCutoffTime: Yup.string().required('Evening cutoff time required'),
   });
   const pool = currData;
 
@@ -78,10 +79,13 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
       maturityDays: pool?.maturityDays ?? 12,
       targetYield: pool?.targetYield ?? 6,
       reserveBufferPercent: pool?.reserveBufferPercent ?? 0.5,
-      dailyCutoffTime: pool?.dailyCutoffTime ? new Date(pool.dailyCutoffTime) : null,
+      morningCutoffTime: pool?.morningCutoffTime
+        ? new Date(pool.morningCutoffTime)
+        : null,
 
-
-
+      eveningCutoffTime: pool?.eveningCutoffTime
+        ? new Date(pool.eveningCutoffTime)
+        : null,
     }),
     [pool]
   );
@@ -106,7 +110,8 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
     'maturityDays',
     'targetYield',
     'reserveBufferPercent',
-    'dailyCutoffTime',
+    'morningCutoffTime',
+    'eveningCutoffTime',
   ];
 
   useEffect(() => {
@@ -130,7 +135,8 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
     values.maturityDays,
     values.targetYield,
     values.reserveBufferPercent,
-    values.dailyCutoffTime,
+    values.morningCutoffTime,
+    values.eveningCutoffTime,
   ]);
 
   const onSubmit = async (data) => {
@@ -286,14 +292,14 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
                 />
               </Stack>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={6} md={3}>
               <Controller
-                name="dailyCutoffTime"
+                name="eveningCutoffTime"
                 control={control}
                 render={({ field, fieldState: { error } }) => (
                   <TimePicker
                     disabled={isReadOnly}
-                    label="Cutoff Time"
+                    label="Evening Cutoff Time"
                     color="primary"
                     value={field.value || null}
                     onChange={(newValue) => field.onChange(newValue)}
@@ -312,8 +318,40 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
                   />
                 )}
               />
+
               <Typography variant="caption" color="text.secondary">
-                Daily deadline for processing exit or reinvestment requests. Requests after this time will be processed on the next business day.
+                Evening transaction processing cutoff time.
+              </Typography>
+            </Grid>
+                    <Grid item xs={6} md={3}>
+              <Controller
+                name="morningCutoffTime"
+                control={control}
+                render={({ field, fieldState: { error } }) => (
+                  <TimePicker
+                    disabled={isReadOnly}
+                    label="Morning Cutoff Time"
+                    color="primary"
+                    value={field.value || null}
+                    onChange={(newValue) => field.onChange(newValue)}
+                    ampm={false}
+                    slotProps={{
+                      actionBar: {
+                        actions: ['accept'],
+                      },
+                      textField: {
+                        fullWidth: true,
+                        margin: 'normal',
+                        error: !!error,
+                        helperText: error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+
+              <Typography variant="caption" color="text.secondary">
+                Morning transaction processing cutoff time.
               </Typography>
             </Grid>
           </Grid>

@@ -8,7 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useForm } from 'react-hook-form';
 import Iconify from 'src/components/iconify';
 import { useGetPsp } from 'src/api/psp-master';
-import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useGetSpvApplicationStepData, useGetSpvDocument } from 'src/api/spvApplication';
 import { useParams, useRouter } from 'src/routes/hook';
 import { paths } from 'src/routes/paths';
 import FormProvider, { RHFCheckbox } from 'src/components/hook-form';
@@ -83,7 +83,9 @@ export default function KYCFinalReview({ currData, percent }) {
   const { stepData: ptcStepData } = useGetSpvApplicationStepData(id, 'ptc_parameters');
   const { stepData: trustDeedStepData } = useGetSpvApplicationStepData(id, 'trust_deed');
   const { stepData: escrowStepData } = useGetSpvApplicationStepData(id, 'escrow');
-  const { stepData: documentsStepData } = useGetSpvApplicationStepData(id, 'documents');
+  // OLD DOCUMENTS SCREEN FLOW
+  // const { stepData: documentsStepData } = useGetSpvApplicationStepData(id, 'documents');
+  const { spvDocuments } = useGetSpvDocument(id);
   const { stepData: creditRatingStepData } = useGetSpvApplicationStepData(id, 'credit_rating');
   const { stepData: isinStepData } = useGetSpvApplicationStepData(id, 'isin_application');
   const localData = useMemo(() => currData || {}, [currData]);
@@ -123,9 +125,12 @@ export default function KYCFinalReview({ currData, percent }) {
     ? escrow
     : escrow?.accounts || escrow?.generatedAccounts || (escrow ? [escrow] : []);
   const documents =
-    getSection(documentsStepData, 'documents', 'documents') ||
-    localData?.documents?.documents ||
-    localData?.documents ||
+    legal?.documents ||
+    spvDocuments ||
+    // OLD DOCUMENTS SCREEN FLOW
+    // getSection(documentsStepData, 'documents', 'documents') ||
+    // localData?.documents?.documents ||
+    // localData?.documents ||
     [];
   const creditRating =
     getSection(creditRatingStepData, 'creditRating', 'credit_rating') || localData?.credit_rating;

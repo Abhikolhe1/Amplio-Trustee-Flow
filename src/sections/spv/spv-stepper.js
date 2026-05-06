@@ -7,7 +7,8 @@ import BasicInfo from './basic-info/basic-info';
 import PoolFinancials from './pool-financials/pool-financials';
 import PtcParameters from './ptc-parameters/ptc-parameters';
 import CreditRating from './credit-rating/credit-rating';
-import LegalDocument from './legal-document/legal-document';
+// OLD DOCUMENTS SCREEN FLOW
+// import LegalDocument from './legal-document/legal-document';
 import LegelStructureView from './legalStructure/legealStructureView';
 import EscrowSetupView from './escrow/escrowSetup';
 import ISINApplicationView from './isin-application/view/isin-application-view';
@@ -35,10 +36,20 @@ export default function SpvStepper({ applicationId }) {
     return step.code || step.value || '';
   };
 
-  const mapBackendStepToUiStep = (stepCode) =>
-    stepCode === 'review_and_submit' || stepCode === 'review_and_activate'
-      ? 'review_and_Activate'
-      : stepCode;
+  const mapBackendStepToUiStep = (stepCode) => {
+    if (stepCode === 'review_and_submit' || stepCode === 'review_and_activate') {
+      return 'review_and_Activate';
+    }
+
+    // OLD BACKEND FLOW: escrow -> documents -> credit_rating
+    // Documents are now handled inside Legal Structure, so a legacy backend/DB
+    // active step of "documents" should continue from Credit Rating.
+    // if (stepCode === 'documents') {
+    //   return 'credit_rating';
+    // }
+
+    return stepCode;
+  };
 
   const steps = [
     { id: 'spv_basic_info', number: 1, lines: ['Basic', 'Info'] },
@@ -46,10 +57,11 @@ export default function SpvStepper({ applicationId }) {
     { id: 'ptc_parameters', number: 3, lines: ['PTC', 'Parameters'] },
     { id: 'trust_deed', number: 4, lines: ['Legal', 'Structure'] },
     { id: 'escrow', number: 5, lines: ['Escrow', 'Setup'] },
-    { id: 'documents', number: 6, lines: ['Legal', 'Documents'] },
-    { id: 'credit_rating', number: 7, lines: ['Credit', 'Rating'] },
-    { id: 'isin_application', number: 8, lines: ['ISIN', 'Application'] },
-    { id: 'review_and_Activate', number: 9, lines: ['Review', 'Activate'] },
+    // OLD DOCUMENTS SCREEN FLOW
+    // { id: 'documents', number: 6, lines: ['Documents'] },
+    { id: 'credit_rating', number: 6, lines: ['Credit', 'Rating'] },
+    { id: 'isin_application', number: 7, lines: ['ISIN', 'Application'] },
+    { id: 'review_and_Activate', number: 8, lines: ['Review', 'Activate'] },
   ];
 
   const [activeStepId, setActiveStepId] = useState('spv_basic_info');
@@ -60,7 +72,8 @@ export default function SpvStepper({ applicationId }) {
     ptc_parameters: {},
     trust_deed: { documents: [] },
     escrow: {},
-    documents: { documents: [] },
+    // OLD DOCUMENTS SCREEN FLOW
+    // documents: { documents: [] },
     credit_rating: {},
     isin_application: {},
     review_and_Activate: {},
@@ -72,7 +85,8 @@ export default function SpvStepper({ applicationId }) {
     ptc_parameters: { percent: 0 },
     trust_deed: { percent: 0 },
     escrow: { percent: 0 },
-    documents: { percent: 0 },
+    // OLD DOCUMENTS SCREEN FLOW
+    // documents: { percent: 0 },
     credit_rating: { percent: 0 },
     isin_application: { percent: 0 },
     review_and_Activate: { percent: 0 },
@@ -179,13 +193,16 @@ export default function SpvStepper({ applicationId }) {
 
       if (completedStepCodes.includes('escrow')) {
         updateStepPercent('escrow', 100);
-        currentStep = 'documents';
-      }
-
-      if (completedStepCodes.includes('documents')) {
-        updateStepPercent('documents', 100);
+        // OLD BACKEND FLOW:
+        // currentStep = 'documents';
         currentStep = 'credit_rating';
       }
+
+      // OLD BACKEND FLOW: documents was a separate screen after escrow.
+      // if (completedStepCodes.includes('documents')) {
+      //   updateStepPercent('documents', 100);
+      //   currentStep = 'credit_rating';
+      // }
 
       if (completedStepCodes.includes('credit_rating')) {
         updateStepPercent('credit_rating', 100);
@@ -293,16 +310,17 @@ export default function SpvStepper({ applicationId }) {
           />
         );
 
-      case 'documents':
-        return (
-          <LegalDocument
-            currData={formData.documents}
-            percent={(p) => updateStepPercent('documents', p)}
-            setActiveStepId={setActiveStepId}
-            saveStepData={(data) => saveStepData('documents', data)}
-            isReadOnly={isReadOnly}
-          />
-        );
+      // OLD DOCUMENTS SCREEN FLOW
+      // case 'documents':
+      //   return (
+      //     <LegalDocument
+      //       currData={formData.documents}
+      //       percent={(p) => updateStepPercent('documents', p)}
+      //       setActiveStepId={setActiveStepId}
+      //       saveStepData={(data) => saveStepData('documents', data)}
+      //       isReadOnly={isReadOnly}
+      //     />
+      //   );
 
       case 'credit_rating':
         return (

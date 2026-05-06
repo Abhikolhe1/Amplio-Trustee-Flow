@@ -100,26 +100,33 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName]);
 
-  const generateSPVName = () => {
-    const selectedPsp = psp.find((item) => String(item.id) === String(watch('pspPartner')));
+const generateSPVName = () => {
+  const selectedPsp = psp.find(
+    (item) => String(item.id) === String(watch('pspPartner'))
+  );
 
-    const getPspCode = (name = '') =>
-      name
-        .split(' ')
-        .map((word) => word[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 4) || 'GEN';
+  const getPspCode = (name = '') =>
+    name
+      .split(' ')
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 4) || 'SPV';
 
-    const pspCode = getPspCode(selectedPsp?.name);
-    const year = new Date().getFullYear();
-    const version = `V${spvCounter}`;
-    const hash = Math.random().toString(36).substring(2, 8).toUpperCase();
-    const formattedId = `${pspCode}-${year}-${version}-${hash}`;
+  const pspCode = getPspCode(selectedPsp?.name);
 
-    setValue('spvName', formattedId);
-    setSpvCounter((prev) => prev + 1);
-  };
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+
+  // Small incremental number (01, 02...)
+  const counter = String(spvCounter).padStart(2, '0');
+  
+  const formattedId = `${pspCode}${year}${month}${counter}`;
+
+  setValue('spvName', formattedId);
+  setSpvCounter((prev) => prev + 1);
+};
 
   const onSubmit = async (data) => {
     try {
