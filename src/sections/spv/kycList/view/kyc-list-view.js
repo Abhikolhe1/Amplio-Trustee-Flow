@@ -141,7 +141,7 @@ export default function KycListView() {
         heading={hasApplications ? 'List' : 'SPV Applications'}
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Spv Kyc', href: paths.dashboard.spvkyc.root },
+          { name: 'SPV KYC', href: paths.dashboard.spvkyc.root },
           { name: 'List', href: paths.dashboard.spvkyc.list },
         ]}
         action={
