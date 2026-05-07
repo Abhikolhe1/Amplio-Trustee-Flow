@@ -24,7 +24,6 @@ const FORM_FIELDS = [
   'trusteeEntity',
   'settlor',
   'governingLaw',
-  'trustDuration',
 ];
 
 const LAW_OPTIONS = [
@@ -184,7 +183,6 @@ const getDefaultFormValues = (stepData) => ({
   trusteeEntity: stepData?.trusteeEntity || 'Axis Trustee Services Ltd',
   settlor: stepData?.settlor || 'BirbalPlus',
   governingLaw: stepData?.governingLaw || 'Indian Trusts Act, 1882 only',
-  trustDuration: stepData?.trustDuration || '',
   stampDutyAndRegistrationId: stepData?.stampDutyAndRegistration || null,
 });
 
@@ -206,7 +204,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
     trusteeEntity: yup.string().required('Trustee entity is required'),
     settlor: yup.string().required('Settlor is required'),
     governingLaw: yup.string().required('Governing law is required'),
-    trustDuration: yup.string().required('Trust duration is required'),
   });
 
   const methods = useForm({
@@ -317,7 +314,6 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
     trusteeEntity: values.trusteeEntity,
     settlor: values.settlor,
     governingLaw: values.governingLaw,
-    trustDuration: values.trustDuration,
   });
 
   const buildTrustDeedPayload = (values, overrides = {}) => {
@@ -490,7 +486,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
               gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }}
             >
 
-              <RHFTextField
+              {/* <RHFTextField
                 name="trustDuration"
                 label="Trust Duration"
                 type="text"
@@ -499,7 +495,7 @@ function LegelStructureView({ percent, setActiveStepId, saveStepData, isReadOnly
                   readOnly: isReadOnly,
 
                 }}
-              />
+              /> */}
             </Box>
           </Stack>
           {!isReadOnly && (
