@@ -189,7 +189,7 @@ export default function KYCFinalReview({ currData, percent }) {
     { label: 'Trust Name', value: legal?.trustName || '--' },
     { label: 'Trustee Entity', value: legal?.trusteeEntity || '--' },
     { label: 'Settlor', value: legal?.settlor || '--' },
-    { label: 'Trust Duration', value: legal?.trustDuration || '--' },
+    // { label: 'Trust Duration', value: legal?.trustDuration || '--' },
     { label: 'Governing Law', value: legal?.governingLaw || '--' },
   ];
 
