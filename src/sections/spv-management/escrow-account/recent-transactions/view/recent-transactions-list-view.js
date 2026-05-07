@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { useState, useCallback, useMemo } from 'react';
+import { useMemo } from 'react';
 // @mui
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -18,8 +18,6 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 import RecentTransactionsTableRow from '../recent-transactions-table-row';
-import RecentTransactionsTableToolbar from '../recent-transactions-table-toolbar';
-import RecentTransactionsTableFiltersResult from '../recent-transactions-table-filters-result';
 
 const TABLE_HEAD = [
   { id: 'id', label: 'Transaction ID' },
@@ -30,41 +28,19 @@ const TABLE_HEAD = [
   { id: 'utr', label: 'UTR' },
 ];
 
-const defaultFilters = {
-  name: '',
-};
-
 export default function RecentTransactionsListView({ transactions = [] }) {
   const table = useTable({ defaultOrderBy: 'date' });
-  const [filters, setFilters] = useState(defaultFilters);
 
   const dataFiltered = useMemo(
     () =>
       applyFilter({
         inputData: transactions,
         comparator: getComparator(table.order, table.orderBy),
-        filters,
       }),
-    [filters, table.order, table.orderBy, transactions]
+    [table.order, table.orderBy, transactions]
   );
 
-  const canReset = !!filters.name;
   const notFound = !dataFiltered.length;
-
-  const handleFilters = useCallback(
-    (name, value) => {
-      table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
-    },
-    [table]
-  );
-
-  const handleResetFilters = useCallback(() => {
-    setFilters(defaultFilters);
-  }, []);
 
   return (
     <Card sx={{ mt: 3, borderRadius: 3 }}>
@@ -73,18 +49,6 @@ export default function RecentTransactionsListView({ transactions = [] }) {
       </Box>
 
       <Divider />
-
-      {/* <RecentTransactionsTableToolbar filters={filters} onFilters={handleFilters} />
-
-      {canReset && (
-        <RecentTransactionsTableFiltersResult
-          filters={filters}
-          onFilters={handleFilters}
-          onResetFilters={handleResetFilters}
-          results={dataFiltered.length}
-          sx={{ p: 2.5, pt: 0 }}
-        />
-      )} */}
 
       <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
         <Scrollbar>
@@ -128,9 +92,7 @@ RecentTransactionsListView.propTypes = {
   transactions: PropTypes.array,
 };
 
-function applyFilter({ inputData, comparator, filters }) {
-  const { name } = filters;
-
+function applyFilter({ inputData, comparator }) {
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
   stabilizedThis.sort((a, b) => {
@@ -139,19 +101,5 @@ function applyFilter({ inputData, comparator, filters }) {
     return a[1] - b[1];
   });
 
-  let filteredData = stabilizedThis.map((el) => el[0]);
-
-  if (name) {
-    const searchValue = name.toLowerCase();
-
-    filteredData = filteredData.filter(
-      (item) =>
-        String(item.id || '').toLowerCase().includes(searchValue) ||
-        String(item.counterparty || '').toLowerCase().includes(searchValue) ||
-        String(item.utr || '').toLowerCase().includes(searchValue) ||
-        String(item.type || '').toLowerCase().includes(searchValue)
-    );
-  }
-
-  return filteredData;
+  return stabilizedThis.map((el) => el[0]);
 }
