@@ -19,6 +19,7 @@ import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import { useParams } from 'src/routes/hook';
 import axiosInstance from 'src/utils/axios';
 import { useGetPsp } from 'src/api/psp-master';
+import RHFDatePicker from 'src/components/hook-form/rhf-date-picker';
 
 // ----------------------------------------------------------------------
 
@@ -37,7 +38,13 @@ const SPV_OPTIONS = [
   },
 ];
 
-export default function BasicInfo({ percent, setActiveStepId, saveStepData, isReadOnly }) {
+export default function BasicInfo({
+  percent,
+  setActiveStepId,
+  saveStepData,
+  isReadOnly,
+  isFieldsReadOnly,
+}) {
   const params = useParams();
   const { id } = params;
   const [spvCounter, setSpvCounter] = useState(1);
@@ -46,6 +53,8 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
   const { stepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
   const [currData, setCurrData] = useState();
 
+  const isInputReadOnly = isReadOnly || isFieldsReadOnly;
+
   const FormSchema = Yup.object().shape({
     pspPartner: Yup.string().required('PSP Partner is required'),
     legalStructure: Yup.string()
@@ -53,6 +62,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
       .notOneOf([''], 'Please select SPV structure'),
     originatorName: Yup.string().required('Originator is required'),
     spvName: Yup.string().required('SPV Name is required'),
+    incorporationDate: Yup.date().nullable().required('Incorporation date is required'),
   });
 
   const defaultValues = useMemo(
@@ -61,6 +71,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
       legalStructure: currData?.legalStructure || '',
       originatorName: currData?.originatorName || 'Birbal Plus',
       spvName: currData?.spvName || '',
+      incorporationDate: currData?.incorporationDate ? new Date(currData.incorporationDate) : null,
     }),
     [currData]
   );
@@ -79,7 +90,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
 
   const values = watch();
 
-  const requiredFields = ['pspPartner', 'legalStructure', 'originatorName', 'spvName'];
+  const requiredFields = ['pspPartner', 'legalStructure', 'originatorName', 'spvName', 'incorporationDate'];
 
   useEffect(() => {
     let completed = 0;
@@ -98,7 +109,7 @@ export default function BasicInfo({ percent, setActiveStepId, saveStepData, isRe
     percent?.(percentValue);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName]);
+  }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName, values.incorporationDate]);
 
 const generateSPVName = () => {
   const selectedPsp = psp.find(
@@ -136,12 +147,20 @@ const generateSPVName = () => {
         pspMasterId: pspPartner,
       };
 
-      await axiosInstance.patch(`/spv-pre/basic-info/${id}`, payload);
-      saveStepData?.(payload);
+      const response = await axiosInstance.patch(`/spv-pre/basic-info/${id}`, payload);
+      const savedSpv = response?.data?.details?.spv;
+
+      if (savedSpv) {
+        setCurrData(savedSpv);
+        saveStepData?.(savedSpv);
+      } else {
+        saveStepData?.(payload);
+      }
+
       setActiveStepId('pool_financials');
     }
     catch (error) {
-      console.log(error.error.message);
+      console.log(error?.error?.message || error.message);
     }
   };
 
@@ -181,7 +200,7 @@ const generateSPVName = () => {
           <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <RHFSelect name="pspPartner" label="PSP PARTNER" InputProps={{
-                readOnly: isReadOnly
+                readOnly: isInputReadOnly
               }} fullWidth sx={{ mt: 1 }}>
                 {psp.map((option) => (
                   <MenuItem key={option.id} value={option.id}>
@@ -192,7 +211,7 @@ const generateSPVName = () => {
             </Grid>
             <Grid item xs={12} md={6}>
               <RHFSelect name="legalStructure" label="SPV LEGAL STRUCTURE" InputProps={{
-                readOnly: isReadOnly
+                readOnly: isInputReadOnly
               }} fullWidth sx={{ mt: 1 }}>
                 {SPV_OPTIONS.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
@@ -207,9 +226,21 @@ const generateSPVName = () => {
                 label="ORIGINATOR (PLATFORM NBFC)"
                 fullWidth
                 InputProps={{
-                  readOnly: isReadOnly
+                  readOnly: isInputReadOnly
                 }}
                 sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <RHFDatePicker
+                name="incorporationDate"
+                label="Incorporation Date"
+                disabled={isInputReadOnly}
+                slotProps={{
+                  textField: {
+                    sx: { mt: 1 },
+                  },
+                }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -221,12 +252,12 @@ const generateSPVName = () => {
 
                 sx={{ mt: 1 }}
                 InputProps={{
-                  readOnly: isReadOnly,
+                  readOnly: isInputReadOnly,
 
 
                   endAdornment: (
                     <InputAdornment position="end">
-                      {!isReadOnly && (
+                      {!isInputReadOnly && (
                         <Button
                           variant="text"
                           color="primary"
@@ -248,6 +279,8 @@ const generateSPVName = () => {
                 }}
 
               />
+            </Grid>
+            <Grid item xs={12}>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 {!isReadOnly && (
                   <Button type="submit" variant="contained" color="primary" disabled={isSubmitting}>
@@ -267,4 +300,6 @@ BasicInfo.propTypes = {
   percent: PropTypes.func,
   saveStepData: PropTypes.func,
   setActiveStepId: PropTypes.func.isRequired,
+  isReadOnly: PropTypes.bool,
+  isFieldsReadOnly: PropTypes.bool,
 };

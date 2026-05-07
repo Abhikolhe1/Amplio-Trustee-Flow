@@ -26,9 +26,11 @@ export default function SpvStepper({ applicationId }) {
   const { application, applicationLoading } = useGetSpvApplication(applicationId);
   const [reviewStatus, setReviewStatus] = useState(0);
   const isReadOnly = reviewStatus === 1;
+  const isExistingSpv = !!application?.linkedSpv;
 
   console.log('ReviewStatus', reviewStatus)
   console.log('isReadOnly', isReadOnly)
+  console.log('isExistingSpv', isExistingSpv)
 
 
   const getStepKey = (step) => {
@@ -262,6 +264,7 @@ export default function SpvStepper({ applicationId }) {
             setActiveStepId={setActiveStepId}
             saveStepData={(data) => saveStepData('spv_basic_info', data)}
             isReadOnly={isReadOnly}
+            isFieldsReadOnly={isExistingSpv}
           />
         );
 
