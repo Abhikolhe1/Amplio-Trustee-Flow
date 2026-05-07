@@ -236,11 +236,7 @@ const generateSPVName = () => {
                 name="incorporationDate"
                 label="Incorporation Date"
                 disabled={isInputReadOnly}
-                slotProps={{
-                  textField: {
-                    sx: { mt: 1 },
-                  },
-                }}
+                sx={{ mt: 1 }}
               />
             </Grid>
             <Grid item xs={12} md={6}>
