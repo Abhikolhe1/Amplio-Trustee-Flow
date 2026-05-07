@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import SummaryCard from 'src/components/summary-card';
+import { formatInrCurrency } from './utils';
 
 const STATUS_COLOR = {
   active: 'success',
@@ -16,7 +17,6 @@ const STATUS_COLOR = {
 
 export default function SPVDetailsOverviewView({ spvINR }) {
   const spv = spvINR || {};
-  const financialSummary = spv.overviewFinancialSummaryINR || spv.overviewFinancialSummary || {};
   const statusColor = STATUS_COLOR[String(spv.status || '').toLowerCase()] || 'default';
 
   const infoRows = [
@@ -51,10 +51,10 @@ export default function SPVDetailsOverviewView({ spvINR }) {
                 }}
               >
                 <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>
-                  Total FUM
+                  PTC-Based AUM
                 </Typography>
                 <Typography variant="h4" sx={{ color: 'primary.main' }}>
-                  INR {financialSummary.totalFum || '-'}
+                  {formatInrCurrency(spv.outstandingValue)}
                 </Typography>
               </Stack>
             </Grid>
@@ -73,7 +73,7 @@ export default function SPVDetailsOverviewView({ spvINR }) {
                   Active Deployment
                 </Typography>
                 <Typography variant="h4" sx={{ color: 'success.main' }}>
-                  INR {financialSummary.activeDeployment || '-'}
+                  {formatInrCurrency(spv.currentPoolOutstanding)}
                 </Typography>
               </Stack>
             </Grid>
@@ -91,7 +91,7 @@ export default function SPVDetailsOverviewView({ spvINR }) {
                 <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
                   Reserve Fund
                 </Typography>
-                <Typography variant="h6">INR {financialSummary.reserveFund || '-'}</Typography>
+                <Typography variant="h6">{formatInrCurrency(spv.reserveFund)}</Typography>
               </Stack>
             </Grid>
 
@@ -106,9 +106,9 @@ export default function SPVDetailsOverviewView({ spvINR }) {
                 }}
               >
                 <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
-                  Investors
+                  Active Investors
                 </Typography>
-                <Typography variant="h6">{financialSummary.investors ?? '-'}</Typography>
+                <Typography variant="h6">{spv.activeInvestors ?? '-'}</Typography>
               </Stack>
             </Grid>
           </Grid>

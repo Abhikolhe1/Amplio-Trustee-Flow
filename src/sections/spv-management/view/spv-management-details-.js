@@ -1,4 +1,5 @@
 import Container from '@mui/material/Container';
+import Alert from '@mui/material/Alert';
 import Grid from '@mui/material/Grid';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -11,14 +12,19 @@ import { useParams, useRouter } from 'src/routes/hook';
 import { SummaryDashboardGrid } from 'src/components/summary-card';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
-// mock
-import { getSpvById } from 'src/_mock/_spv';
+import { useSnackbar } from 'src/components/snackbar';
 //
-import { ClosedTransactionsListView } from '../closed-transactions/view';
-import SpvEscrowAccountView from '../escrow-account';
 import SPVDetailsOverviewView from '../spv-details-overview';
+import SpvEscrowAccountView from '../escrow-account';
 import { PoolPtcListView } from '../pool-ptc/view';
 import { TransactionHistoryListView } from '../transaction-history/view';
+import { ClosedTransactionsListView } from '../closed-transactions/view';
+import {
+  createNewPoolApplication,
+  useGetSpvManagementList,
+  useGetSpvManagementPools,
+} from 'src/api/spvManagement';
+import { buildSpvDetails, buildSpvPoolRows } from '../utils';
 
 const TABS = [
   { value: 'overview', label: 'Overview' },
@@ -32,11 +38,17 @@ export default function SPVDetailsView() {
   const settings = useSettingsContext();
   const { id } = useParams();
   const router = useRouter();
+  const { enqueueSnackbar } = useSnackbar();
   const [searchParams] = useSearchParams();
   const tab = searchParams.get('tab');
   const [currentTab, setCurrentTab] = useState(tab || 'overview');
+  const [isCreatingPool, setIsCreatingPool] = useState(false);
+  const { spvList, spvListLoading, spvListError } = useGetSpvManagementList();
+  const { pools, poolsLoading, poolsError } = useGetSpvManagementPools(id);
 
-  const spv = useMemo(() => getSpvById(id), [id]);
+  const apiSpv = useMemo(() => spvList.find((item) => item.spvId === id), [id, spvList]);
+  const spv = useMemo(() => buildSpvDetails(apiSpv), [apiSpv]);
+  const mappedPools = useMemo(() => buildSpvPoolRows(pools), [pools]);
   const summaryCards = spv?.summaryCards || [];
 
   const handleChangeTab = useCallback(
@@ -49,9 +61,35 @@ export default function SPVDetailsView() {
     [router]
   );
 
-  const handleViewPool = useCallback((row) => {
-    router.push(paths.dashboard.spvManagement.poolDetails(row.id));
-  }, [router]);
+  const handleCreatePool = useCallback(async () => {
+    if (!id) {
+      return;
+    }
+
+    try {
+      setIsCreatingPool(true);
+      const response = await createNewPoolApplication(id);
+      const applicationId = response?.application?.id;
+
+      if (!applicationId) {
+        throw new Error('New pool application was created but no application id was returned.');
+      }
+
+      enqueueSnackbar(response?.message || 'New Pool Application created', { variant: 'success' });
+      router.push(paths.dashboard.spvkyc.details(applicationId));
+    } catch (error) {
+      enqueueSnackbar(getErrorMessage(error), { variant: 'error' });
+    } finally {
+      setIsCreatingPool(false);
+    }
+  }, [enqueueSnackbar, id, router]);
+
+  const handleViewPool = useCallback(
+    (row) => {
+      router.push(paths.dashboard.spvManagement.poolDetails(row.id));
+    },
+    [router]
+  );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -73,6 +111,18 @@ export default function SPVDetailsView() {
         ))}
       </Grid>
 
+      {spvListError && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {getErrorMessage(spvListError, 'Unable to load SPV details.')}
+        </Alert>
+      )}
+
+      {!spvListLoading && !spv && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          The selected SPV could not be found in the management list.
+        </Alert>
+      )}
+
       <Tabs value={currentTab} onChange={handleChangeTab} sx={{ mb: { xs: 3, md: 5 } }}>
         {TABS.map((item) => (
           <Tab key={item.value} value={item.value} label={item.label} />
@@ -83,19 +133,32 @@ export default function SPVDetailsView() {
       {currentTab === 'escrow_account' && <SpvEscrowAccountView escrow={spv?.escrowAccount} />}
       {currentTab === 'pool_ptc' && (
         <PoolPtcListView
-          pools={spv?.poolPtc || []}
-          conversions={spv?.ptcConversionSummary || []}
+          pools={mappedPools}
+          canCreateNewPool={spv?.canCreateNewPool}
+          pendingPoolApplications={spv?.pendingPoolApplications}
+          poolsLoading={poolsLoading}
+          poolsError={poolsError}
+          onCreatePool={handleCreatePool}
+          isCreatingPool={isCreatingPool}
+          conversions={[]}
           onViewRow={handleViewPool}
         />
       )}
       {currentTab === 'transaction_history' && (
-        <TransactionHistoryListView transactions={spv?.transactionHistory || []} />
+        <TransactionHistoryListView transactions={[]} />
       )}
       {currentTab === 'closed_transactions' && (
-        <ClosedTransactionsListView transactions={spv?.closedTransactions || []} />
+        <ClosedTransactionsListView transactions={[]} />
       )}
-
     </Container>
   );
+}
+
+function getErrorMessage(error, fallback = 'Something went wrong') {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  return error?.message || error?.error?.message || fallback;
 }
 

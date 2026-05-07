@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { endpoints, fetcher } from 'src/utils/axios';
+import axiosInstance, { endpoints, fetcher } from 'src/utils/axios';
 import useSWR from 'swr';
 
 export function useGetSpvApplications() {
@@ -204,3 +204,9 @@ export function useGetSpvKycDocumentTypes() {
 
 //     return memoizedValue;
 // }
+
+export async function createNewPoolApplication(spvId) {
+  const URL = endpoints.spvApplication.newPoolApplication(spvId);
+  const res = await axiosInstance.post(URL);
+  return res.data;
+}

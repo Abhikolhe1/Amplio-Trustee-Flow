@@ -15,7 +15,7 @@ const STATUS_COLOR = {
 };
 
 export default function PoolPtcTableRow({ row, onViewRow }) {
-  const { id, name, subtitle, poolValue, ptcsIssued, merchants, status } = row;
+  const { id, name, subtitle, poolValue, ptcsIssued, merchants, status, isCurrentPool } = row;
 
   return (
     <TableRow hover>
@@ -26,6 +26,11 @@ export default function PoolPtcTableRow({ row, onViewRow }) {
           primaryTypographyProps={{ variant: 'body2', fontWeight: 700 }}
           secondaryTypographyProps={{ variant: 'caption' }}
         />
+        {isCurrentPool && (
+          <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 600 }}>
+            Current Pool
+          </Typography>
+        )}
       </TableCell>
 
       <TableCell>

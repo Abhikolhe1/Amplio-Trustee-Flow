@@ -77,6 +77,13 @@ export const endpoints = {
       `/spv-applications/${applicationId}/data-by-status/${statusValue}`,
     poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
     getSpvDocument: (applicationId) => `/spv-pre/documents/${applicationId}`,
+    newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
+  },
+  spvManagement: {
+    list: '/spv-management/list',
+    summary: '/spv-management/summary',
+    pools: (spvId) => `/spv-management/${spvId}/pools`,
+    newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
   },
   spvKycDocumentType: {
     list: '/spv-kyc-document-types',

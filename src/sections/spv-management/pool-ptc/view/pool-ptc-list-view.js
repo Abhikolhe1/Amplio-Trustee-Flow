@@ -1,24 +1,29 @@
 import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import PoolPtcTableToolbar from '../pool-ptc-table-toolbar';
 import PoolPtcTableFiltersResult from '../pool-ptc-table-filters-result';
 import PoolPtcTableRow from '../pool-ptc-table-row';
-import PtcConversionTableRow from '../ptc-conversion-table-row';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import Scrollbar from 'src/components/scrollbar';
+import Iconify from 'src/components/iconify';
 import {
   useTable,
   getComparator,
   TableNoData,
+  TableSkeleton,
   TableHeadCustom,
   TablePaginationCustom,
 } from 'src/components/table';
 import { useState, useCallback, useMemo } from 'react';
+import { getPendingPoolApplicationLabel } from '../../utils';
 import PtcConversionListView from './ptc-conversion-list-view';
 
 const POOL_TABLE_HEAD = [
@@ -30,24 +35,23 @@ const POOL_TABLE_HEAD = [
   { id: '', label: 'Action', width: 88 },
 ];
 
-const PTC_TABLE_HEAD = [
-  { id: 'series', label: 'Series' },
-  { id: 'amount', label: 'Amount' },
-  { id: 'maturity', label: 'Maturity' },
-  { id: 'investors', label: 'Investors' },
-  { id: 'status', label: 'Status' },
-  { id: 'yieldValue', label: 'Yield' },
-];
-
 const defaultFilters = {
   name: '',
 };
 
-export default function PoolPtcListView({ pools = [], conversions = [], onViewRow }) {
+export default function PoolPtcListView({
+  pools = [],
+  canCreateNewPool,
+  pendingPoolApplications,
+  poolsLoading,
+  poolsError,
+  onCreatePool,
+  isCreatingPool,
+  conversions = [],
+  onViewRow,
+}) {
   const poolTable = useTable({ defaultOrderBy: 'name' });
-  const ptcTable = useTable({ defaultOrderBy: 'series' });
   const [poolFilters, setPoolFilters] = useState(defaultFilters);
-  const [ptcFilters, setPtcFilters] = useState(defaultFilters);
 
   const poolsFiltered = useMemo(
     () =>
@@ -59,16 +63,6 @@ export default function PoolPtcListView({ pools = [], conversions = [], onViewRo
     [poolFilters, pools, poolTable.order, poolTable.orderBy]
   );
 
-  const conversionsFiltered = useMemo(
-    () =>
-      applyPtcFilter({
-        inputData: conversions,
-        comparator: getComparator(ptcTable.order, ptcTable.orderBy),
-        filters: ptcFilters,
-      }),
-    [conversions, ptcFilters, ptcTable.order, ptcTable.orderBy]
-  );
-
   const handlePoolFilters = useCallback(
     (name, value) => {
       poolTable.onResetPage();
@@ -77,27 +71,52 @@ export default function PoolPtcListView({ pools = [], conversions = [], onViewRo
     [poolTable]
   );
 
-  const handlePtcFilters = useCallback(
-    (name, value) => {
-      ptcTable.onResetPage();
-      setPtcFilters((prevState) => ({ ...prevState, [name]: value }));
-    },
-    [ptcTable]
-  );
-
   const handleResetPoolFilters = useCallback(() => {
     setPoolFilters(defaultFilters);
-  }, []);
-
-  const handleResetPtcFilters = useCallback(() => {
-    setPtcFilters(defaultFilters);
   }, []);
 
   return (
     <>
       <Card sx={{ borderRadius: 3 }}>
-        <Box sx={{ px: 3, py: 2.5 }}>
-          <Typography variant="h6">Associated Pools</Typography>
+        <Box
+          sx={{
+            px: 3,
+            py: 2.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 2,
+            flexWrap: 'wrap',
+          }}
+        >
+          <Box>
+            <Typography variant="h6">Associated Pools</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+              {getPendingPoolApplicationLabel(pendingPoolApplications)}
+            </Typography>
+          </Box>
+
+          <Tooltip
+            title={
+              canCreateNewPool
+                ? 'Create a new pool application'
+                : 'Backend has disabled new pool creation for this SPV'
+            }
+            placement="top"
+            arrow
+          >
+            <span>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+                onClick={onCreatePool}
+                disabled={!canCreateNewPool || isCreatingPool}
+              >
+                Create New Pool
+              </Button>
+            </span>
+          </Tooltip>
         </Box>
 
         <Divider />
@@ -114,6 +133,14 @@ export default function PoolPtcListView({ pools = [], conversions = [], onViewRo
           />
         )}
 
+        {poolsError && (
+          <Box sx={{ px: 2.5, pb: 2.5 }}>
+            <Alert severity="error">
+              {getErrorMessage(poolsError, 'Unable to load pools for this SPV.')}
+            </Alert>
+          </Box>
+        )}
+
         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
           <Scrollbar>
             <Table size={poolTable.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
@@ -127,13 +154,20 @@ export default function PoolPtcListView({ pools = [], conversions = [], onViewRo
               />
 
               <TableBody>
-                {poolsFiltered
-                  .slice(poolTable.page * poolTable.rowsPerPage, poolTable.page * poolTable.rowsPerPage + poolTable.rowsPerPage)
-                  .map((row) => (
-                    <PoolPtcTableRow key={row.id} row={row} onViewRow={onViewRow} />
-                  ))}
+                {poolsLoading
+                  ? Array.from({ length: poolTable.rowsPerPage }).map((_, index) => (
+                      <TableSkeleton key={index} />
+                    ))
+                  : poolsFiltered
+                      .slice(
+                        poolTable.page * poolTable.rowsPerPage,
+                        poolTable.page * poolTable.rowsPerPage + poolTable.rowsPerPage
+                      )
+                      .map((row) => (
+                        <PoolPtcTableRow key={row.id} row={row} onViewRow={onViewRow} />
+                      ))}
 
-                <TableNoData notFound={!poolsFiltered.length} />
+                {!poolsLoading && <TableNoData notFound={!poolsFiltered.length} />}
               </TableBody>
             </Table>
           </Scrollbar>
@@ -150,14 +184,20 @@ export default function PoolPtcListView({ pools = [], conversions = [], onViewRo
         />
       </Card>
 
-      <PtcConversionListView conversions={conversions}/>
+      <PtcConversionListView conversions={conversions} />
     </>
   );
 }
 
 PoolPtcListView.propTypes = {
+  canCreateNewPool: PropTypes.bool,
   conversions: PropTypes.array,
+  isCreatingPool: PropTypes.bool,
+  onCreatePool: PropTypes.func,
   onViewRow: PropTypes.func,
+  pendingPoolApplications: PropTypes.number,
+  poolsError: PropTypes.any,
+  poolsLoading: PropTypes.bool,
   pools: PropTypes.array,
 };
 
@@ -186,27 +226,10 @@ function applyPoolFilter({ inputData, comparator, filters }) {
   return filteredData;
 }
 
-function applyPtcFilter({ inputData, comparator, filters }) {
-  const { name } = filters;
-  const stabilizedThis = inputData.map((el, index) => [el, index]);
-
-  stabilizedThis.sort((a, b) => {
-    const order = comparator(a[0], b[0]);
-    if (order !== 0) return order;
-    return a[1] - b[1];
-  });
-
-  let filteredData = stabilizedThis.map((el) => el[0]);
-
-  if (name) {
-    const searchValue = name.toLowerCase();
-    filteredData = filteredData.filter(
-      (item) =>
-        String(item.series || '').toLowerCase().includes(searchValue) ||
-        String(item.issuedOn || '').toLowerCase().includes(searchValue) ||
-        String(item.status || '').toLowerCase().includes(searchValue)
-    );
+function getErrorMessage(error, fallback = 'Something went wrong') {
+  if (typeof error === 'string') {
+    return error;
   }
 
-  return filteredData;
+  return error?.message || error?.error?.message || fallback;
 }
