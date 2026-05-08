@@ -97,6 +97,27 @@ export function useGetPoolFinancial(applicationId) {
   return memoizedValue;
 }
 
+export function useGetCreditRating(applicationId) {
+  //   console.log('applicationId', applicationId);
+  const URL = applicationId ? endpoints.spvApplication.creditRating(applicationId) : null;
+
+  const { data, isLoading, error, isValidating } = useSWR(URL, fetcher);
+  console.log('creditRating', data);
+
+  const memoizedValue = useMemo(
+    () => ({
+      creditRating: data?.data,
+      creditRatingLoading: isLoading,
+      creditRatingError: error,
+      creditRatingValidating: isValidating,
+    }),
+    [data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+}
+
+
 export function useGetSpvDocument(applicationId) {
   //   console.log('applicationId', applicationId);
   const URL = applicationId ? endpoints.spvApplication.getSpvDocument(applicationId) : null;

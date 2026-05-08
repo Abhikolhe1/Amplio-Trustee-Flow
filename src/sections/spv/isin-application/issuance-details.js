@@ -13,7 +13,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import FormProvider, {
   RHFCustomFileUploadBox,
   RHFSelect,
@@ -96,14 +96,18 @@ export default function IssuanceDetails({
       .test('fileRequired', 'ISIN Letter is required', (value) => hasUploadedFile(value)),
   });
 
-  const defaultValues = {
+  const defaultValues = useMemo(() => ({
     isinNumber: currData?.isinNumber || '',
     securityType: currData?.securityType || 'secure',
     issueSize: issueSize ?? currData?.issueSize ?? '',
     issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
     creditRating: creditAgecyWithRating || currData?.creditRating || '',
-    isisnLetterDoc: currData?.isinLetterDoc || currData?.isinLetterDocId || currData?.isisnLetterDoc || null,
-  };
+    isisnLetterDoc:
+      currData?.isinLetterDoc ||
+      currData?.isinLetterDocId ||
+      currData?.isisnLetterDoc ||
+      null,
+  }), [currData, issueSize, creditAgecyWithRating]);
 
   const methods = useForm({
     resolver: yupResolver(issuanceSchema),
@@ -115,7 +119,7 @@ export default function IssuanceDetails({
     reset,
     control,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, isDirty },
   } = methods;
 
   const values = useWatch({ control });
@@ -146,26 +150,12 @@ export default function IssuanceDetails({
     }
   });
 
-
-
   useEffect(() => {
-    if (!isInitialized && currData) {
-      reset({
-        securityType: currData?.securityType || 'secure',
-        isinNumber: currData?.isinNumber || '',
-        issueSize: issueSize ?? currData?.issueSize ?? '',
-        creditRating: creditAgecyWithRating || currData?.creditRating || '',
-        issueDate: currData?.issueDate ? new Date(currData.issueDate) : null,
-        isisnLetterDoc:
-          currData?.isinLetterDoc ||
-          currData?.isinLetterDocId ||
-          currData?.isisnLetterDoc ||
-          null,
-      });
-
-      setIsInitialized(true);
+    // If not dirty (no user edits yet) and we have new data or we haven't initialized yet
+    if (!isDirty && (currData || issueSize || creditAgecyWithRating)) {
+      reset(defaultValues);
     }
-  }, [currData, issueSize, creditAgecyWithRating, reset, isInitialized]);
+  }, [defaultValues, reset, isDirty]);
 
   useEffect(() => {
     // sessionStorage.setItem('issuanceDetails', JSON.stringify(values));

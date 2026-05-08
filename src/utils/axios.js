@@ -78,6 +78,7 @@ export const endpoints = {
     poolFinancial: (applicationId) => `/spv-pre/pool-financials/${applicationId}`,
     getSpvDocument: (applicationId) => `/spv-pre/documents/${applicationId}`,
     newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
+    creditRating: (applicationId) => `/spv-pre/credit-rating/${applicationId}`,
   },
   spvManagement: {
     list: '/spv-management/list',
