@@ -6,7 +6,7 @@ import IssuanceDetails from '../issuance-details';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 import dayjs from 'dayjs';
-import { useGetSpvApplicationStepData } from 'src/api/spvApplication';
+import { useGetCreditRating, useGetPoolFinancial, useGetSpvApplicationStepData } from 'src/api/spvApplication';
 import { useParams } from 'src/routes/hook';
 
 const getIsinData = (stepData) => {
@@ -17,35 +17,6 @@ const getIsinData = (stepData) => {
 };
 
 const getStorageKey = (id, key) => `spv:${id}:isin:${key}`;
-
-const readStoredJson = (key) => {
-  if (typeof window === 'undefined') return null;
-
-  const rawValue = sessionStorage.getItem(key) || localStorage.getItem(key);
-  if (!rawValue) return null;
-
-  try {
-    return JSON.parse(rawValue);
-  } catch (error) {
-    return null;
-  }
-};
-
-const writeStoredJson = (key, value) => {
-  if (typeof window === 'undefined' || !value || !Object.keys(value).length) return;
-
-  const serializedValue = JSON.stringify(value);
-  sessionStorage.setItem(key, serializedValue);
-  localStorage.setItem(key, serializedValue);
-};
-
-const clearStoredJson = (key) => {
-  if (typeof window === 'undefined') return;
-
-  sessionStorage.removeItem(key);
-  localStorage.removeItem(key);
-};
-
 export default function ISINApplicationView({
   currData,
   allData,
@@ -55,17 +26,14 @@ export default function ISINApplicationView({
   isReadOnly
 }) {
   const { id } = useParams();
-  const { stepData: poolFinancialsStepData } = useGetSpvApplicationStepData(id, 'pool_financials');
-  const { stepData: creditRatingStepData } = useGetSpvApplicationStepData(id, 'credit_rating');
+  const {
+    application: poolFinancialsStepData,
+  } = useGetPoolFinancial(id);
+
+  const {
+    creditRating: creditRatingStepData,
+  } = useGetCreditRating(id);
   const { stepData: isinStepData } = useGetSpvApplicationStepData(id, 'isin_application');
-  const storedPoolFinancials = useMemo(
-    () => readStoredJson(getStorageKey(id, 'pool_financials')),
-    [id]
-  );
-  const storedCreditRating = useMemo(
-    () => readStoredJson(getStorageKey(id, 'credit_rating')),
-    [id]
-  );
 
   const mergedCurrData = useMemo(
     () => getIsinData(isinStepData) || currData || {},
@@ -73,9 +41,9 @@ export default function ISINApplicationView({
   );
   const [selectedDepository, setSelectedDepository] = useState(mergedCurrData?.depositoryId || 'nsdl');
   const creditRatingData =
+    creditRatingStepData?.data ||
     creditRatingStepData ||
     allData?.credit_rating ||
-    storedCreditRating ||
     {};
   const applicationDate = creditRatingData?.ratingDate
     ? dayjs(creditRatingData.ratingDate).format('DD MMM YYYY')
@@ -90,43 +58,16 @@ export default function ISINApplicationView({
       : creditRatingAgency || ratingObtained || mergedCurrData?.creditRating || '';
 
   const poolData =
+    poolFinancialsStepData?.data ||
     poolFinancialsStepData ||
     allData?.pool_financials ||
-    storedPoolFinancials ||
     {};
   const issueSize = poolData?.poolLimit ?? mergedCurrData?.issueSize ?? '';
-
+  
   useEffect(() => {
     setSelectedDepository(mergedCurrData?.depositoryId || 'nsdl');
-    saveStepData?.(mergedCurrData);
-  }, [mergedCurrData, saveStepData]);
+  }, [mergedCurrData]);
 
-  useEffect(() => {
-    if (allData?.pool_financials && Object.keys(allData.pool_financials).length) {
-      writeStoredJson(getStorageKey(id, 'pool_financials'), allData.pool_financials);
-    }
-
-    if (allData?.credit_rating && Object.keys(allData.credit_rating).length) {
-      writeStoredJson(getStorageKey(id, 'credit_rating'), allData.credit_rating);
-    }
-  }, [allData?.credit_rating, allData?.pool_financials, id]);
-
-  useEffect(() => {
-    const hasPoolApiData = Boolean(
-      poolFinancialsStepData && Object.keys(poolFinancialsStepData).length
-    );
-    const hasCreditApiData = Boolean(
-      creditRatingStepData && Object.keys(creditRatingStepData).length
-    );
-
-    if (hasPoolApiData) {
-      clearStoredJson(getStorageKey(id, 'pool_financials'));
-    }
-
-    if (hasCreditApiData) {
-      clearStoredJson(getStorageKey(id, 'credit_rating'));
-    }
-  }, [creditRatingStepData, id, poolFinancialsStepData]);
 
   // const handleNextStep = () => {};
 
@@ -161,7 +102,7 @@ export default function ISINApplicationView({
         </Label>
       </Box>
       {/* Depository Card */}
-      <DepositoryCard isReadOnly ={isReadOnly} selectedDepository={selectedDepository} onSelect={setSelectedDepository} />
+      <DepositoryCard isReadOnly={isReadOnly} selectedDepository={selectedDepository} onSelect={setSelectedDepository} />
 
       {/* Issuance Details */}
       <IssuanceDetails
@@ -172,7 +113,7 @@ export default function ISINApplicationView({
         setActiveStepId={setActiveStepId}
         saveStepData={saveStepData}
         percent={percent}
-        isReadOnly ={isReadOnly}
+        isReadOnly={isReadOnly}
       />
 
       {/* Application Tracker */}

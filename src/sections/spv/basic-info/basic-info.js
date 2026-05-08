@@ -47,7 +47,7 @@ export default function BasicInfo({
 }) {
   const params = useParams();
   const { id } = params;
-  const [spvCounter, setSpvCounter] = useState(1);
+  // const [spvCounter, setSpvCounter] = useState(1);
   const { psp = [] } = useGetPsp();
 
   const { stepData } = useGetSpvApplicationStepData(id, 'spv_basic_info');
@@ -111,33 +111,23 @@ export default function BasicInfo({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [values.pspPartner, values.legalStructure, values.originatorName, values.spvName, values.incorporationDate]);
 
-const generateSPVName = () => {
-  const selectedPsp = psp.find(
-    (item) => String(item.id) === String(watch('pspPartner'))
-  );
+  const generateSPVName = async () => {
+    try {
+      const pspId = watch('pspPartner');
 
-  const getPspCode = (name = '') =>
-    name
-      .split(' ')
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 4) || 'SPV';
+      if (!pspId) {
+        return;
+      }
 
-  const pspCode = getPspCode(selectedPsp?.name);
+      const response = await axiosInstance.get(
+        `/spv-pre/generate-spv-name/${pspId}`
+      );
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-
-  // Small incremental number (01, 02...)
-  const counter = String(spvCounter).padStart(2, '0');
-  
-  const formattedId = `${pspCode}${year}${month}${counter}`;
-
-  setValue('spvName', formattedId);
-  setSpvCounter((prev) => prev + 1);
-};
+      setValue('spvName', response.data.spvName);
+    } catch (error) {
+      console.log(error?.response?.data?.error?.message || error.message);
+    }
+  };
 
   const onSubmit = async (data) => {
     try {
@@ -258,6 +248,7 @@ const generateSPVName = () => {
                           variant="text"
                           color="primary"
                           onClick={generateSPVName}
+                          disabled={!watch('pspPartner')}
                           sx={{
                             minWidth: 'auto',
                             px: 1,
@@ -273,7 +264,6 @@ const generateSPVName = () => {
                     </InputAdornment>
                   ),
                 }}
-
               />
             </Grid>
             <Grid item xs={12}>
