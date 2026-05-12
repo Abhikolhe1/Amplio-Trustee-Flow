@@ -13,7 +13,8 @@ import { useParams } from 'src/routes/hook';
 
 // ----------------------------------------------------------------------
 
-const MIN_FACE_VALUE = 1000;
+const MIN_FACE_VALUE = 100000;
+const MIN_INVESTMENT_AMOUNT = 10000000; 
 
 const Window_Frequency = [
   {
@@ -180,8 +181,8 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
             }
           )
           .required('Max investors required'),
-        windowFrequency: Yup.string().required('Select frequency'),
-        windowDurationHours: Yup.number().required('Window duration required'),
+        // windowFrequency: Yup.string().required('Select frequency'),
+        // windowDurationHours: Yup.number().required('Window duration required'),
       }),
     [poolLimit]
   );
@@ -202,8 +203,8 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
       minInvestment,
       maxUnitsPerInvestor,
       maxInvestors,
-      windowFrequency: currData?.windowFrequency || '7',
-      windowDurationHours: 24,
+      // windowFrequency: currData?.windowFrequency || '7',
+      // windowDurationHours: 24,
     };
   }, [currData, poolLimit]);
 
@@ -237,7 +238,7 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
     'minInvestment',
     'maxUnitsPerInvestor',
     'maxInvestors',
-    'windowFrequency',
+    // 'windowFrequency',
   ];
 
   useEffect(() => {
@@ -257,7 +258,7 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
     values.minInvestment,
     values.maxUnitsPerInvestor,
     values.maxInvestors,
-    values.windowFrequency,
+    // values.windowFrequency,
   ]);
 
   useEffect(() => {
@@ -281,23 +282,25 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
     }
   }, [faceValuePerUnit, poolLimit, setValue]);
 
-  useEffect(() => {
-    if (!faceValuePerUnit || !poolLimit) return;
+useEffect(() => {
+  if (!faceValuePerUnit || !poolLimit) return;
 
-    // Always recompute fresh
-    let nextMinInvestment = faceValuePerUnit;
+  let nextMinInvestment = MIN_INVESTMENT_AMOUNT;
 
-    // Ensure it's multiple of faceValue (already is)
-    // Clamp to pool limit
-    nextMinInvestment = Math.min(nextMinInvestment, poolLimit);
+  // Ensure min investment is multiple of face value
+  nextMinInvestment =
+    Math.ceil(nextMinInvestment / faceValuePerUnit) * faceValuePerUnit;
 
-    if (nextMinInvestment !== minInvestment) {
-      setValue('minInvestment', nextMinInvestment, {
-        shouldValidate: true,
-        shouldDirty: true,
-      });
-    }
-  }, [faceValuePerUnit, poolLimit, setValue]);
+  // Clamp to pool limit
+  nextMinInvestment = Math.min(nextMinInvestment, poolLimit);
+
+  if (nextMinInvestment !== minInvestment) {
+    setValue('minInvestment', nextMinInvestment, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  }
+}, [faceValuePerUnit, poolLimit, minInvestment, setValue]);
 
   useEffect(() => {
     if (!faceValuePerUnit || !totalUnits || !minUnits) return;
@@ -445,11 +448,11 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
             </Grid>
           </Grid>
 
-          <Typography variant="subtitle1" color="primary" sx={{ mb: 2, mt: 2, display: 'block' }}>
+          {/* <Typography variant="subtitle1" color="primary" sx={{ mb: 2, mt: 2, display: 'block' }}>
             Investor Liquidity Window
-          </Typography>
+          </Typography> */}
 
-          <Grid container spacing={3}>
+          {/* <Grid container spacing={3}>
             <Grid item xs={12} md={6}>
               <RHFSelect name="windowFrequency" label="Window Frequency" inputProps={{
                 readOnly: isReadOnly,
@@ -476,7 +479,7 @@ export default function PtcParameters({ percent, saveStepData, setActiveStepId, 
                 }}
               />
             </Grid>
-          </Grid>
+          </Grid> */}
 
           {!isReadOnly && (
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>

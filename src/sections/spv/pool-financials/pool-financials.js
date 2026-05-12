@@ -220,16 +220,16 @@ export default function PoolFinancials({ percent, setActiveStepId, saveStepData,
               <Stack spacing={0.5}>
                 <Typography variant="body2">Pool Limit (₹)</Typography>
                 <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="caption">₹10L</Typography>
-                  <Typography variant="caption">₹5Cr</Typography>
+                  <Typography variant="caption">₹10cr</Typography>
+                  <Typography variant="caption">₹50Cr</Typography>
                 </Stack>
 
                 <RHFSlider
                   disabled={isReadOnly}
                   name="poolLimit"
-                  min={1000000}
-                  max={50000000}
-                  step={100000}
+                  min={100000000}
+                  max={500000000}
+                  step={10000000}
                   sx={sliderStyle}
                   valueLabelFormat={(value) => `₹${formatNumber(value)}`}
                 />
