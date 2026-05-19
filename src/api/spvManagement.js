@@ -146,6 +146,25 @@ export function useGetSpvManagementPools(spvId) {
   );
 }
 
+export function useGetSpvUnallocatedFunds(spvId) {
+  const URL = spvId ? endpoints.spvManagement.unallocatedFunds(spvId) : null;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher, {
+    keepPreviousData: true,
+  });
+
+  return useMemo(
+    () => ({
+      unallocatedFunds: data?.data || [],
+      unallocatedFundsLoading: isLoading,
+      unallocatedFundsError: error,
+      unallocatedFundsValidating: isValidating,
+      unallocatedFundsEmpty: !isLoading && !(data?.data || []).length,
+      refreshUnallocatedFunds: mutate,
+    }),
+    [data?.data, error, isLoading, isValidating, mutate]
+  );
+}
+
 async function fetchSpvManagementPoolDetails(poolId) {
   if (!poolId) {
     return { pool: null, spv: null };

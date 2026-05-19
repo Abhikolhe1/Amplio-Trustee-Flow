@@ -84,6 +84,7 @@ export const endpoints = {
     list: '/spv-management/list',
     summary: '/spv-management/summary',
     pools: (spvId) => `/spv-management/${spvId}/pools`,
+    unallocatedFunds: (spvId) => `/spv-management/${spvId}/unallocated-funds`,
     newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
   },
   spvKycDocumentType: {

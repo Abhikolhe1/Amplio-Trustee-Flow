@@ -19,10 +19,12 @@ import SpvEscrowAccountView from '../escrow-account';
 import { PoolPtcListView } from '../pool-ptc/view';
 import { TransactionHistoryListView } from '../transaction-history/view';
 import { ClosedTransactionsListView } from '../closed-transactions/view';
+import { UnallocatedFundsListView } from '../unallocated-funds/view';
 import {
   createNewPoolApplication,
   useGetSpvManagementList,
   useGetSpvManagementPools,
+  useGetSpvUnallocatedFunds,
 } from 'src/api/spvManagement';
 import { buildSpvDetails, buildSpvPoolRows } from '../utils';
 
@@ -32,6 +34,7 @@ const TABS = [
   { value: 'pool_ptc', label: 'Pool & PTC' },
   { value: 'transaction_history', label: 'Transaction History' },
   { value: 'closed_transactions', label: 'Closed Transactions' },
+  { value: 'unallocated_funds', label: 'Unallocated Funds' },
 ];
 
 export default function SPVDetailsView() {
@@ -45,6 +48,8 @@ export default function SPVDetailsView() {
   const [isCreatingPool, setIsCreatingPool] = useState(false);
   const { spvList, spvListLoading, spvListError } = useGetSpvManagementList();
   const { pools, poolsLoading, poolsError } = useGetSpvManagementPools(id);
+  const { unallocatedFunds, unallocatedFundsLoading, unallocatedFundsError } =
+    useGetSpvUnallocatedFunds(id);
 
   const apiSpv = useMemo(() => spvList.find((item) => item.spvId === id), [id, spvList]);
   const spv = useMemo(() => buildSpvDetails(apiSpv), [apiSpv]);
@@ -149,6 +154,13 @@ export default function SPVDetailsView() {
       )}
       {currentTab === 'closed_transactions' && (
         <ClosedTransactionsListView transactions={[]} />
+      )}
+      {currentTab === 'unallocated_funds' && (
+        <UnallocatedFundsListView
+          transactions={unallocatedFunds}
+          loading={unallocatedFundsLoading}
+          error={unallocatedFundsError}
+        />
       )}
     </Container>
   );
