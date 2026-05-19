@@ -106,6 +106,15 @@ export function useNavData() {
             path: paths.dashboard.spvManagement.root,
             icon: ICONS.company,
           },
+          {
+            title: t('Investor Orders'),
+            path: paths.dashboard.investmentOrders.root,
+            icon: ICONS.order,
+            deepMatch: true,
+            children: [
+              { title: t('All Orders'), path: paths.dashboard.investmentOrders.list },
+            ],
+          },
 
           //   // USER
           //   {

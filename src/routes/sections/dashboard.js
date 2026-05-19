@@ -103,6 +103,11 @@ const ChatPage = lazy(() => import('src/pages/dashboard/chat'));
 const MailPage = lazy(() => import('src/pages/dashboard/mail'));
 const CalendarPage = lazy(() => import('src/pages/dashboard/calendar'));
 const KanbanPage = lazy(() => import('src/pages/dashboard/kanban'));
+// INVESTMENT ORDERS
+const InvestmentOrdersListPage = lazy(() => import('src/pages/dashboard/investment-orders/list'));
+const InvestmentOrdersDetailsPage = lazy(() =>
+  import('src/pages/dashboard/investment-orders/details')
+);
 // SPV MANAGEMENT
 const SpvManagementListPage = lazy(() => import('src/pages/dashboard/spv-management/list'));
 const SpvManagementDetailsPage = lazy(() => import('src/pages/dashboard/spv-management/details'));
@@ -223,6 +228,14 @@ export const dashboardRoutes = [
           { path: ':id/edit', element: <SignatoriesEditPage /> },
           { path: 'new', element: <SignatoriesCreatePage /> },
           { path: ':id', element: <SignatoriesDetailsPage /> },
+        ],
+      },
+      {
+        path: 'investment-orders',
+        children: [
+          { element: <InvestmentOrdersListPage />, index: true },
+          { path: 'list', element: <InvestmentOrdersListPage /> },
+          { path: ':orderId', element: <InvestmentOrdersDetailsPage /> },
         ],
       },
       {

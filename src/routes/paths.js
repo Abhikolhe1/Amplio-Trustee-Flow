@@ -164,6 +164,11 @@ export const paths = {
       //   edit: `${ROOTS.DASHBOARD}/company/${MOCK_ID}/edit`,
       // },
     },
+    investmentOrders: {
+      root: `${ROOTS.DASHBOARD}/investment-orders`,
+      list: `${ROOTS.DASHBOARD}/investment-orders/list`,
+      detail: (orderId) => `${ROOTS.DASHBOARD}/investment-orders/${orderId}`,
+    },
     issureservices: {
       root: `${ROOTS.DASHBOARD}/issureservices`,
       roi: `${ROOTS.DASHBOARD}/issureservices/roi`,

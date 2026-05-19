@@ -141,4 +141,12 @@ export const endpoints = {
     filterList: (filter) => `/company-sector-types?filter=${filter}`,
     details: (id) => `/company-sector-types/${id}`,
   },
+  investmentOrders: {
+    list: '/admin/investment-orders',
+    byId: (orderId) => `/admin/investment-orders/${orderId}`,
+  },
+  redemptionOrders: {
+    list: '/admin/redemption-orders',
+    byId: (payoutId) => `/admin/redemption-orders/${payoutId}`,
+  },
 };
