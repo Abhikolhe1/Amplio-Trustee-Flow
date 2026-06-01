@@ -108,12 +108,9 @@ export function useNavData() {
           },
           {
             title: t('Investor Orders'),
-            path: paths.dashboard.investmentOrders.root,
+            path: paths.dashboard.investmentOrders.list,
             icon: ICONS.order,
             deepMatch: true,
-            children: [
-              { title: t('All Orders'), path: paths.dashboard.investmentOrders.list },
-            ],
           },
 
           //   // USER
